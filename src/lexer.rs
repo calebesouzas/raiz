@@ -1,4 +1,4 @@
-#[derive(Debug)]
+#[derive(Debug, PartialEq, Eq, Clone)]
 pub enum Token<'a> {
     Identifier(&'a str),
     Keyword(&'a str),
@@ -55,11 +55,18 @@ impl<'a> Lexer<'a> {
                     '\"' => self.get_string(),
                     '+' | '-' | '*' | '/' => self.tokens.push(Token::BinaryOperator(c)),
                     '!' => match self.peek_next() {
-                        Some('=') => self.tokens.push(Token::NotEqual),
+                        Some('=') => {
+                            self.tokens.push(Token::NotEqual);
+                            self.advance();
+                        }
                         _ => self.tokens.push(Token::StatementEnd),
                     },
+
                     '=' => match self.peek_next() {
-                        Some('=') => self.tokens.push(Token::Equal),
+                        Some('=') => {
+                            self.tokens.push(Token::Equal);
+                            self.advance();
+                        }
                         _ => self.tokens.push(Token::Assign),
                     },
                     ' ' | '\n' | '\r' | '\t' => {
@@ -90,6 +97,7 @@ impl<'a> Lexer<'a> {
             _ => Token::Identifier(word),
         };
         self.tokens.push(token);
+        self.position -= 1;
     }
     fn get_number(&mut self) {
         let mut number: i32 = 0;
@@ -102,6 +110,7 @@ impl<'a> Lexer<'a> {
             }
         }
         self.tokens.push(Token::NumberLiteral(number));
+        self.position -= 1;
     }
     fn get_string(&mut self) {
         let start = self.position;
