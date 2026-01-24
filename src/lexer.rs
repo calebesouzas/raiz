@@ -29,6 +29,13 @@ impl<'a> Lexer<'a> {
             tokens: Vec::<Token>::new(),
         }
     }
+    fn peek_prev(&self) -> Option<char> {
+        if self.position - 1 < self.bytes.len() {
+            Some(self.bytes[self.position - 1] as char)
+        } else {
+            None
+        }
+    }
     fn peek_next(&self) -> Option<char> {
         if self.position + 1 < self.bytes.len() {
             Some(self.bytes[self.position + 1] as char)
@@ -101,6 +108,7 @@ impl<'a> Lexer<'a> {
     }
     fn get_number(&mut self) {
         let mut number: i32 = 0;
+        let modifier = { if self.peek_prev() == Some('-') { -1 } else { 1 } };
         while let Some(c) = self.peek() {
             if c.is_numeric() {
                 number = number * 10 + (c as i32 - 48);
@@ -109,6 +117,7 @@ impl<'a> Lexer<'a> {
                 break;
             }
         }
+        number *= modifier;
         self.tokens.push(Token::NumberLiteral(number));
         self.position -= 1;
     }
