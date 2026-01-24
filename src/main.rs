@@ -1,6 +1,10 @@
+use std::env;
 mod lexer;
 
-use std::env;
+#[cfg(test)]
+mod tests;
+
+use lexer::Lexer;
 
 fn main() {
     let version = "v0.0.1-test";
@@ -10,7 +14,10 @@ fn main() {
         println!("Raiz language - {}", version);
     }
 
-    for arg in args {
-        println!("{}", arg);
-    }
+    let code = String::from("var x = 10!");
+
+    let mut lexer = Lexer::new(&code);
+    lexer.tokenize();
+
+    dbg!(lexer.tokens);
 }
