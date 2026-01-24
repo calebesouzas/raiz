@@ -118,7 +118,12 @@ impl<'a> Lexer<'a> {
             }
         }
         number *= modifier;
-        self.tokens.push(Token::NumberLiteral(number));
+        if modifier == -1 {
+            let last_index = self.tokens.len() - 1;
+            self.tokens[last_index] = Token::NumberLiteral(number);
+        } else {
+            self.tokens.push(Token::NumberLiteral(number));
+        }
         self.position -= 1;
     }
     fn get_string(&mut self) {
