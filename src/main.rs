@@ -14,7 +14,7 @@ fn main() {
         println!("Raiz language - {}", version);
     }
 
-    let code = String::from("var x = 10!");
+    let code = String::from("15 + 3 - 7");
 
     let mut lexer = Lexer::new(&code);
     lexer.tokenize();
