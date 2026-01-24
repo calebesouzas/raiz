@@ -2,7 +2,11 @@
 pub enum Token<'a> {
     Identifier(&'a str),
     Keyword(&'a str),
-    BinaryOperator(char),
+    Plus,
+    Minus,
+    Star,
+    Slash,
+    BackSlash,
     NumberLiteral(i32),
     StringLiteral(&'a str),
     NotEqual,
@@ -60,7 +64,11 @@ impl<'a> Lexer<'a> {
                     'a'..='z' | 'A'..='Z' => self.get_identifier(),
                     '0'..='9' => self.get_number(),
                     '\"' => self.get_string(),
-                    '+' | '-' | '*' | '/' => self.tokens.push(Token::BinaryOperator(c)),
+                    '+' => self.tokens.push(Token::Plus),
+                    '-' => self.tokens.push(Token::Minus),
+                    '*' => self.tokens.push(Token::Star),
+                    '/' => self.tokens.push(Token::Slash),
+                    '\\' => self.tokens.push(Token::BackSlash),
                     '!' => match self.peek_next() {
                         Some('=') => {
                             self.tokens.push(Token::NotEqual);
