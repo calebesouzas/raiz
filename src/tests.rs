@@ -1,4 +1,5 @@
 use crate::lexer::{Lexer, Token};
+use crate::parser::Parser;
 
 #[test]
 fn not_empty() {
@@ -17,4 +18,16 @@ fn negative_number_literals() {
 
     assert_eq!(lexer.tokens[0], Token::Minus);
     assert_eq!(lexer.tokens[1], Token::NumberLiteral(15));
+}
+
+#[test]
+fn parser_test_im_scaried() {
+    let code = String::from("1 + 1");
+    let mut lexer = Lexer::new(&code);
+    lexer.tokenize();
+
+    let mut parser = Parser::new(lexer);
+    parser.parse();
+
+    dbg!(parser);
 }
