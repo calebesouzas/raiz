@@ -27,37 +27,51 @@ impl<'a> Lexer<'a> {
             tokens: Vec::<Token>::new(),
         }
     }
-    fn next(&mut self) -> Token {
+    fn peek(&self) -> Option<&Token> {
+        self.tokens.last()
+    }
+    fn next(&mut self) -> Option<Token> {
         let c = self.bytes[self.current] as char;
         let result = match c {
-            '+' => Token::Plus,
-            '-' => Token::Minus,
-            '*' => Token::Star,
-            '/' => Token::Slash,
-            '(' => Token::OpenParen,
-            ')' => Token::CloseParen,
+            '+' => Some(Token::Plus),
+            '-' => Some(Token::Minus),
+            '*' => Some(Token::Star),
+            '/' => Some(Token::Slash),
+            '(' => Some(Token::OpenParen),
+            ')' => Some(Token::CloseParen),
             '0'..='9' => {
                 let number = self.get_number();
+                // -1 so we don't skip one character
+                // right after the end of the number
                 self.current -= 1;
-                Token::NumberLiteral(number)
+                Some(Token::NumberLiteral(number))
             }
-            _ => Token::EndOfFile,
+            other => {
+                println!("Invalid character: {}", other);
+                None
+            }
         };
         self.current += 1;
         result
     }
     pub fn tokenize(&mut self) {
         while self.current < self.bytes.len() {
-            let token = self.next();
-            self.tokens.push(token);
-            self.current += 1;
+            if self.peek() != Some(&Token::EndOfFile) {
+                let token = self.next().unwrap_or(Token::EndOfFile);
+
+                self.tokens.push(token);
+                self.current += 1;
+            } else {
+                break;
+            }
         }
     }
     fn get_number(&mut self) -> i32 {
         let mut number: i32 = 0;
         while self.current < self.bytes.len() {
             let c = self.bytes[self.current] as char;
-            if c.is_numeric() {
+            if c.is_ascii_digit() {
+                // 48 is the decimal code for '0'
                 number = number * 10 + (c as i32 - 48);
                 self.current += 1;
             } else {
