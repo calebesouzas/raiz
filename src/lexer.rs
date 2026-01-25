@@ -60,7 +60,6 @@ impl<'a> Lexer<'a> {
                 let token = self.next().unwrap_or(Token::EndOfFile);
 
                 self.tokens.push(token);
-                self.current += 1;
             } else {
                 break;
             }
