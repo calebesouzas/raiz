@@ -1,6 +1,6 @@
 use crate::lexer::{Lexer, Token};
 
-#[derive(Debug)]
+#[derive(Debug, PartialEq)]
 pub enum Expr {
     Literal(Value),
     Variable(String),
@@ -17,7 +17,7 @@ pub enum Expr {
     Return(Option<Value>),
 }
 
-#[derive(Debug)]
+#[derive(Debug, PartialEq)]
 pub enum Operator {
     Sum,
     Subtract,
@@ -27,7 +27,7 @@ pub enum Operator {
     // And others like Access, Index(?) and more...
 }
 
-#[derive(Debug)]
+#[derive(Debug, PartialEq)]
 pub enum Value {
     Int(i32),
     Float(f32),
@@ -45,7 +45,7 @@ fn get_binding_power(op: &Operator) -> (u8, u8) {
     }
 }
 
-#[derive(Debug)]
+#[derive(Debug, PartialEq)]
 pub struct Parser {
     tokens: Vec<Token>,
     current: usize,

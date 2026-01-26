@@ -1,5 +1,5 @@
 use crate::lexer::{Lexer, Token};
-use crate::parser::Parser;
+use crate::parser::{Expr, Operator, Parser, Value};
 
 #[test]
 fn not_empty() {
@@ -27,7 +27,30 @@ fn parser_test_im_scaried() {
     lexer.tokenize();
 
     let mut parser = Parser::new(lexer);
-    parser.parse();
+    let actual_result = parser.parse();
 
-    dbg!(parser);
+    let wanted_result = Expr::Binary {
+        left: Box::new(Expr::Literal(Value::Int(1))),
+        operator: Operator::Sum,
+        right: Box::new(Expr::Literal(Value::Int(1))),
+    };
+    assert_eq!(actual_result, wanted_result);
+}
+
+#[test]
+fn parse_unary_operations() {
+    let code = String::from("-15");
+    let mut lexer = Lexer::new(&code);
+    lexer.tokenize();
+
+    let mut parser = Parser::new(lexer);
+    let result = parser.parse();
+
+    let wanted_result = Expr::Unary {
+        operator: Operator::Subtract,
+        right: Box::new(Expr::Literal(Value::Int(15))),
+    };
+
+    dbg!(result);
+    //assert_eq!(result, wanted_result);
 }
