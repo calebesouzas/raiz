@@ -16,21 +16,10 @@ fn main() {
     if args.len() == 1 {
         println!("Raiz language - {}", version);
     }
-
-    let code = String::from("-7");
-
-    let mut lexer = Lexer::new(&code);
-    lexer.tokenize();
-
-    dbg!(&lexer.tokens);
-
-    let mut parser = Parser::new(lexer);
-    let ast = parser.parse();
-    dbg!(ast);
-
-    parser_test_im_scaried();
+    grouping_test();
 }
-fn parser_test_im_scaried() {
+#[allow(unused)]
+fn one_plus_one_test() {
     let code = String::from("1 + 1");
     let mut lexer = Lexer::new(&code);
     lexer.tokenize();
@@ -43,5 +32,20 @@ fn parser_test_im_scaried() {
         operator: Operator::Sum,
         right: Box::new(Expr::Literal(Value::Int(1))),
     };
+    dbg!(&actual_result);
     assert_eq!(actual_result, wanted_result);
+}
+fn grouping_test() {
+    println!("At grouping test!");
+    let code = "15 * ((2 + 7) - 8 / 2)";
+    println!("Code: {}", code);
+    let mut lexer = Lexer::new(&code.to_string());
+    lexer.tokenize();
+
+    println!("Tokens: {:?}", lexer.tokens);
+
+    let mut parser = Parser::new(lexer);
+    let result = parser.parse();
+
+    dbg!(result);
 }

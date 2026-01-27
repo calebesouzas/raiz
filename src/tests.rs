@@ -54,3 +54,15 @@ fn parse_unary_operations() {
     dbg!(result);
     //assert_eq!(result, wanted_result);
 }
+
+#[test]
+fn parse_groups() {
+    let code = String::from("15 * ((2 + 7) - 8 / 2)");
+    let mut lexer = Lexer::new(&code);
+    lexer.tokenize();
+
+    let mut parser = Parser::new(lexer);
+    let result = parser.parse();
+
+    dbg!(result);
+}

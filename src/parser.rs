@@ -76,7 +76,10 @@ impl Parser {
         self.tokens.pop();
     }
     fn parse_expression(&mut self, minimum_bp: u8) -> Expr {
-        let mut left_side = match self.peek() {
+        println!("Called now");
+        let current = self.peek();
+        println!("Current token: {:?}", current);
+        let mut left_side = match current {
             Token::NumberLiteral(number) => Expr::Literal(Value::Int(*number)),
             Token::Minus => {
                 let (_, bp) = get_binding_power(&Operator::Unary);
@@ -87,17 +90,29 @@ impl Parser {
                     right: Box::new(right_side),
                 }
             }
+            Token::OpenParen => {
+                self.advance();
+                let inner = self.parse_expression(0);
+                if self.peek() == &Token::CloseParen {
+                    Expr::Group(Box::new(inner))
+                } else {
+                    panic!("Expected closing parenthesis");
+                }
+            }
             other => {
-                println!("Unhandled token: {:?}", other);
+                panic!("Unhandled token: {:?}", other);
                 Expr::Return(None)
             }
         };
         self.advance();
         loop {
-            if self.peek() == &Token::EndOfFile {
+            println!("At loop...");
+            let current = self.peek();
+            println!("Current token: {:?}", current);
+            if current == &Token::EndOfFile {
                 break;
             }
-            let op = match self.peek() {
+            let op = match current {
                 Token::Plus => Operator::Sum,
                 Token::Minus => Operator::Subtract,
                 Token::Star => Operator::Multiply,

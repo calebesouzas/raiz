@@ -28,10 +28,11 @@ impl<'a> Lexer {
             tokens: Vec::<Token>::new(),
         }
     }
+    #[allow(unused_assignments)]
     pub fn tokenize(&mut self) {
-        let mut chars = self.chars.iter();
-        while let Some(c) = chars.next() {
-            #[allow(unused_assignments)]
+        let mut i = 0;
+        while i < self.chars.len() {
+            let c = self.chars[i];
             let mut token = Token::EndOfFile;
             match c {
                 '+' => token = Token::Plus,
@@ -41,12 +42,14 @@ impl<'a> Lexer {
                 '(' => token = Token::OpenParen,
                 ')' => token = Token::CloseParen,
                 '0'..='9' => {
-                    let mut number = *c as i32 - 48;
-                    while let Some(ch) = chars.next()
-                        && ch.is_ascii_digit()
-                    {
-                        number = number * 10 + (*ch as i32 - 48);
+                    let mut number = c as i32 - 48;
+                    //let mut number: i32 = 0;
+                    while self.chars[i + 1].is_ascii_digit() {
+                        let ch = self.chars[i + 1];
+                        number = number * 10 + (ch as i32 - 48);
+                        i += 1;
                     }
+
                     token = Token::NumberLiteral(number);
                 }
                 other => {
@@ -58,6 +61,7 @@ impl<'a> Lexer {
             if token != Token::EndOfFile {
                 self.tokens.push(token);
             }
+            i += 1;
         }
         self.tokens.push(Token::EndOfFile);
     }
