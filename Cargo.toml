@@ -1,6 +1,9 @@
-[package]
-name = "raiz"
-version = "0.1.0"
-edition = "2024"
+[workspace]
+members = [
+  "crates/raiz-core",
+  "crates/raiz-cli",
+  "crates/raiz-parser",
+  "crates/raiz-interpreter"
+]
 
-[dependencies]
+resolver = "2"

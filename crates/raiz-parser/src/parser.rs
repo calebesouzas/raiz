@@ -1,40 +1,5 @@
-use crate::lexer::{Lexer, Token};
-
-#[derive(Debug, PartialEq)]
-pub enum Expr {
-    Literal(Value),
-    Variable(String),
-    Binary {
-        left: Box<Expr>,
-        operator: Operator,
-        right: Box<Expr>,
-    },
-    Unary {
-        operator: Operator,
-        right: Box<Expr>,
-    },
-    Group(Box<Expr>),
-    Return(Option<Value>),
-}
-
-#[derive(Debug, PartialEq)]
-pub enum Operator {
-    Sum,
-    Subtract,
-    Multiply,
-    Divide,
-    Unary,
-    // And others like Access, Index(?) and more...
-}
-
-#[derive(Debug, PartialEq)]
-pub enum Value {
-    Int(i32),
-    Float(f32),
-    Char(char),
-    Size(usize),
-    String(String),
-}
+use crate::lexer::Lexer;
+use raiz_core::{Expr, Operator, RaizObject, Token};
 
 fn get_binding_power(op: &Operator) -> (u8, u8) {
     match *op {
@@ -80,7 +45,7 @@ impl Parser {
         let current = self.peek();
         println!("Current token: {:?}", current);
         let mut left_side = match current {
-            Token::NumberLiteral(number) => Expr::Literal(Value::Int(*number)),
+            Token::NumberLiteral(number) => Expr::Literal(RaizObject::Int(*number)),
             Token::Minus => {
                 let (_, bp) = get_binding_power(&Operator::Unary);
                 self.advance();

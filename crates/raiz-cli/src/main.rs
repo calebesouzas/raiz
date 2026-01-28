@@ -1,14 +1,5 @@
 use std::env;
 
-#[cfg(test)]
-mod tests;
-
-mod lexer;
-use lexer::Lexer;
-
-mod parser;
-use parser::{Expr, Operator, Parser, Value};
-
 fn main() {
     let version = "v0.0.1-test";
     let args = env::args();

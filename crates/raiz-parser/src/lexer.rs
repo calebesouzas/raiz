@@ -1,14 +1,4 @@
-#[derive(Debug, PartialEq, Eq, Clone)]
-pub enum Token {
-    Plus,
-    Minus,
-    Star,
-    Slash,
-    OpenParen,
-    CloseParen,
-    NumberLiteral(i32),
-    EndOfFile,
-}
+use raiz_core::Token;
 
 #[derive(Debug)]
 pub struct Lexer {

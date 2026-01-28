@@ -3,5 +3,28 @@
 version = 4
 
 [[package]]
-name = "raiz"
-version = "0.1.0"
+name = "raiz-cli"
+version = "0.0.1"
+dependencies = [
+ "raiz-core",
+ "raiz-interpreter",
+]
+
+[[package]]
+name = "raiz-core"
+version = "0.0.1"
+
+[[package]]
+name = "raiz-interpreter"
+version = "0.0.1"
+dependencies = [
+ "raiz-core",
+ "raiz-parser",
+]
+
+[[package]]
+name = "raiz-parser"
+version = "0.0.2"
+dependencies = [
+ "raiz-core",
+]

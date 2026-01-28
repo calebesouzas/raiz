@@ -1,0 +1,8 @@
+[package]
+name = "raiz-interpreter"
+version = "0.0.1"
+edition = "2024"
+
+[dependencies]
+raiz-core = { path = "../raiz-core" }
+raiz-parser = { path = "../raiz-parser" }
