@@ -22,11 +22,8 @@ impl Lexer {
     }
     pub fn tokenize(&mut self) -> Result<Vec<Token>, RaizError> {
         let mut tokens = Vec::<Token>::new();
-        while let Some(c) = self.cursor.next() {
-            // will automaticaly update the lines and columns
-            // based on what character it is, doesn't matter
-            // if it is a valid character or not in it's context
-            self.pos.update(*c);
+        while let Some(c) = self.cursor.current() {
+            let current_pos = self.pos.clone();
             // I do it because i can't return from the function
             // without assigning a `TokenKind` value to `token_kind`
             let mut error: Option<RaizError> = None;
@@ -62,8 +59,8 @@ impl Lexer {
                 '{' => OpenBrace,
                 '}' => CloseBrace,
                 '!' => {
-                    if let Some('=') = self.cursor.peek() {
-                        self.cursor.advance();
+                    if let Some('=') = self.peek() {
+                        self.advance();
                         NotEqual
                     } else {
                         Exclamation
@@ -73,26 +70,28 @@ impl Lexer {
                 '@' => At,
                 '#' => HashTag,
                 ':' => {
-                    if let Some(ch) = self.cursor.peek() {
-                        self.cursor.advance(); // consume ch
-                        match ch {
+                    if let Some(ch) = self.peek() {
+                        let result = match ch {
                             '>' => CoolArrow,
                             '=' => Assign(true),
                             ':' => DoubleCollon,
                             _ => Collon,
-                        }
+                        };
+                        self.advance(); // consume ch
+                        result
                     } else {
                         Collon
                     }
                 }
                 '=' => {
-                    if let Some(ch) = self.cursor.peek() {
-                        self.cursor.advance();
-                        match ch {
+                    if let Some(ch) = self.peek() {
+                        let result = match ch {
                             '=' => Equal,
                             '>' => FatArrow,
                             _ => Assign(false),
-                        }
+                        };
+                        self.advance();
+                        result
                     } else {
                         Assign(false)
                     }
@@ -104,15 +103,18 @@ impl Lexer {
                 '0'..='9' => {
                     let mut len: usize = 1;
                     let mut number = 0;
-                    while let Some(ch) = self.cursor.peek()
+                    while let Some(ch) = self.current()
                         && (ch.is_ascii_digit() || *ch == '_')
                     {
-                        self.cursor.advance(); // consume ch
                         if *ch != '_' {
                             number = number * 10 + (*ch as i32 - 48);
                         }
+                        self.advance();
                         len += 1;
                     }
+                    self.cursor.retreat();
+                    // ^- this prevents skipping the chararacter
+                    // right after the last one in the number
                     self.pos.def_len(len);
                     NumberLiteral(number)
                 }
@@ -124,12 +126,13 @@ impl Lexer {
                 '$' | 'a'..='z' | 'A'..='Z' => {
                     let start: usize = self.cursor.get_current();
                     let mut end = start;
-                    while let Some(ch) = self.cursor.peek()
+                    while let Some(ch) = self.current()
                         && (ch.is_ascii_alphanumeric() || *ch == '_')
                     {
+                        self.advance();
                         end += 1;
-                        self.cursor.advance();
                     }
+                    self.cursor.retreat();
                     let len = end - start;
                     self.pos.def_len(len);
                     let identifier = &self.source[start..end];
@@ -151,29 +154,28 @@ impl Lexer {
                 '_' => NullIdentifier,
                 // handling character literal
                 '\'' => {
-                    if let Some(next_c) = self.cursor.next() {
-                        if let Some('\'') = self.cursor.peek() {
-                            self.cursor.advance(); // consume '\''
-                            match next_c {
-                                '\t' | '\n' | '\r' | '\\' => {
-                                    let msg = "Use escape sequence instead";
-                                    error = Some(RaizError {
-                                        kind: "Lexical".to_string(),
-                                        msg: msg.to_string(),
-                                        pos: None,
-                                    })
-                                }
-                                _ => (),
+                    if let Some(char_literal) = self.peek() {
+                        let result = match char_literal {
+                            '\t' | '\n' | '\r' => {
+                                let msg = "Use escape sequence instead";
+                                error = Some(RaizError {
+                                    kind: "Syntax".to_string(),
+                                    msg: msg.to_string(),
+                                    pos: None,
+                                });
+                                EndOfFile
                             }
-                            CharLiteral(*next_c)
-                        } else {
-                            error = Some(RaizError {
-                                kind: "Lexical".to_string(),
-                                msg: "Invalid character literal".to_string(),
-                                pos: None,
-                            });
-                            EndOfFile
-                        }
+                            '\'' => {
+                                error = Some(RaizError {
+                                    kind: "Syntax".to_string(),
+                                    msg: "Empty character literal".to_string(),
+                                    pos: Some(self.pos.clone()),
+                                });
+                                EndOfFile
+                            }
+                            other => CharLiteral(*other),
+                        };
+                        result
                     } else {
                         error = Some(RaizError {
                             kind: "Lexical".to_string(),
@@ -194,8 +196,8 @@ impl Lexer {
                     EndOfFile
                 }
             };
-
-            let token_pos = self.pos.clone();
+            self.advance();
+            let token_pos = current_pos;
             let token = Token {
                 kind: token_kind,
                 pos: token_pos,
@@ -215,5 +217,17 @@ impl Lexer {
             pos: final_pos,
         });
         Ok(tokens)
+    }
+    fn current(&self) -> Option<&char> {
+        self.cursor.current()
+    }
+    fn peek(&self) -> Option<&char> {
+        self.cursor.peek()
+    }
+    fn next(&mut self) -> Option<&char> {
+        self.cursor.next()
+    }
+    fn advance(&mut self) {
+        self.cursor.advance();
     }
 }

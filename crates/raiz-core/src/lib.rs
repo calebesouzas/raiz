@@ -65,15 +65,10 @@ impl RaizProgram {
 pub struct Cursor<T> {
     vec: Vec<T>,
     current: usize,
-    temp_current: usize,
 }
 impl<T> Cursor<T> {
     pub fn new(vec: Vec<T>) -> Self {
-        Self {
-            vec,
-            current: 0,
-            temp_current: 0,
-        }
+        Self { vec, current: 0 }
     }
     // returns the current item without consuming it
     pub fn current(&self) -> Option<&T> {
@@ -93,17 +88,15 @@ impl<T> Cursor<T> {
 
     pub fn advance(&mut self) {
         self.current += 1;
-        self.temp_current = self.current;
     }
 
     pub fn retreat(&mut self) {
         self.current -= 1;
-        self.temp_current = self.current;
     }
+
     // returns the next item without consuming it
-    pub fn peek(&mut self) -> Option<&T> {
-        self.temp_current += 1;
-        self.vec.get(self.temp_current)
+    pub fn peek(&self) -> Option<&T> {
+        self.vec.get(self.current + 1)
     }
     pub fn get_current(&self) -> usize {
         self.current

@@ -1,6 +1,6 @@
 use std::env;
 
-use raiz_core::Program;
+use raiz_core::RaizProgram;
 use raiz_parser::ProgramParser;
 
 fn main() {
@@ -19,13 +19,13 @@ fn main() {
 
 fn unexpected_char() {
     let code = "ç".to_string();
-    let mut p = Program::new(&code);
+    let mut p = RaizProgram::new(code);
     p.build_ast();
 }
 
 fn var_dec_test() {
     let code = "var x = 10!".to_string();
-    let mut p = Program::new(&code);
+    let mut p = RaizProgram::new(code);
 
     p.build_ast();
 }
