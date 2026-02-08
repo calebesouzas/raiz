@@ -8,6 +8,7 @@ version = "0.0.1"
 dependencies = [
  "raiz-core",
  "raiz-interpreter",
+ "raiz-parser",
 ]
 
 [[package]]
