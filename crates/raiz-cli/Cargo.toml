@@ -5,4 +5,5 @@ edition = "2024"
 
 [dependencies]
 raiz-core = { path = "../raiz-core"}
+raiz-parser = { path = "../raiz-parser" }
 raiz-interpreter = { path = "../raiz-interpreter" }
