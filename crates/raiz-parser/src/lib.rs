@@ -13,7 +13,7 @@ pub trait ProgramParser {
     fn build_ast(self) -> Program;
 }
 
-impl ProgramParser for RaizProgram {
+impl ProgramParser for Program {
     fn build_ast(mut self: Program) -> Program {
         let mut lexer = Lexer::new(&self.source);
         let lexer_result = lexer.tokenize();
