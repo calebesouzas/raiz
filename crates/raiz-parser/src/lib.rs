@@ -1,18 +1,20 @@
-use std::process::exit;
+//use std::process::exit;
 
 mod lexer;
 use crate::lexer::Lexer;
-use raiz_core::RaizProgram;
+use raiz_core::Program;
+
+mod parser;
 
 #[cfg(test)]
 mod tests;
 
 pub trait ProgramParser {
-    fn build_ast(self) -> RaizProgram;
+    fn build_ast(self) -> Program;
 }
 
 impl ProgramParser for RaizProgram {
-    fn build_ast(mut self: RaizProgram) -> RaizProgram {
+    fn build_ast(mut self: Program) -> Program {
         let mut lexer = Lexer::new(&self.source);
         let lexer_result = lexer.tokenize();
         match lexer_result {
@@ -20,7 +22,7 @@ impl ProgramParser for RaizProgram {
                 dbg!(&token_vec);
             }
             Err(e) => {
-                eprintln!("{}Error\n\t{} at {}", e.kind, e.msg, e.pos.unwrap());
+                eprintln!("Error: {}", e.msg);
             }
         }
 

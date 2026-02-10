@@ -50,12 +50,12 @@ impl Position {
         }
     }
 }
-pub struct RaizProgram {
+pub struct Program {
     pub source: String,
     pub ast: Option<Vec<Stmt>>,
 }
 
-impl RaizProgram {
+impl Program {
     pub fn new(source: String) -> Self {
         Self { source, ast: None }
     }
@@ -110,7 +110,7 @@ impl<T> Cursor<T> {
  * And we'll probably have even more!
  * */
 #[derive(Debug, PartialEq, Clone)] // why 'derive(Clone)'?
-pub enum TokenKind {
+pub enum Token {
     /* Operators */
     // Binary
     Plus,  // +
@@ -188,8 +188,8 @@ pub enum TokenKind {
 }
 
 #[derive(Debug, PartialEq, Clone)]
-pub struct Token {
-    pub kind: TokenKind,
+pub struct TokenWithPos {
+    pub token: Token,
     pub pos: Position,
 }
 impl fmt::Display for Token {
@@ -199,8 +199,8 @@ impl fmt::Display for Token {
      * and return a string to a variable
      * just like the original text. */
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        use TokenKind::*;
-        let token_as_text = match &self.kind {
+        use Token::*;
+        let token_as_text = match &self {
             // Binary
             Plus => "+",
             Minus => "-",
@@ -280,7 +280,8 @@ impl fmt::Display for Token {
             EndOfFile => "end of file",
         };
 
-        write!(f, "'{}' at {}", token_as_text, &self.pos)
+        //write!(f, "'{}' at {}", token_as_text, &self.pos)
+        write!(f, "'{}'", token_as_text)
     }
 }
 
@@ -290,8 +291,8 @@ impl fmt::Display for Token {
 // because let's be honest, writing
 // `StatementKind::Variant`
 // many times... Can be a little boring
-pub struct Stmt {
-    pub kind: StmtKind,
+pub struct StmtWithPos {
+    pub kind: Stmt,
     pub pos: Position,
 }
 
@@ -300,7 +301,7 @@ pub struct Stmt {
  * (i'm a beginner programmer(?) by the way)
  * */
 #[derive(Debug, PartialEq)]
-pub enum StmtKind {
+pub enum Stmt {
     SingleExpression(Expr),
     VarDeclaration {
         name: String,
@@ -347,14 +348,14 @@ pub enum StmtKind {
 }
 
 #[derive(Debug, PartialEq)]
-pub struct Expr {
-    pub kind: ExprKind,
+pub struct ExprWithPos {
+    pub kind: Expr,
     pub pos: Position,
 }
 
 #[derive(Debug, PartialEq)]
-pub enum ExprKind {
-    Literal(RaizObject),
+pub enum Expr {
+    Literal(Object),
     Variable(String),
     Binary {
         left: Box<Expr>,
@@ -398,7 +399,7 @@ pub enum Operator {
 }
 
 #[derive(Debug, PartialEq)]
-pub enum RaizObject {
+pub enum Object {
     Int(i32),
     // Float(f32),
     Char(char),
@@ -420,8 +421,7 @@ pub enum RaizObject {
     None,
 }
 
-pub struct RaizError {
-    pub kind: String,
+pub struct Error {
     pub msg: String,
     pub pos: Option<Position>,
 }

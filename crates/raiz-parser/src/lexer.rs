@@ -1,4 +1,4 @@
-use raiz_core::{Cursor, Position, RaizError, Token, TokenKind};
+use raiz_core::{Cursor, Error, Position, Token};
 
 pub struct Lexer {
     source: String,
@@ -20,14 +20,14 @@ impl Lexer {
             pos,
         }
     }
-    pub fn tokenize(&mut self) -> Result<Vec<Token>, RaizError> {
+    pub fn tokenize(&mut self) -> Result<Vec<Token>, Error> {
         let mut tokens = Vec::<Token>::new();
         while let Some(c) = self.cursor.current() {
             let current_pos = self.pos.clone();
             // I do it because i can't return from the function
             // without assigning a `TokenKind` value to `token_kind`
             let mut error: Option<RaizError> = None;
-            use TokenKind::*;
+            use Token::*;
             let token_kind = match c {
                 '+' => Plus,
                 '-' => Minus,
@@ -158,16 +158,14 @@ impl Lexer {
                         let result = match char_literal {
                             '\t' | '\n' | '\r' => {
                                 let msg = "Use escape sequence instead";
-                                error = Some(RaizError {
-                                    kind: "Syntax".to_string(),
+                                error = Some(Error {
                                     msg: msg.to_string(),
                                     pos: None,
                                 });
                                 EndOfFile
                             }
                             '\'' => {
-                                error = Some(RaizError {
-                                    kind: "Syntax".to_string(),
+                                error = Some(Error {
                                     msg: "Empty character literal".to_string(),
                                     pos: Some(self.pos.clone()),
                                 });
@@ -177,8 +175,7 @@ impl Lexer {
                         };
                         result
                     } else {
-                        error = Some(RaizError {
-                            kind: "Lexical".to_string(),
+                        error = Some(Error {
                             msg: "Not closed character literal".to_string(),
                             pos: None,
                         });
@@ -187,8 +184,7 @@ impl Lexer {
                 }
                 other => {
                     if !other.is_ascii_whitespace() {
-                        error = Some(RaizError {
-                            kind: "Lexical".to_string(),
+                        error = Some(Error {
                             msg: format!("Unexpected character: > {} <", other),
                             pos: None,
                         });
@@ -206,16 +202,13 @@ impl Lexer {
                 e.pos = Some(self.pos.clone());
                 return Err(e);
             }
-            if token.kind != TokenKind::EndOfFile {
+            if token != EndOfFile {
                 tokens.push(token);
             }
         }
         let mut final_pos = self.pos.clone();
         final_pos.column += 1; // to be located right after the last character
-        tokens.push(Token {
-            kind: TokenKind::EndOfFile,
-            pos: final_pos,
-        });
+        tokens.push(Token::EndOfFile);
         Ok(tokens)
     }
     fn current(&self) -> Option<&char> {
