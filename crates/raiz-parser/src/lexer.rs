@@ -26,7 +26,7 @@ impl Lexer {
             let current_pos = self.pos.clone();
             // I do it because i can't return from the function
             // without assigning a `TokenKind` value to `token_kind`
-            let mut error: Option<RaizError> = None;
+            let mut error: Option<Error> = None;
             use Token::*;
             let token_kind = match c {
                 '+' => Plus,
@@ -73,7 +73,6 @@ impl Lexer {
                     if let Some(ch) = self.peek() {
                         let result = match ch {
                             '>' => CoolArrow,
-                            '=' => Assign(true),
                             ':' => DoubleCollon,
                             _ => Collon,
                         };
@@ -88,12 +87,12 @@ impl Lexer {
                         let result = match ch {
                             '=' => Equal,
                             '>' => FatArrow,
-                            _ => Assign(false),
+                            _ => Assign,
                         };
                         self.advance();
                         result
                     } else {
-                        Assign(false)
+                        Assign
                     }
                 }
                 // handling number literals, no support for floating
@@ -194,10 +193,7 @@ impl Lexer {
             };
             self.advance();
             let token_pos = current_pos;
-            let token = Token {
-                kind: token_kind,
-                pos: token_pos,
-            };
+            let token = token_kind;
             if let Some(mut e) = error {
                 e.pos = Some(self.pos.clone());
                 return Err(e);

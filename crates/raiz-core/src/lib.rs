@@ -160,7 +160,7 @@ pub enum Token {
     NullIdentifier, // _
     At,             // @
     HashTag,        // #
-    Assign(bool),   // = (`bool` for 'inferred' if the previous char is ':')
+    Assign,         // =
     Collon,         // :
     DoubleCollon,   // ::
 
@@ -246,13 +246,7 @@ impl fmt::Display for Token {
             DoubleCollon => "::",
             NullIdentifier => "_",
             // Assignment
-            Assign(inferred) => {
-                if *inferred {
-                    ":="
-                } else {
-                    "="
-                }
-            }
+            Assign => "=",
             // Literals
             NumberLiteral(num) => &num.to_string(),
             CharLiteral(c) => &c.to_string(),
@@ -404,6 +398,7 @@ pub enum Object {
     // Float(f32),
     Char(char),
     String(String),
+    Bool(bool),
     Function {
         // `Option<Vec<String>>`
         // for the names (or None if no params).
