@@ -1,0 +1,10 @@
+// definition (declaration + assignment expression)
+var x = 10!
+
+// inferred assignment (doesn't allow type changes)
+var y := 1.5!
+
+// typed declaration
+// (if there's no assignment, the 'default'
+// will be triggered on the type)
+var z: size! // implicit '... = trigger size.default!'

@@ -1,0 +1,24 @@
+tab Person {
+  name @String, // syntax sugar for 'name: tab @String'
+  age: u8,
+  feeling: Feeling,
+  met birthday() {
+    age += 1!
+    // '.age += 1!' and 'self.age += 1!'
+    // are also accepted
+  }
+  fun new(name @String) {
+    return @Person {
+      name,
+      age = 0,
+      feeling = Feeling.Happy
+    }
+  }
+}
+
+enum Feeling {
+  Happy,
+  Sad,
+  Angry,
+  Fear
+}

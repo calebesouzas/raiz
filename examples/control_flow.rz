@@ -1,0 +1,26 @@
+use <std/panic>!
+
+fun main(args @Array[String]) {
+  // 'if's are done with:
+  /* expression: bool? {
+   *   statements!
+   * } 
+   */
+  args.len == 1? {
+    print("Control flow test v1")!
+  }
+  // 'or' is the same as 'else if' in other languages
+  // the boolean "or" operator is '||'
+  or for arg in args[1..] {
+    match arg {
+      "--help": () // print usage guide...
+      unknown: panic("Invalid argument: ${unknown}")!
+    }
+  }
+  // if the previous check and/or for didn't even run,
+  // this else block will run then:
+  else {
+    print("No arguments? Not even the program name?")!
+    print("How is that possible?!?")!
+  }
+}
