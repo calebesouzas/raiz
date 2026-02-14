@@ -2,7 +2,7 @@
 
 function compile_db ()
 {
-  echo "\n  Removing old 'compile_commands.json..."
+  echo "\n  Removing old 'compile_commands.json'..."
   rm -f compile_commands.json
   echo "[" > compile_commands.json
   directory="$PWD"
@@ -28,7 +28,7 @@ function compile_db ()
 function start ()
 {
   echo "Setting up Raiz in C dev env..."
-  alias raiz="$HOME/dev/craiz/build/bin/raiz"
+  alias raiz="$HOME/dev/raiz/build/bin/raiz"
 }
 
 function build ()
@@ -47,11 +47,12 @@ function build ()
   echo "\n  Building final binary..."
   OBJECTS=$(find build/obj -type f -name "*.c.o")
   echo "    Objects:"
-  for OBJECT in $OBJECTS
+  for OBJECT in $(find build/obj/ -type f -name "*.c.o")
   do
     echo "      $OBJECT"
   done
   echo "\n  Built program at build/bin/raiz"
-  gcc $OBJECTS -o build/bin/raiz
+  OBJECTS=$(echo "$OBJECTS" | tr '\n' ' ')
+  sh -c "gcc $OBJECTS -o build/bin/raiz"
   compile_db
 }
