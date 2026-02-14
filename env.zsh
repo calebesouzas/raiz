@@ -56,3 +56,8 @@ function build ()
   sh -c "gcc $OBJECTS -o build/bin/raiz"
   compile_db
 }
+
+function debug ()
+{
+  gdb ./build/bin/raiz
+}
