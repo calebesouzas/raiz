@@ -1,5 +1,21 @@
 #!/data/data/com.termux/files/usr/bin/zsh
 
+function echo_sources ()
+{
+  echo "C files:"
+  for cfile in $(find -type f -name "*.c")
+  do
+    echo $cfile
+    cat $cfile
+  done
+  echo "H files:"
+  for hfile in $(find -type f -name "*.h")
+  do
+    echo $hfile
+    cat $hfile
+  done
+}
+
 function compile_db ()
 {
   echo "\n  Removing old 'compile_commands.json'..."
