@@ -2,7 +2,6 @@
 #include <stdlib.h> // exit()
 #include <string.h> // strerror()
 #include "raiz_core.h"
-#include "raiz_errors.h" // RAIZ_PANIC() and RAIZ_PRINT_ERR()
 #include <errno.h> // errno
 
 /* Function `main`
@@ -29,15 +28,18 @@ main(int argc, char *argv[]) {
       switch (arg[1]) {
       case 'f': // '-f', shortcut for '--file'
         if (i + 1 >= argc) { // if we're in the last argument
-          RAIZ_PANIC("raiz: expected file path after '-f'\n");
+          fprintf(stderr, "raiz: expected file path after '-f'\n");
+          exit(1);
         }
 
         p_file = fopen(argv[i + 1], "r");
         if (p_file == NULL) {
-          RAIZ_PANIC( // using less than 80 columns in a line is hard...
+          fprintf( // using less than 80 columns in a line is hard...
+            stderr,
             "raiz: failed to open file \"%s\":\n%s.\n",
             argv[i + 1], strerror(errno)
           );
+          exit(1);
         }
 
         break; // switch (arg[1]) case 'f'
