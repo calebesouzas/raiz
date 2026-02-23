@@ -2,7 +2,6 @@
 #include <stdlib.h> // exit()
 #include <string.h> // strerror()
 #include "raiz_core.h"
-#include "tests.h"
 #include <errno.h> // errno
 
 /* Function `main`
@@ -16,12 +15,11 @@ int
 main(int argc, char *argv[]) {
   if (argc == 1) { // only the program name
     printf("Raiz - v%s - Creative Commons Zero\n", RAIZ_VERSION);
-    return 0;
   }
 
   FILE *p_file = NULL;
   int i;
-  for (i = 0; i < argc; ++i) {
+  for (i = 1; i < argc; ++i) {
     char *arg = argv[i];
 
     if (arg[0] == '-') { // potentialy an option (if not only '--')
@@ -53,9 +51,6 @@ main(int argc, char *argv[]) {
   if (p_file != NULL) {
     fclose(p_file);
   }
-
-  String test_str = test_char_p_to_String("Hello world!");
-  printf("%s (len: %u)\n", test_str.ptr, test_str.len);
 
   return 0;
 }
