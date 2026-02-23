@@ -2,6 +2,7 @@
 #include <stdlib.h> // exit()
 #include <string.h> // strerror()
 #include "raiz_core.h"
+#include "tests.h"
 #include <errno.h> // errno
 
 /* Function `main`
@@ -23,8 +24,7 @@ main(int argc, char *argv[]) {
   for (i = 0; i < argc; ++i) {
     char *arg = argv[i];
 
-    switch (arg[0]) {
-    case '-': // potentialy an option (if not only '--')
+    if (arg[0] == '-') { // potentialy an option (if not only '--')
       switch (arg[1]) {
       case 'f': // '-f', shortcut for '--file'
         if (i + 1 >= argc) { // if we're in the last argument
@@ -44,17 +44,18 @@ main(int argc, char *argv[]) {
 
         break; // switch (arg[1]) case 'f'
       }
-
-      break; // switch (arg[0]) case '-'
-
-    default:
-      break;
+    } else { // arg[0] == '-'
+      // treat as a command
+      
     }
   }
 
   if (p_file != NULL) {
     fclose(p_file);
   }
+
+  String test_str = test_char_p_to_String("Hello world!");
+  printf("%s (len: %u)\n", test_str.ptr, test_str.len);
 
   return 0;
 }
