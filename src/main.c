@@ -1,8 +1,10 @@
 #include <stdio.h>
-#include <stdlib.h> // exit()
+#include <stdlib.h> // exit(), malloc() and free()
 #include <string.h> // strerror()
-#include "raiz_core.h"
+#include "raiz_core.h" // RAIZ_VERSION and RAIZ_FILE_SIZE_LIMIT
+#include "raiz_memory.h" // byte type
 #include <errno.h> // errno
+#include <sys/types.h>
 
 /* Function `main`
  * Params:
@@ -18,38 +20,49 @@ main(int argc, char *argv[]) {
   }
 
   FILE *p_file = NULL;
-  int i;
-  for (i = 1; i < argc; ++i) {
-    char *arg = argv[i];
+  byte *file_content = NULL;
 
-    if (arg[0] == '-') { // potentialy an option (if not only '--')
-      switch (arg[1]) {
-      case 'f': // '-f', shortcut for '--file'
-        if (i + 1 >= argc) { // if we're in the last argument
-          fprintf(stderr, "raiz: expected file path after '-f'\n");
-          exit(1);
-        }
+  if (argc > 1) {
+    p_file = fopen(argv[1], "r");
+    if (p_file == NULL) {
+      fprintf(stderr,
+        "raiz: failed to open file \"%s\": %s\n",
+        argv[1],
+        strerror(errno)
+      );
+      exit(errno);
+    }
 
-        p_file = fopen(argv[i + 1], "r");
-        if (p_file == NULL) {
-          fprintf( // using less than 80 columns in a line is hard...
-            stderr,
-            "raiz: failed to open file \"%s\":\n%s.\n",
-            argv[i + 1], strerror(errno)
-          );
-          exit(1);
-        }
+    // getting the file size (in bytes)
+    fseek(p_file, 0, SEEK_END);
+    int file_size = ftell(p_file);
 
-        break; // switch (arg[1]) case 'f'
-      }
-    } else { // arg[0] == '-'
-      // treat as a command
-      
+    // put the cursor back at the begining
+    fseek(p_file, 0, SEEK_SET);
+
+    if (file_size > RAIZ_FILE_SIZE_LIMIT) {
+      fprintf(
+        stderr,
+        "raiz: file '%s' exceeds size limit of %d bytes\n",
+        argv[1],
+        RAIZ_FILE_SIZE_LIMIT
+      );
+      exit(-1);
+    }
+
+    file_content = malloc(file_size);
+    for (int i = 0; i < file_size; i++) {
+      file_content[i] = fgetc(p_file);
     }
   }
 
   if (p_file != NULL) {
     fclose(p_file);
+    p_file = NULL;
+  }
+  if (file_content != NULL) {
+    free(file_content);
+    file_content = NULL;
   }
 
   return 0;
