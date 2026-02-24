@@ -20,7 +20,7 @@ main(int argc, char *argv[]) {
   }
 
   FILE *p_file = NULL;
-  byte *file_content = NULL;
+  byte *source_code_buffer = NULL;
 
   if (argc > 1) {
     p_file = fopen(argv[1], "r");
@@ -50,9 +50,9 @@ main(int argc, char *argv[]) {
       exit(-1);
     }
 
-    file_content = malloc(file_size);
+    source_code_buffer = malloc(file_size);
     for (int i = 0; i < file_size; i++) {
-      file_content[i] = fgetc(p_file);
+      source_code_buffer[i] = fgetc(p_file);
     }
   }
 
@@ -60,9 +60,12 @@ main(int argc, char *argv[]) {
     fclose(p_file);
     p_file = NULL;
   }
-  if (file_content != NULL) {
-    free(file_content);
-    file_content = NULL;
+
+
+
+  if (source_code_buffer != NULL) {
+    free(source_code_buffer);
+    source_code_buffer = NULL;
   }
 
   return 0;
