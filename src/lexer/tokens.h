@@ -1,6 +1,9 @@
 #ifndef RAIZ_TOKENS_H
 #define RAIZ_TOKENS_H
 
+#include "../raiz_memory.h"
+#include "../raiz_strings.h"
+
 // TODO: add the remaining comments for each TOKEN_<VARIANT>
 typedef enum {
   // Simple tokens:
@@ -22,6 +25,9 @@ typedef enum {
   // i may change the behaviour of this symbol.
   // (then, the module operator will be a built-in function)
   TOKEN_PERCENT,    // %
+  // grave accent: not.sure about what i'll do. May be.something related to
+  // regex and patterns at strings...
+  TOKEN_GRAVE,      // `
   // hat: power at a 'math' block. Not sure about the 'shell' version
   TOKEN_HAT,        // ^
   // ampersand: marker for asyncronous command at 'shell' block
@@ -70,6 +76,7 @@ typedef enum {
   TOKEN_LT_EQ,      // <=
   TOKEN_THIN_ARR,   // ->
   TOKEN_FAT_ARR,    // =>
+  TOKEN_WAVE_ARR,   // ~>
   TOKEN_OR,         // ||
   TOKEN_AND,        // &&
   TOKEN_XOR,        // ^^ the binary XOR for boolean expressions!
@@ -85,6 +92,8 @@ typedef enum {
   TOKEN_STRING,     // "Hello"
 
   // Keyword tokens:
+  TOKEN_KEY_MATH,   // math
+  TOKEN_KEY_SHELL,  // shell
   TOKEN_KEY_VAR,    // var
   TOKEN_KEY_VAL,    // val
   TOKEN_KEY_LET,    // let (used to re-assign a value to a variable)
@@ -94,10 +103,12 @@ typedef enum {
   TOKEN_KEY_ELSE,   // else
   TOKEN_KEY_FOR,    // for
   TOKEN_KEY_WHILE,  // while
+  TOKEN_KEY_IN,     // in
   TOKEN_KEY_MATCH,  // match (switch from some other languages)
   TOKEN_KEY_FUN,    // fun
   TOKEN_KEY_MET,    // met (function that uses an instance of a table object)
   TOKEN_KEY_TAB,    // tab (table)
+  TOKEN_KEY_SELF,   // self (some languages use 'this')
   TOKEN_KEY_ONEV,   // onevent
                     // (special function that handles a triggered event)
   TOKEN_KEY_EVENT,  // event (for event declaration)
@@ -106,11 +117,36 @@ typedef enum {
   TOKEN_KEY_USE,    // use
 
   // Identifier token:
-  TOKEN_IDENTIFIER, 
+  TOKEN_IDENTIFIER,
   // An identifier is any alphanumeric or '_' character sequence, not starting
   // with a numeric character and containing only ASCII characters. If using
   // a keyword as an identifier is needed, prefix it with a '\' 
   // (the character for such task may be changed)
 } TokenKind;
+
+typedef struct {
+  TokenKind kind;
+  int value;
+} TokenInt;
+
+typedef struct {
+  TokenKind kind;
+  double value;
+} TokenFloat;
+
+typedef struct {
+  TokenKind kind;
+  byte value[4];
+} TokenChar;
+
+typedef struct {
+  TokenKind kind;
+  String value;
+} TokenString;
+
+typedef struct {
+  TokenKind kind;
+  String identifier;
+} TokenIdentifier;
 
 #endif /* RAIZ_TOKENS_H */
