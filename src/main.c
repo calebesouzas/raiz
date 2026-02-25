@@ -61,8 +61,6 @@ main(int argc, char *argv[]) {
     p_file = NULL;
   }
 
-
-
   if (source_code_buffer != NULL) {
     free(source_code_buffer);
     source_code_buffer = NULL;
