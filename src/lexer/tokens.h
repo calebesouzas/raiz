@@ -3,6 +3,7 @@
 
 #include "../raiz_memory.h"
 #include "../raiz_strings.h"
+#include "../arrays.h"
 
 // TODO: add the remaining comments for each TOKEN_<VARIANT>
 typedef enum {
@@ -122,31 +123,33 @@ typedef enum {
   // with a numeric character and containing only ASCII characters. If using
   // a keyword as an identifier is needed, prefix it with a '\' 
   // (the character for such task may be changed)
-} TokenKind;
+} Token;
 
 typedef struct {
-  TokenKind kind;
+  Token kind;
   int value;
 } TokenInt;
 
 typedef struct {
-  TokenKind kind;
+  Token kind;
   double value;
 } TokenFloat;
 
 typedef struct {
-  TokenKind kind;
+  Token kind;
   byte value[4];
 } TokenChar;
 
 typedef struct {
-  TokenKind kind;
+  Token kind;
   String value;
 } TokenString;
 
 typedef struct {
-  TokenKind kind;
+  Token kind;
   String identifier;
 } TokenIdentifier;
+
+RZ_DEF_ARRAY_OF(Token);
 
 #endif /* RAIZ_TOKENS_H */
