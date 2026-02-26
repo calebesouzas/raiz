@@ -1,8 +1,9 @@
 #ifndef RAIZ_TOKENS_H
 #define RAIZ_TOKENS_H
 
-#include "../raiz_memory.h"
-#include "../raiz_strings.h"
+#include "../core/memory.h"
+#include "../core/strings.h"
+#include "../core/positions.h"
 #include "../arrays.h"
 
 // TODO: add the remaining comments for each TOKEN_<VARIANT>
@@ -123,33 +124,14 @@ typedef enum {
   // with a numeric character and containing only ASCII characters. If using
   // a keyword as an identifier is needed, prefix it with a '\' 
   // (the character for such task may be changed)
+} TokenKind;
+
+typedef struct {
+  TokenKind kind;
+  uint32_t len;
+  void *value;
+  Position start_pos;
+  Position end_pos;
 } Token;
-
-typedef struct {
-  Token kind;
-  int value;
-} TokenInt;
-
-typedef struct {
-  Token kind;
-  double value;
-} TokenFloat;
-
-typedef struct {
-  Token kind;
-  byte value[4];
-} TokenChar;
-
-typedef struct {
-  Token kind;
-  String value;
-} TokenString;
-
-typedef struct {
-  Token kind;
-  String identifier;
-} TokenIdentifier;
-
-RZ_DEF_ARRAY_OF(Token);
 
 #endif /* RAIZ_TOKENS_H */
