@@ -1,8 +1,8 @@
 #include <stdio.h>
 #include <stdlib.h> // exit(), malloc() and free()
 #include <string.h> // strerror()
-#include "raiz_core.h" // RAIZ_VERSION and RAIZ_FILE_SIZE_LIMIT
-#include "raiz_memory.h" // byte type
+#include "core/core.h" // RAIZ_VERSION and RAIZ_FILE_SIZE_LIMIT
+#include "core/memory.h" // byte type
 #include <errno.h> // errno
 #include <sys/types.h>
 

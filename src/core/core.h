@@ -1,7 +1,7 @@
 #ifndef RAIZ_CORE_H
 #define RAIZ_CORE_H
 
-#include "raiz_memory.h"
+#include "memory.h"
 
 #define RAIZ_VERSION "0.0.1-beta0"
 

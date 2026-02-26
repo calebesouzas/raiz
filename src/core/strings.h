@@ -1,7 +1,7 @@
 #ifndef RAIZ_RZ_STRINGS_H
 #define RAIZ_RZ_STRINGS_H
 
-#include "raiz_memory.h"
+#include "memory.h"
 
 #include <stdint.h>
 typedef struct {
