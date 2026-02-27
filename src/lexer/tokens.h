@@ -1,89 +1,86 @@
 #ifndef RAIZ_TOKENS_H
 #define RAIZ_TOKENS_H
 
-#include "../core/memory.h"
-#include "../core/strings.h"
 #include "../core/positions.h"
-#include "../arrays.h"
 
 // TODO: add the remaining comments for each TOKEN_<VARIANT>
 typedef enum {
   // Simple tokens:
   // exclamation mark: used to mark the end of a statement
-  TOKEN_EXCLAM,     // !
+  TOKEN_EXCLAM,     // ! ok
   // question mark: used to trigger event 'check' at an object
-  TOKEN_QUESTION,   // ?
+  TOKEN_QUESTION,   // ? ok
   // at symbol: used to reference a schema (table, type, class, etc)
-  TOKEN_AT,         // @
+  TOKEN_AT,         // @ ok
   // hashtag symbol: don't really know what i'll use it for...
   // but may be about creating a Raiz scope inside a 'math' or 'shell' block
-  TOKEN_HASH,       // #
+  TOKEN_HASH,       // # ok
   // dollar symbol: used to create a 'shell' block in one line
   // can also be used to store stdout, stderr and stdin of a ran command
   // or just an environment variable's value as a Raiz string.
-  TOKEN_DOLLAR,     // $
+  TOKEN_DOLLAR,     // $ ok
   // percent: probably just the normal module operator.
   // If i find another cool thing to add to this language,
   // i may change the behaviour of this symbol.
   // (then, the module operator will be a built-in function)
-  TOKEN_PERCENT,    // %
+  TOKEN_PERCENT,    // % ok
   // grave accent: not.sure about what i'll do. May be.something related to
   // regex and patterns at strings...
-  TOKEN_GRAVE,      // `
+  TOKEN_GRAVE,      // ` ok
   // hat: power at a 'math' block. Not sure about the 'shell' version
-  TOKEN_HAT,        // ^
+  TOKEN_HAT,        // ^ ok
   // ampersand: marker for asyncronous command at 'shell' block
-  TOKEN_AMPER,      // &
+  TOKEN_AMPER,      // & ok
   // pipe: fraction separator at 'math' block or the command line '|'
   // operator at a 'shell' block
-  TOKEN_PIPE,       // |
-  TOKEN_TILDE,      // ~
+  TOKEN_PIPE,       // | ok
+  TOKEN_TILDE,      // ~ ok
   // asterisk: global operator at imports ('use' statements) and paths.
-  TOKEN_ASTERISK,   // *
+  TOKEN_ASTERISK,   // * ok
   // slash: default folder separator at paths
   // (even on Windows, when we support it)
-  TOKEN_SLASH,      // /
-  TOKEN_PLUS,       // +
-  TOKEN_MINUS,      // -
+  TOKEN_SLASH,      // / ok
+  TOKEN_PLUS,       // + ok
+  TOKEN_MINUS,      // - ok
   // collon: not sure yet, will not be used for type inference as it'll be
   // done automaticaly.
-  TOKEN_COLLON,     // :
-  TOKEN_COMMA,      // ,
-  TOKEN_DOT,        // .
+  TOKEN_COLLON,     // : ok
+  TOKEN_COMMA,      // , ok
+  TOKEN_DOT,        // . ok
   // single equal: assign values to variables (if followed by a '?' ('=?') at
   // 'math' blocks, sets the preceeding variable to be the return value of the
   // entire 'math' expression, if there are multiple ones, a tuple with the 
   // values in the order that the variables are "checked" is returned)
-  TOKEN_ASSIGN,    // =
-  TOKEN_BACKSLASH, // \
+  TOKEN_ASSIGN,    // = ok
+  TOKEN_BACKSLASH, // \ ok
   
   // Paired tokens:
   // parenthesis: 'shell' expression delimiter.
-  TOKEN_LPAREN,     // (
-  TOKEN_RPAREN,     // )
+  TOKEN_LPAREN,     // ( ok
+  TOKEN_RPAREN,     // ) ok
   // brackets: indexer operator or generic type delimiter at 'raiz' scopes
-  TOKEN_LSQUARE,    // [
-  TOKEN_RSQUARE,    // ]
-  TOKEN_LBRACE,     // {
-  TOKEN_RBRACE,     // }
+  TOKEN_LSQUARE,    // [ ok
+  TOKEN_RSQUARE,    // ] ok
+  TOKEN_LBRACE,     // { ok
+  TOKEN_RBRACE,     // } ok
   // '>' at 'shell' blocks is an operator that writes (or appends)
   // the stdout of a command into a file path specified
-  TOKEN_GREATER,    // >
-  TOKEN_LESSER,     // <
+  TOKEN_GREATER,    // > ok
+  TOKEN_LESSER,     // < ok
   
   // Composed tokens:
-  TOKEN_EQUAL,      // ==
-  TOKEN_NOTEQ,      // !=
-  TOKEN_GT_EQ,      // >=
-  TOKEN_LT_EQ,      // <=
-  TOKEN_THIN_ARR,   // ->
-  TOKEN_FAT_ARR,    // =>
-  TOKEN_WAVE_ARR,   // ~>
-  TOKEN_OR,         // ||
-  TOKEN_AND,        // &&
-  TOKEN_XOR,        // ^^ the binary XOR for boolean expressions!
-  TOKEN_LSHIFT,     // <<
-  TOKEN_RSHIFT,     // >>
+  TOKEN_EQUAL,      // == ok
+  TOKEN_NOTEQ,      // != ok
+  TOKEN_GT_EQ,      // >= ok
+  TOKEN_LT_EQ,      // <= ok
+  TOKEN_THIN_ARR,   // -> ok
+  TOKEN_FAT_ARR,    // => ok
+  TOKEN_WAVE_ARR,   // ~> ok
+  TOKEN_OR,         // || ok
+  TOKEN_AND,        // && ok
+  TOKEN_XOR,        // ^^ ok - the binary XOR for boolean expressions!
+  TOKEN_LSHIFT,     // << ok
+  TOKEN_RSHIFT,     // >> ok
   /* There is also something about an unsigned right shift operator with >>> */
   // TODO: search more about it (the unsigned right shift operator)
 
@@ -128,10 +125,9 @@ typedef enum {
 
 typedef struct {
   TokenKind kind;
-  uint32_t len;
+  unsigned int len;
   void *value;
-  Position start_pos;
-  Position end_pos;
+  Position pos;
 } Token;
 
 #endif /* RAIZ_TOKENS_H */
