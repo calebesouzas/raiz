@@ -69,8 +69,8 @@ main(int argc, char *argv[]) {
       source_code_buffer[i] = fgetc(p_file);
     }
 
-    Token* tokens = raiz_tokenize(source_code);
-    for (int i = 0; i < array_len(tokens); ++i) {
+    Token* tokens = raiz_tokenize(source_code_buffer);
+    for (unsigned int i = 0; i < array_len(tokens); ++i) {
       if (tokens[i].value != NULL) {
 	free(tokens[i].value);
       }
