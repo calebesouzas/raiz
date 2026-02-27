@@ -3,6 +3,11 @@
 #include <string.h> // strerror()
 #include "core/core.h" // RAIZ_VERSION and RAIZ_FILE_SIZE_LIMIT
 #include "core/memory.h" // byte type
+
+#include "arrays.h"
+#include "lexer/tokens.h" // Token
+#include "lexer/tokenizer.h" // raiz_tokenize()
+
 #include <errno.h> // errno
 #include <sys/types.h>
 
@@ -20,7 +25,7 @@ main(int argc, char *argv[]) {
   }
 
   FILE *p_file = NULL;
-  byte *source_code_buffer = NULL;
+  char *source_code_buffer = NULL;
 
   if (argc > 1) {
     p_file = fopen(argv[1], "r");
@@ -47,10 +52,19 @@ main(int argc, char *argv[]) {
         argv[1],
         RAIZ_FILE_SIZE_LIMIT
       );
+      fclose(p_file);
       exit(-1);
     }
 
     source_code_buffer = malloc(file_size);
+    if (!source_code_buffer) {
+      fprintf(
+	stderr,
+	"raiz: failed to allocate memory for code buffer\n"
+      );
+      fclose(p_file);
+      exit(-2);
+    }
     for (int i = 0; i < file_size; i++) {
       source_code_buffer[i] = fgetc(p_file);
     }
