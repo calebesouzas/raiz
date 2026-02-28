@@ -7,7 +7,10 @@
 #include <stdlib.h>
 
 #define set(VARIANT) token = simple_token(VARIANT, 1, pos);
-#define setn(VARIANT, NUM) token = simple_token(VARIANT, NUM, pos); pos.column += NUM - 1;
+#define setn(VARIANT, NUM)\
+  token = simple_token(VARIANT, NUM, pos);\
+  pos.column += NUM - 1;
+
 #define is_next(character) if (source_code[i + 1] == character)
 
 #define is_number(c) (c >= '0' && c <= '9')
@@ -48,7 +51,7 @@ Token* raiz_tokenize(char* const source_code) {
       case ' ':
       case '\t':
       case '\r':
-	add = 0;
+        add = 0;
         break;
       CASE('!', 
         is_next('=') {
