@@ -1,6 +1,9 @@
 #ifndef RAIZ_ARRAY_UTILITY_H
 #define RAIZ_ARRAY_UTILITY_H
 
+#include "debug/logs.h"
+#include "debug/variables.h"
+
 typedef struct {
   unsigned int count;
   unsigned int capacity;
@@ -13,7 +16,14 @@ typedef struct {
 #define array_push(array, value)\
   do {\
     if (array == NULL) {\
-      ArrayHeader *header = malloc(sizeof(*array) * ARRAY_INIT_CAPACITY + sizeof(*header));\
+      ArrayHeader *header = malloc(\
+        sizeof(*array) * ARRAY_INIT_CAPACITY + sizeof(*header)\
+      );\
+      RAIZ_LOG(\
+        "init '%s' with %u bytes",\
+        STRING_VAR_NAME(array),\
+        sizeof(*array) * ARRAY_INIT_CAPACITY + sizeof(*header)\
+      );\
       if (header != NULL) {\
         header->capacity = ARRAY_INIT_CAPACITY;\
         header->count = 0;\
@@ -23,7 +33,14 @@ typedef struct {
     ArrayHeader *header = (ArrayHeader*)(array) - 1;\
     if (header->count >= header->capacity) {\
       header->capacity *= 1.5;\
-      header = realloc(header, sizeof(*array) *header->capacity + sizeof(*header));\
+      header = realloc(\
+        header, sizeof(*array) *header->capacity + sizeof(*header)\
+      );\
+      RAIZ_LOG(\
+        "realloc '%s' with %u bytes",\
+        STRING_VAR_NAME(array),\
+        sizeof(*array) *header->capacity + sizeof(*header)\
+      );\
       (array) = (void*)(header + 1);\
     }\
     (array)[header->count++] = (value);\
