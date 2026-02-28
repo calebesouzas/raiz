@@ -1,7 +1,7 @@
 CC = gcc
 MKDIR = mkdir -p
 RM = rm -rf
-CFLAGS = -Iinclude -Werror -Wall -Wextra -Wpedantic -g
+CFLAGS = -Iinclude -Werror -Wall -Wextra -Wpedantic -g -DRAIZ_DEBUG
 DEBUG_ARGS ?=
 
 # Dynamically find all .c files
