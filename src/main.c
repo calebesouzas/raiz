@@ -8,6 +8,8 @@
 #include "lexer/tokens.h" // Token
 #include "lexer/tokenizer.h" // raiz_tokenize()
 
+#include "debug/logs.h" // RAIZ_LOG()
+
 #include <errno.h> // errno
 #include <sys/types.h>
 
@@ -45,6 +47,8 @@ main(int argc, char *argv[]) {
     // put the cursor back at the begining
     fseek(p_file, 0, SEEK_SET);
 
+    RAIZ_LOG("file size: %d", file_size);
+
     if (file_size > RAIZ_FILE_SIZE_LIMIT) {
       fprintf(
         stderr,
@@ -54,13 +58,16 @@ main(int argc, char *argv[]) {
       );
       fclose(p_file);
       exit(-1);
+    } else if (file_size == 0) {
+      fprintf(stderr, "raiz: empty file: \"%s\"\n", argv[1]);
+      exit(1);
     }
 
     source_code_buffer = malloc(file_size);
     if (!source_code_buffer) {
       fprintf(
-	stderr,
-	"raiz: failed to allocate memory for code buffer\n"
+        stderr,
+        "raiz: failed to allocate memory for code buffer\n"
       );
       fclose(p_file);
       exit(-2);
@@ -72,7 +79,7 @@ main(int argc, char *argv[]) {
     Token* tokens = raiz_tokenize(source_code_buffer);
     for (unsigned int i = 0; i < array_len(tokens); ++i) {
       if (tokens[i].value != NULL) {
-	free(tokens[i].value);
+        free(tokens[i].value);
       }
     }
     array_free(tokens);
