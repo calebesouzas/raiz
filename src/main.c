@@ -77,11 +77,6 @@ main(int argc, char *argv[]) {
     }
 
     Token* tokens = raiz_tokenize(source_code_buffer);
-    for (unsigned int i = 0; i < array_len(tokens); ++i) {
-      if (tokens[i].value != NULL) {
-        free(tokens[i].value);
-      }
-    }
     array_free(tokens);
   }
 
