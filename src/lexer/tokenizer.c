@@ -6,56 +6,25 @@
 #include "../arrays.h"
 #include <stdlib.h>
 
-#define set(VARIANT) token = simple_token(VARIANT, 1, pos);
-#define setn(VARIANT, NUM)\
-  token = simple_token(VARIANT, NUM, pos);\
-  pos.column += NUM - 1;
-
-#define is_next(character) if (source_code[i + 1] == character)
+#define is_next(character) (source_code[i + 1] == character)
 
 #define is_number(c) (c >= '0' && c <= '9')
 #define is_alpha(c) ((c >= 'a' && c <= 'z') || (c >= 'A' && c <= 'Z'))
 
 #define is_identstart(c) (is_alpha(c) || c == '_' )
-#define is_identchar(c) ((c >= '0' && c <= '9') \
-			 || (c >= 'A' && c <= 'Z')\
-			 || (c == '_'))
+#define is_identchar(c) (is_identstart(c) || is_number(c))
 
-Token simple_token(TokenKind kind, uint len, unsigned int start) {
+inline Token set_simple_token(TokenKind kind, uint len, uint start) {
   return (Token) {
     .kind = kind,
     .len = len,
-    .pos = pos,
-    .value = NULL
+    .start = start,
   };
 }
 
-inline int doubled(char c, char* const source, unsigned int start) {
-  return (*(source + start + 1) == c);
-}
-
-Token* raiz_tokenize(char* const source_code) {
-  Token* tokens = NULL;
-  Token token;
-
-  Position pos = (Position) {
-    .column = 0,
-    .line = 1
-  };
-
-  char c = '\0';
-  for (unsigned int i = 0; (c = source_code[i]); ++i) {
-    int add = 1;
-    pos.column++;
-    switch (c) {
-      case '\n':
-        pos.line++;
-        pos.column = 0;
-      case ' ':
-      case '\t':
-      case '\r':
-        add = 0;
-        break;
+int handle_simple_token(char*const slice, uint start_index, Token* token) {
+  switch (slice[0]) {
+    // TODO: handle one, two or three symbol sequence tokens
       CASE('!', 
         is_next('=') {
           setn(TOKEN_NOTEQ, 2)
@@ -136,33 +105,60 @@ Token* raiz_tokenize(char* const source_code) {
         })
       CASE('\\', set(TOKEN_BACKSLASH))
       default:
-	if (is_number(source_code[i])) {
-	  // TODO: handle numbers
-	  int number = 0;
-	  unsigned int start = i;
-	  for (; is_number(source_code[i]); ++i) {
-	    number = (number * 10) + (source_code[i] - '0');
-	  }
-	  setn(TOKEN_INT, i - start)
-	  token.value = (int*)malloc(sizeof(int));
-	  if (token.value) (*((int*)(token).value)) = number;
-  } else if (is_identstart(c)) {
-    unsigned int start = i;
-    // get identifier length
-    for (; is_identchar(source_code[i]); ++i);
-	} else {
-          fprintf(
-	    stderr,
-	    "raiz: invalid character at line %u column %u: %c\n",
-	    pos.line,
-	    pos.column + 1,
-	    c
-	  );
-	  exit(-3);
+  }
+}
+
+Token* raiz_tokenize(char* const source_code) {
+  Token* tokens = NULL;
+  Token token;
+
+  uint line = 1;
+  uint column = 0;
+
+  for (uint i = 0; source_code[i]; ++i) {
+    short add = 1;
+    column++;
+    switch (source_code[i]) {
+    case '\n':
+      line++;
+      column = 0;
+    case ' ':
+    case '\t':
+    case '\r':
+      add = 0;
+      break;
+    default:
+      if (is_number(source_code[i])) {
+        // TODO: handle numbers
+        int number = 0;
+        uint start = i;
+        for (; is_number(source_code[i]); ++i) {
+          number = (number * 10) + (source_code[i] - '0');
         }
-    } // switch (c) // current character
+        setn(TOKEN_INT, i - start)
+        token.value = (int*)malloc(sizeof(int));
+        if (token.value) (*((int*)(token).value)) = number;
+      } else if (is_identstart(c)) {
+        uint start = i;
+        // get identifier length
+        for (; is_identchar(source_code[i]); ++i);
+        // TODO: compare slice with each keyword
+        // NOTE: i could implement a hash map for performance
+        // and DX reasons
+      } else {
+        fprintf(
+          stderr,
+          "raiz: invalid character at line %u column %u: %c\n",
+          line,
+          column + 1,
+          source_code[i]
+        );
+        array_free(tokens);
+        return NULL;
+      }
+    } // switch (source_code[i]) // current character
     if (add) array_push(tokens, token);
-    
+
   } // for (... source_code ...) // main loop
 
   return tokens;
