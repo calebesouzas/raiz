@@ -1,0 +1,83 @@
+// format: DEF_TOK(VariantName, StringVersion)
+
+// Binary operators:
+DEF_TOK(RZ_TK_PLUS,    "+")
+DEF_TOK(RZ_TK_MINUS,   "-")
+// NOTE: '*' is dereference operator when in an unary expression
+DEF_TOK(RZ_TK_STAR,    "*")
+DEF_TOK(RZ_TK_SLASH,   "/")
+DEF_TOK(RZ_TK_PERCENT, "%")
+
+// Grouping operators:
+DEF_TOK(RZ_TK_OPAREN,  "(")
+DEF_TOK(RZ_TK_CPAREN,  ")")
+DEF_TOK(RZ_TK_OBRACK,  "[")
+DEF_TOK(RZ_TK_CBRACK,  "]")
+DEF_TOK(RZ_TK_OCURLY,  "{")
+DEF_TOK(RZ_TK_CCURLY,  "}")
+
+// Punctuation symbols:
+DEF_TOK(RZ_TK_DOT,     ".")
+DEF_TOK(RZ_TK_COMMA,   ",")
+DEF_TOK(RZ_TK_COLLON,  ":")
+DEF_TOK(RZ_TK_EXCLAM,  "!")
+DEF_TOK(RZ_TK_QUEST,   "?")
+
+// Comparison operators:
+DEF_TOK(RZ_TK_EQUAL,  "==")
+DEF_TOK(RZ_TK_ALMEQ,  "~=")
+DEF_TOK(RZ_TK_NOTEQ,  "!=")
+DEF_TOK(RZ_TK_GT,      ">")
+DEF_TOK(RZ_TK_LT,      "<")
+DEF_TOK(RZ_TK_GT_EQ,  ">=")
+DEF_TOK(RZ_TK_LT_EQ,  "<=")
+
+// Special symbols:
+DEF_TOK(RZ_TK_ASSIGN,  "=")
+DEF_TOK(RZ_TK_AT,      "@")
+DEF_TOK(RZ_TK_HASH,    "#")
+DEF_TOK(RZ_TK_DOLLAR,  "$")
+DEF_TOK(RZ_TK_AMPER,   "&")
+DEF_TOK(RZ_TK_PIPE,    "|")
+DEF_TOK(RZ_TK_HAT,     "^")
+DEF_TOK(RZ_TK_TILDE,   "~")
+
+// Boolean tokens:
+DEF_TOK(RZ_TK_OR,     "||")
+DEF_TOK(RZ_TK_AND,    "&&")
+DEF_TOK(RZ_TK_XOR,    "^^")
+
+// Literals:
+DEF_TOK(RZ_TK_INT,     "<number literal>")
+DEF_TOK(RZ_TK_CHAR, "<character literal>")
+DEF_TOK(RZ_TK_STRING,  "<string literal>")
+
+// Keywords (alphabetical order please):
+DEF_TOK(RZ_TK_K_AS, "as")
+DEF_TOK(RZ_TK_K_IF, "if")
+DEF_TOK(RZ_TK_K_IN, "in")
+DEF_TOK(RZ_TK_K_OR, "or")
+
+DEF_TOK(RZ_TK_K_FOR, "for")
+DEF_TOK(RZ_TK_K_FUN, "fun")
+DEF_TOK(RZ_TK_K_LET, "let")
+DEF_TOK(RZ_TK_K_MET, "met")
+DEF_TOK(RZ_TK_K_MUT, "mut")
+DEF_TOK(RZ_TK_K_NOT, "not")
+DEF_TOK(RZ_TK_K_PUB, "pub")
+DEF_TOK(RZ_TK_K_TAB, "tab")
+DEF_TOK(RZ_TK_K_USE, "use")
+DEF_TOK(RZ_TK_K_VAL, "val")
+DEF_TOK(RZ_TK_K_VAR, "var")
+
+DEF_TOK(RZ_TK_K_ELSE, "else")
+DEF_TOK(RZ_TK_K_MATH, "math")
+DEF_TOK(RZ_TK_K_SELF, "self")
+
+DEF_TOK(RZ_TK_K_EVENT, "event")
+DEF_TOK(RZ_TK_K_MATCH, "match")
+DEF_TOK(RZ_TK_K_SHELL, "shell")
+DEF_TOK(RZ_TK_K_WHILE, "while")
+
+DEF_TOK(RZ_TK_K_ONEVENT, "onevent")
+DEF_TOK(RZ_TK_K_TRIGGER, "trigger")

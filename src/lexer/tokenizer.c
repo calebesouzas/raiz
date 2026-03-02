@@ -14,11 +14,14 @@
 #define is_next(character) if (source_code[i + 1] == character)
 
 #define is_number(c) (c >= '0' && c <= '9')
+#define is_alpha(c) ((c >= 'a' && c <= 'z') || (c >= 'A' && c <= 'Z'))
+
+#define is_identstart(c) (is_alpha(c) || c == '_' )
 #define is_identchar(c) ((c >= '0' && c <= '9') \
 			 || (c >= 'A' && c <= 'Z')\
 			 || (c == '_'))
 
-Token simple_token(TokenKind kind, unsigned int len, Position pos) {
+Token simple_token(TokenKind kind, uint len, unsigned int start) {
   return (Token) {
     .kind = kind,
     .len = len,
@@ -143,6 +146,10 @@ Token* raiz_tokenize(char* const source_code) {
 	  setn(TOKEN_INT, i - start)
 	  token.value = (int*)malloc(sizeof(int));
 	  if (token.value) (*((int*)(token).value)) = number;
+  } else if (is_identstart(c)) {
+    unsigned int start = i;
+    // get identifier length
+    for (; is_identchar(source_code[i]); ++i);
 	} else {
           fprintf(
 	    stderr,
