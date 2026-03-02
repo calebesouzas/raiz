@@ -118,6 +118,10 @@ Token* raiz_tokenize(char* const source_code) {
   for (uint i = 0; source_code[i]; ++i) {
     short add = 1;
     column++;
+    token.start = i;
+    token.column = column;
+    token.line = line;
+
     switch (source_code[i]) {
     case '\n':
       line++;
@@ -128,23 +132,31 @@ Token* raiz_tokenize(char* const source_code) {
       add = 0;
       break;
     default:
+      // NOTE: only 32 bit integer numbers are handled
+      // and there are no prefixes or suffixes
+      // (such as '0x', '0b' prefixes or 'u' and 'f' suffixes)
       if (is_number(source_code[i])) {
-        // TODO: handle numbers
+        // TODO: handle floating numbers
         int number = 0;
         uint start = i;
+
+        // if entered this 'if' block, will run the loop below at least once
+        // Then, the number and it's length are calculated correctly
         for (; is_number(source_code[i]); ++i) {
+          // TODO: check for and skip '_'s for better reading of the number
           number = (number * 10) + (source_code[i] - '0');
         }
-        setn(TOKEN_INT, i - start)
-        token.value = (int*)malloc(sizeof(int));
-        if (token.value) (*((int*)(token).value)) = number;
+
+        token.kind = RAIZ_TOKEN_LITERAL_INT;
+        token.data.i_val = number;
+        token.len = i - start;
+
       } else if (is_identstart(c)) {
         uint start = i;
         // get identifier length
         for (; is_identchar(source_code[i]); ++i);
         // TODO: compare slice with each keyword
-        // NOTE: i could implement a hash map for performance
-        // and DX reasons
+        // NOTE: i could implement a hash map for performance and DX reasons
       } else {
         fprintf(
           stderr,
@@ -157,6 +169,7 @@ Token* raiz_tokenize(char* const source_code) {
         return NULL;
       }
     } // switch (source_code[i]) // current character
+
     if (add) array_push(tokens, token);
 
   } // for (... source_code ...) // main loop
