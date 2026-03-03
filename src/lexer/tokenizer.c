@@ -1,12 +1,17 @@
 #include "tokenizer.h"
 #include "tokens.h"
 
-#include "../helpers/switch.h"
+#include "../helpers/switch.h" // CASE (auto break) macro
 
 #include "../arrays.h"
+
+#include <stdio.h>
 #include <stdlib.h>
 
-#define is_next(character) (source_code[i + 1] == character)
+typedef unsigned int uint; // alias because it's too long
+#define NULL ((void*)0)
+
+#define is_next(character) (source_code[index + 1] == character)
 
 #define is_number(c) (c >= '0' && c <= '9')
 #define is_alpha(c) ((c >= 'a' && c <= 'z') || (c >= 'A' && c <= 'Z'))
@@ -14,7 +19,10 @@
 #define is_identstart(c) (is_alpha(c) || c == '_' )
 #define is_identchar(c) (is_identstart(c) || is_number(c))
 
-inline Token set_simple_token(TokenKind kind, uint len, uint start) {
+#define set(kind) (*token) = set_simple_token(kind, 1, index);
+#define setn(kind, len) (*token) = set_simple_token(kind, len, index);
+
+static inline Token set_simple_token(TokenKind kind, uint len, uint start) {
   return (Token) {
     .kind = kind,
     .len = len,
@@ -22,90 +30,95 @@ inline Token set_simple_token(TokenKind kind, uint len, uint start) {
   };
 }
 
-int handle_simple_token(char*const slice, uint start_index, Token* token) {
-  switch (slice[0]) {
-    // TODO: handle one, two or three symbol sequence tokens
-      CASE('!', 
-        is_next('=') {
-          setn(TOKEN_NOTEQ, 2)
-        } else {
-          set(TOKEN_EXCLAM)
-        })
-      CASE('@', set(TOKEN_AT))
-      CASE('#', set(TOKEN_HASH))
-      CASE('$', set(TOKEN_DOLLAR))
-      CASE('%', set(TOKEN_PERCENT))
-      CASE('^',
-        is_next('^') {
-          setn(TOKEN_OR, 2)
-        } else {
-          set(TOKEN_HAT)
-        })
-      CASE('&',
-        is_next('&') {
-          setn(TOKEN_AND, 2)
-        } else {
-          set(TOKEN_AMPER)
-        })
-      CASE('*', set(TOKEN_ASTERISK))
-      CASE('(', set(TOKEN_LPAREN))
-      CASE(')', set(TOKEN_RPAREN))
-      CASE('[', set(TOKEN_LSQUARE))
-      CASE(']', set(TOKEN_RSQUARE))
-      CASE('{', set(TOKEN_LBRACE))
-      CASE('}', set(TOKEN_RBRACE))
-      CASE('-', 
-        is_next('>') {
-          setn(TOKEN_THIN_ARR, 2)
-        } else {
-          set(TOKEN_MINUS)
-        })
-      CASE('+', set(TOKEN_PLUS))
-      CASE('=',
-        is_next('=') {
-          setn(TOKEN_EQUAL, 2)
-        } else is_next('>') {
-          setn(TOKEN_FAT_ARR, 2)
-        } else {
-          set(TOKEN_ASSIGN)
-        })
-      CASE('`', set(TOKEN_GRAVE))
-      CASE(',', set(TOKEN_COMMA))
-      CASE('.', set(TOKEN_DOT))
-      CASE(':', set(TOKEN_COLLON))
-      CASE('/', set(TOKEN_SLASH))
-      CASE('?', set(TOKEN_QUESTION))
-      CASE('~',
-        is_next('>') {
-          setn(TOKEN_WAVE_ARR, 2)
-        } else {
-          set(TOKEN_TILDE)
-        })
-      CASE('>',
-        is_next('=') {
-          setn(TOKEN_GT_EQ, 2)
-        } else is_next('>') {
-          setn(TOKEN_RSHIFT, 2)
-        } else {
-          set(TOKEN_GREATER)
-        })
-      CASE('<',
-        is_next('<') {
-          setn(TOKEN_LSHIFT, 2)
-        } else is_next('=') {
-          setn(TOKEN_LT_EQ, 2)
-        } else {
-          set(TOKEN_LESSER)
-        })
-      CASE('|',
-        is_next('|') {
-          setn(TOKEN_OR, 2)
-        } else {
-          set(TOKEN_PIPE)
-        })
-      CASE('\\', set(TOKEN_BACKSLASH))
-      default:
+int handle_simple_token(char*const source_code, uint index, Token* token) {
+  int result = 1;
+  switch (source_code[index]) {
+  // TODO: handle one, two or three symbol sequence tokens
+  CASE('!',
+    if is_next('=') {
+      setn(RAIZ_TOKEN_NOT_EQUAL, 2)
+    } else {
+      set(RAIZ_TOKEN_EXCLAMATION);
+    })
+  CASE('@', set(RAIZ_TOKEN_AT))
+  CASE('#', set(RAIZ_TOKEN_HASH))
+  CASE('$', set(RAIZ_TOKEN_DOLLAR))
+  CASE('%', set(RAIZ_TOKEN_PERCENT))
+  CASE('^',
+    if is_next('^') {
+      setn(RAIZ_TOKEN_DOUBLE_HAT, 2)
+    } else {
+      set(RAIZ_TOKEN_HAT)
+    })
+  CASE('&',
+    if is_next('&') {
+      setn(RAIZ_TOKEN_DOUBLE_AMPERSAND, 2)
+    } else {
+      set(RAIZ_TOKEN_AMPERSAND)
+    })
+  CASE('*', set(RAIZ_TOKEN_STAR))
+  CASE('(', set(RAIZ_TOKEN_OPEN_PARENTHESES))
+  CASE(')', set(RAIZ_TOKEN_CLOSE_PARENTHESES))
+  CASE('[', set(RAIZ_TOKEN_OPEN_BRACKETS))
+  CASE(']', set(RAIZ_TOKEN_CLOSE_BRACKETS))
+  CASE('{', set(RAIZ_TOKEN_OPEN_CURLY_BRACES))
+  CASE('}', set(RAIZ_TOKEN_CLOSE_CURLY_BRACES))
+  CASE('-',
+    if is_next('>') {
+      setn(RAIZ_TOKEN_THIN_ARROW, 2)
+    } else if is_next('`') {
+      setn(RAIZ_TOKEN_HALF_THIN_ARROW, 2)
+    } else {
+      set(RAIZ_TOKEN_MINUS)
+    })
+  CASE('+', set(RAIZ_TOKEN_PLUS))
+  CASE('=',
+    if is_next('=') {
+      setn(RAIZ_TOKEN_EQUAL, 2)
+    } else if is_next('>') {
+      setn(RAIZ_TOKEN_FAT_ARROW, 2)
+    } else {
+      set(RAIZ_TOKEN_ASSIGN)
+    })
+  CASE(',', set(RAIZ_TOKEN_COMMA))
+  CASE('.', set(RAIZ_TOKEN_DOT))
+  CASE(':', set(RAIZ_TOKEN_COLLON))
+  CASE('/', set(RAIZ_TOKEN_SLASH))
+  CASE('?', set(RAIZ_TOKEN_QUESTION))
+  CASE('~',
+    if is_next('>') {
+      setn(RAIZ_TOKEN_WAVE_ARROW, 2)
+    } else {
+      set(RAIZ_TOKEN_TILDE)
+    })
+  CASE('>',
+    if is_next('=') {
+      setn(RAIZ_TOKEN_GREATER_OR_EQUAL, 2)
+    } else if is_next('>') {
+      setn(RAIZ_TOKEN_DOUBLE_GREATER, 2)
+    } else {
+      set(RAIZ_TOKEN_GREATER_THAN)
+    })
+  CASE('<',
+    if is_next('<') {
+      setn(RAIZ_TOKEN_DOUBLE_LESS, 2)
+    } else if is_next('=') {
+      setn(RAIZ_TOKEN_LESS_OR_EQUAL, 2)
+    } else {
+      set(RAIZ_TOKEN_LESS_THAN)
+    })
+  CASE('|',
+    if is_next('|') {
+      setn(RAIZ_TOKEN_DOUBLE_PIPE, 2)
+    } else {
+      set(RAIZ_TOKEN_PIPE)
+    })
+  default:
+    result = 0;
+    break;
   }
+
+  return result;
 }
 
 Token* raiz_tokenize(char* const source_code) {
@@ -132,10 +145,11 @@ Token* raiz_tokenize(char* const source_code) {
       add = 0;
       break;
     default:
+      if (handle_simple_token(source_code, i, &token)) {}
       // NOTE: only 32 bit integer numbers are handled
       // and there are no prefixes or suffixes
       // (such as '0x', '0b' prefixes or 'u' and 'f' suffixes)
-      if (is_number(source_code[i])) {
+      else if (is_number(source_code[i])) {
         // TODO: handle floating numbers
         int number = 0;
         uint start = i;
@@ -151,8 +165,9 @@ Token* raiz_tokenize(char* const source_code) {
         token.data.i_val = number;
         token.len = i - start;
 
-      } else if (is_identstart(c)) {
-        uint start = i;
+      } else if (is_identstart(source_code[i])) {
+        // uint start = i;
+
         // get identifier length
         for (; is_identchar(source_code[i]); ++i);
         // TODO: compare slice with each keyword
@@ -169,6 +184,7 @@ Token* raiz_tokenize(char* const source_code) {
         array_free(tokens);
         return NULL;
       }
+      break; // default case
     } // switch (source_code[i]) // current character
 
     if (add) array_push(tokens, token);
