@@ -7,9 +7,9 @@
 
 #include <stdio.h>
 #include <stdlib.h>
+#include <string.h>
 
 typedef unsigned int uint; // alias because it's too long
-#define NULL ((void*)0)
 
 #define is_next(character) (source_code[index + 1] == character)
 
@@ -28,6 +28,32 @@ static inline Token set_simple_token(TokenKind kind, uint len, uint start) {
     .len = len,
     .start = start,
   };
+}
+
+// NOTE: could implement a hash table instead of iterating through
+// each keyword and comparing it with 'word'
+int set_if_is_keyword(char*const word, uint len, Token* token) {
+  const char *keywords[] = { // same order as in 'tokens.def'
+    "as", "in", "or",
+    "for", "fun", "let", "met", "mut",
+    "not", "pub", "tab", "use", "val", "var",
+    "else", "math", "self",
+    "event", "macro", "shell", "while",
+    "onevent", "trigger"
+  };
+
+  // i know there is a better way, but i don't know this way (not yet)
+  uint keywords_start = (uint) RAIZ_TOKEN_LITERAL_STRING;
+
+  for (uint i = keywords_start; i < RAIZ_TOKEN_COUNT; ++i) {
+    if (strncmp(word, keywords[i - keywords_start], len) == 0) {
+      token->kind = (TokenKind)i; // hope it does work...
+      return 1;
+    }
+  }
+
+  token->kind = RAIZ_TOKEN_IDENTIFIER;
+  return 0;
 }
 
 int handle_simple_token(char*const source_code, uint index, Token* token) {
