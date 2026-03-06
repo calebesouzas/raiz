@@ -2,8 +2,11 @@
 #include <stdlib.h> // exit(), malloc() and free()
 #include <string.h> // strerror()
 
-#include "raiz_core.h"
+#define RAIZ_LEXER_IMPLEMENTATION
+#include "lexer.h"
 
+#include "raiz_core.h"
+#include "raiz_arrays.h"
 #include "raiz_debug/logs.h" // RAIZ_LOG()
 
 #include <errno.h> // errno
@@ -72,8 +75,8 @@ main(int argc, char *argv[]) {
       source_code_buffer[i] = fgetc(p_file);
     }
 
-    //Token* tokens = raiz_tokenize(source_code_buffer);
-    //array_free(tokens);
+    Token* tokens = raiz_tokenize(source_code_buffer);
+    array_free(tokens);
   }
 
 
