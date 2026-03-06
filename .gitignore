@@ -3,4 +3,4 @@ compile_commands.json
 build/*
 temp/*
 *~
-a.rz
+[a-z].rz
