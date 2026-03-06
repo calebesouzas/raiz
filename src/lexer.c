@@ -1,9 +1,8 @@
-#include "tokenizer.h"
-#include "tokens.h"
+#include "lexer.h"
 
-#include "../helpers/switch.h" // CASE (auto break) macro
+#include "raiz_helpers/switch.h" // CASE (auto break) macro
 
-#include "../arrays.h"
+#include "raiz_arrays.h"
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -32,7 +31,7 @@ static inline Token set_simple_token(TokenKind kind, uint len, uint start) {
 
 // NOTE: could implement a hash table instead of iterating through
 // each keyword and comparing it with 'word'
-int set_if_is_keyword(char*const word, uint len, Token* token) {
+void set_if_is_keyword(char*const word, uint len, Token* token) {
   const char *keywords[] = { // same order as in 'tokens.def'
     "as", "in", "or",
     "for", "fun", "let", "met", "mut",
@@ -48,12 +47,11 @@ int set_if_is_keyword(char*const word, uint len, Token* token) {
   for (uint i = keywords_start; i < RAIZ_TOKEN_COUNT; ++i) {
     if (strncmp(word, keywords[i - keywords_start], len) == 0) {
       token->kind = (TokenKind)i; // hope it does work...
-      return 1;
+      return;
     }
   }
 
   token->kind = RAIZ_TOKEN_IDENTIFIER;
-  return 0;
 }
 
 int handle_simple_token(char*const source_code, uint index, Token* token) {
@@ -192,12 +190,13 @@ Token* raiz_tokenize(char* const source_code) {
         token.len = i - start;
 
       } else if (is_identstart(source_code[i])) {
-        // uint start = i;
+        uint start = i;
 
         // get identifier length
         for (; is_identchar(source_code[i]); ++i);
-        // TODO: compare slice with each keyword
+
         // NOTE: i could implement a hash map for performance and DX reasons
+        set_if_is_keyword(source_code + start, i, &token);
       } else {
         fprintf(
           stderr,
