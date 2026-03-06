@@ -41,38 +41,6 @@ function compile_db ()
   echo "]" >> compile_commands.json
 }
 
-function start ()
-{
-  echo "Setting up Raiz in C dev env..."
-  alias raiz="$HOME/dev/raiz/build/bin/raiz"
-}
-
-function build ()
-{
-  echo "  Removing old build folder..."
-  rm -rf build
-  mkdir -p build build/obj build/bin
-  echo "\n  Compiling files..."
-  for FILE in $(find src -type f -name "*.c")
-  do
-    NEW_PATH="build/${FILE/src/obj}.o"
-    echo "    Compiling $FILE into $NEW_PATH"
-    gcc -c $FILE -o $NEW_PATH \
-      -Werror -Wall -Wextra -Wpedantic -Iinclude -g
-  done
-  echo "\n  Building final binary..."
-  OBJECTS=$(find build/obj -type f -name "*.c.o")
-  echo "    Objects:"
-  for OBJECT in $(find build/obj/ -type f -name "*.c.o")
-  do
-    echo "      $OBJECT"
-  done
-  echo "\n  Built program at build/bin/raiz"
-  OBJECTS=$(echo "$OBJECTS" | tr '\n' ' ')
-  sh -c "gcc $OBJECTS -o build/bin/raiz"
-  compile_db
-}
-
 function debug ()
 {
   gdb ./build/bin/raiz
