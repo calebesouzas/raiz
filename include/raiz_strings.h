@@ -15,8 +15,10 @@ typedef struct {
 // string_push: pushes 'source' into 'destine', does realloc the header if
 // needed or inits 'destine' if it's NULL. Returns non-zero values for errors
 #define string_push(destine, source)\
+  string_push_slice(destine, source, strlen(source))
+
+#define string_push_slice(destine, source, source_len)\
 do {\
-  unsigned int source_len = strlen(source);\
   unsigned int destine_len = (destine) ? strlen(destine) : 0;\
 \
   StringHeader* header = NULL;\
