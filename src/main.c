@@ -1,17 +1,10 @@
 #include <stdio.h>
 #include <stdlib.h> // exit(), malloc() and free()
 #include <string.h> // strerror()
-#include "core/core.h" // RAIZ_VERSION and RAIZ_FILE_SIZE_LIMIT
 
-//#include "arrays.h"
-#include "errors.h"
-//#include "lexer/tokens.h" // Token
-//#include "lexer/tokenizer.h" // raiz_tokenize()
+#include "raiz_core.h"
 
-#define RAIZ_FORMATTING_IMPLEMENTATION
-#include "formatting.h" // raiz_format()
-
-#include "debug/logs.h" // RAIZ_LOG()
+#include "raiz_debug/logs.h" // RAIZ_LOG()
 
 #include <errno.h> // errno
 #include <sys/types.h>
@@ -27,13 +20,6 @@ int
 main(int argc, char *argv[]) {
   if (argc == 1) { // only the program name
     printf("Raiz - v%s - Creative Commons Zero\n", RAIZ_VERSION);
-    RaizResult format_result = raiz_format(2, "Hello ", "world!");
-    if (format_result.status == RAIZ_RESULT_OK) {
-      printf("%s\n", (char*)format_result.ok_value);
-    }
-    else {
-      printf("%s-error: %s\n", format_result.err_value.kind, format_result.err_value.message);
-    }
   }
 
   FILE *p_file = NULL;

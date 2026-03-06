@@ -1,8 +1,9 @@
 #include "formatting.h"
-#include "errors.h"
-#include "strings.h"
+#include "raiz_errors.h"
+#include "raiz_strings.h"
+#include <assert.h>
+#include <malloc.h>
 #include <stdarg.h>
-#include <stdio.h>
 
 RaizResult raiz_format(int count, ...) {
   va_list args;
@@ -11,9 +12,9 @@ RaizResult raiz_format(int count, ...) {
   char* result = NULL;
 
   for (int i = 0; i < count; ++i) {
-    int error = string_push(result, va_arg(args, char*));
+    result = string_push(result, va_arg(args, char*));
 
-    if (error) return (RaizResult) {
+    if (result == NULL) return (RaizResult) {
       .status = RAIZ_RESULT_ERROR,
       .ok_value = NULL,
       .err_value = (RaizError){

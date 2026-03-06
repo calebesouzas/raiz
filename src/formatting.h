@@ -1,7 +1,7 @@
 #ifndef RAIZ_FORMATTING_H
 #define RAIZ_FORMATTING_H
 
-#include "errors.h"
+#include "raiz_errors.h"
 RaizResult raiz_format(int count, ...);
 
 #ifdef RAIZ_FORMATTING_IMPLEMENTATION
