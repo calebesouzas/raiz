@@ -12,7 +12,7 @@
 
 typedef unsigned int uint; // alias because it's too long
 
-#define is_next(character) (source_code[index + 1] == character)
+#define is_next(character) (source_code[(*index) + 1] == character)
 
 #define is_number(c) (c >= '0' && c <= '9')
 #define is_alpha(c) ((c >= 'a' && c <= 'z') || (c >= 'A' && c <= 'Z'))
@@ -20,8 +20,10 @@ typedef unsigned int uint; // alias because it's too long
 #define is_identstart(c) (is_alpha(c) || c == '_' )
 #define is_identchar(c) (is_identstart(c) || is_number(c))
 
-#define set(kind) (*token) = set_simple_token(kind, 1, index);
-#define setn(kind, len) (*token) = set_simple_token(kind, len, index);
+#define set(kind) setn(kind, 1)
+#define setn(kind, len)\
+  (*token) = set_simple_token(kind, len, *index);\
+  (*index) += len;
 
 static inline Token set_simple_token(TokenKind kind, uint len, uint start) {
   return (Token) {
@@ -55,12 +57,14 @@ void set_if_is_keyword(char*const word, uint len, Token* token) {
 
   token->len = len;
   token->kind = RAIZ_TOKEN_IDENTIFIER;
-  string_push_slice(token->data.s_val, word, len);
+  char* identifier = NULL;
+  string_push_slice(identifier, word, len);
+  token->data.s_val = identifier;
 }
 
-int handle_simple_token(char*const source_code, uint index, Token* token) {
+int handle_simple_token(char*const source_code, uint *index, Token* token) {
   int result = 1;
-  switch (source_code[index]) {
+  switch (source_code[*index]) {
   // TODO: handle one, two or three symbol sequence tokens
   CASE('!',
     if is_next('=') {
@@ -173,7 +177,7 @@ Token* raiz_tokenize(char* const source_code) {
       add = 0;
       break;
     default:
-      if (handle_simple_token(source_code, i, &token)) {}
+      if (handle_simple_token(source_code, &i, &token)) {}
       // NOTE: only 32 bit integer numbers are handled
       // and there are no prefixes or suffixes
       // (such as '0x', '0b' prefixes or 'u' and 'f' suffixes)
@@ -201,7 +205,7 @@ Token* raiz_tokenize(char* const source_code) {
         for (; is_identchar(source_code[i]); ++i);
 
         // NOTE: i could implement a hash map for performance and DX reasons
-        set_if_is_keyword(source_code + start, i, &token);
+        set_if_is_keyword(source_code + start, i - start, &token);
       } else {
         fprintf(
           stderr,
@@ -217,30 +221,34 @@ Token* raiz_tokenize(char* const source_code) {
       break; // default case
     } // switch (source_code[i]) // current character
 
-    const char* token_variant_names[] = {
-      #define RAIZ_DEFINE_TOKEN(variant, string) #variant,
-      #include "tokens.def"
-      #undef RAIZ_DEFINE_TOKEN
-      NULL
-    };
-    printf("[RAIZ]: add token (%s)", token_variant_names[token.kind]);
+    if (add) {
+      const char* token_variant_names[] = {
+        #define RAIZ_DEFINE_TOKEN(variant, string) #variant,
+        #include "tokens.def"
+        #undef RAIZ_DEFINE_TOKEN
+        NULL
+      };
+      printf("[RAIZ]: add token (%s)", token_variant_names[token.kind]);
 
-    switch (token.kind) {
-    case RAIZ_TOKEN_LITERAL_CHAR:
-      printf(" < '%s' >\n", token.data.c_val);
-      break;
-    case RAIZ_TOKEN_LITERAL_INT:
-      printf(" < %d >\n", token.data.i_val);
-      break;
-    case RAIZ_TOKEN_LITERAL_STRING:
-      printf(" < \"%s\" >\n", token.data.s_val);
-      break;
-    default:
-      printf("\n");
-      break;
+      switch (token.kind) {
+      case RAIZ_TOKEN_LITERAL_CHAR:
+        printf(" < '%s' >\n", token.data.c_val);
+        break;
+      case RAIZ_TOKEN_LITERAL_INT:
+        printf(" < %d >\n", token.data.i_val);
+        break;
+      case RAIZ_TOKEN_LITERAL_STRING:
+        printf(" < \"%s\" >\n", token.data.s_val);
+        break;
+      case RAIZ_TOKEN_IDENTIFIER:
+        printf(" < %s >\n", token.data.s_val);
+        break;
+      default:
+        printf("\n");
+        break;
+      }
+      array_push(tokens, token);
     }
-
-    if (add) array_push(tokens, token);
 
   } // for (... source_code ...) // main loop
 
