@@ -1,8 +1,10 @@
 #include "lexer.h"
 
+#include "raiz_debug/logs.h"
 #include "raiz_helpers/switch.h" // CASE (auto break) macro
 
 #include "raiz_arrays.h"
+#include "raiz_strings.h"
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -42,16 +44,18 @@ void set_if_is_keyword(char*const word, uint len, Token* token) {
   };
 
   // i know there is a better way, but i don't know this way (not yet)
-  uint keywords_start = (uint) RAIZ_TOKEN_LITERAL_STRING;
+  uint keywords_start = (uint) RAIZ_TOKEN_LITERAL_STRING + 1;
 
-  for (uint i = keywords_start; i < RAIZ_TOKEN_COUNT; ++i) {
-    if (strncmp(word, keywords[i - keywords_start], len) == 0) {
-      token->kind = (TokenKind)i; // hope it does work...
+  for (uint i = 0; i < (sizeof(keywords) / sizeof(keywords[0])); ++i) {
+    if (strncmp(word, keywords[i], len) == 0) {
+      token->kind = (TokenKind)(i + keywords_start); // hope it does work...
       return;
     }
   }
 
+  token->len = len;
   token->kind = RAIZ_TOKEN_IDENTIFIER;
+  string_push_slice(token->data.s_val, word, len);
 }
 
 int handle_simple_token(char*const source_code, uint index, Token* token) {
@@ -189,6 +193,7 @@ Token* raiz_tokenize(char* const source_code) {
         token.data.i_val = number;
         token.len = i - start;
 
+        i--; // don't skip chars after numbers!
       } else if (is_identstart(source_code[i])) {
         uint start = i;
 
@@ -211,6 +216,29 @@ Token* raiz_tokenize(char* const source_code) {
       }
       break; // default case
     } // switch (source_code[i]) // current character
+
+    const char* token_variant_names[] = {
+      #define RAIZ_DEFINE_TOKEN(variant, string) #variant,
+      #include "tokens.def"
+      #undef RAIZ_DEFINE_TOKEN
+      NULL
+    };
+    printf("[RAIZ]: add token (%s)", token_variant_names[token.kind]);
+
+    switch (token.kind) {
+    case RAIZ_TOKEN_LITERAL_CHAR:
+      printf(" < '%s' >\n", token.data.c_val);
+      break;
+    case RAIZ_TOKEN_LITERAL_INT:
+      printf(" < %d >\n", token.data.i_val);
+      break;
+    case RAIZ_TOKEN_LITERAL_STRING:
+      printf(" < \"%s\" >\n", token.data.s_val);
+      break;
+    default:
+      printf("\n");
+      break;
+    }
 
     if (add) array_push(tokens, token);
 
