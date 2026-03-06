@@ -1,5 +1,5 @@
-#ifndef RAIZ_TOKENS_H
-#define RAIZ_TOKENS_H
+#ifndef RAIZ_TOKENIZER_H
+#define RAIZ_TOKENIZER_H
 
 // TODO: add the remaining comments for each TOKEN_<VARIANT>
 typedef enum {
@@ -20,4 +20,10 @@ typedef struct {
   } data;
 } Token;
 
-#endif /* RAIZ_TOKENS_H */
+Token* raiz_tokenize(char* const source_code);
+
+#ifdef RAIZ_TOKENIZER_IMPLEMENTATION
+#include "lexer.c"
+#endif
+
+#endif /* ifndef RAIZ_TOKENIZER */
