@@ -40,7 +40,7 @@ do {\
   }\
 \
   if (header != NULL) {\
-    strncat((destine), (source), source_len);\
+    strncat((destine), (source), (source_len));\
     header->len += source_len;\
   }\
 \
