@@ -176,6 +176,24 @@ Token* raiz_tokenize(char* const source_code) {
     case '\r':
       add = 0;
       break;
+    case '"':
+      i++; // consume '"'
+      uint start = i;
+      for (; source_code[i] && source_code[i] != '"'; ++i);
+      if (source_code[i] != '"') {
+        fprintf(stderr, "raiz: expected '\"' closing string at %u:%u\n",
+                line, column);
+        array_free(tokens);
+        return NULL;
+      }
+      token.kind = RAIZ_TOKEN_LITERAL_STRING;
+      token.len = i - start;
+      // with 'i - 1' we ignore the closing '"'
+      char* string = NULL;
+      string_push_slice(string, source_code + start, i - start);
+      token.data.s_val = string;
+      i++; // consume closing '"'
+      break;
     default:
       if (handle_simple_token(source_code, &i, &token)) {}
       // NOTE: only 32 bit integer numbers are handled
