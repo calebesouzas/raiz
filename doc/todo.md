@@ -9,8 +9,8 @@ format
 - [x] Add code for debug messages (either by macros or real functions)
 
 ## Lexer
-- [ ] Fix broken tokenizer (and organize the token kind and value handlers)!
-- [ ] Fix off-by-one errors about updating the current character index
+- [x] Fix broken tokenizer (and organize the token kind and value handlers)!
+- [x] Fix off-by-one errors about updating the current character index
 
 ## Parser
 - [ ] Implement a parser for the language (you can start simple)!
