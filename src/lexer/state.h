@@ -5,13 +5,31 @@
 #include "raiz_arrays.h"
 
 typedef struct {
-  unsigned int index, start, line, column;
+  unsigned int index, start, start_line, start_column, line, column;
   Token* tokens;
 } LexerState;
 
+#define raiz_init_lexer()\
+  (LexerState) {\
+    .column = 1,\
+    .line = 1,\
+    .index = 0,\
+    .start = 0,\
+    .start_line = 1,\
+    .start_column = 1,\
+    .tokens = NULL,\
+  }
+
 void push_token(LexerState* state, TokenKind kind);
 
-#define backup_start(state) (state)->start = (state)->index
+#define backup_start(state)\
+  do {\
+    (state)->start = (state)->index;\
+    (state)->start_line = (state)->line;\
+    (state)->start_column = (state)->column;\
+  } while (0)
+
+uint update_state(LexerState* state, char current_char);
 
 #define set_token_data(state, field, value)\
   (state)->tokens[array_len((state)->tokens) - 1].data.field = (value)

@@ -2,7 +2,6 @@
 #include "./helper.h" // CASE (auto break) macro
 
 #include "raiz_arrays.h"
-#include "raiz_strings.h"
 
 #include "tokens.h"
 #include "state.h"
@@ -19,19 +18,16 @@ void debug_added_token(LexerState* state);
 #endif
 
 Token* raiz_tokenize(char* const source_code) {
-  LexerState state = {.index = 0, .column = 0, .line = 1};
-
-  for (state.index = 0; source_code[state.index]; ++state.index) {
-    state.column++;
-
+  LexerState state;
+  for (state = raiz_init_lexer();
+      source_code[state.index]; update_state(&state, source_code[state.index]))
+  {
     #ifdef RAIZ_DEBUG
     short add = 1;
     #endif
 
     switch (source_code[state.index]) {
     case '\n':
-      state.line++;
-      state.column = 0;
     case ' ':
     case '\t':
     case '\r':
@@ -61,7 +57,8 @@ Token* raiz_tokenize(char* const source_code) {
 
         // if entered this 'if' block, will run the loop below at least once
         // Then, the number and it's length are calculated correctly
-        for (; is_number(source_code[state.index]); ++state.index) {
+        for (; is_number(source_code[state.index]);
+            update_state(&state, source_code[state.index])) {
           // TODO: check for and skip '_'s for better reading of the number
           number = (number * 10) + (source_code[state.index] - '0');
         }
@@ -70,17 +67,21 @@ Token* raiz_tokenize(char* const source_code) {
         
         set_token_data(&state, i_val, number);
 
-        state.index--; // don't skip chars after numbers!
+        // don't skip chars after numbers!
+        state.index--;
+        state.column--;
       } else if (is_identstart(source_code[state.index])) {
         backup_start(&state);
 
         // get identifier length
-        for (; is_identchar(source_code[state.index]); ++state.index);
+        for (; is_identchar(source_code[state.index]);
+            update_state(&state, source_code[state.index]));
 
         // NOTE: i could implement a hash map for performance and DX reasons
         set_if_is_keyword(&state, source_code + state.start);
 
         state.index--;
+        state.column--;
       } else {
         fprintf(
           stderr,
@@ -112,7 +113,9 @@ void debug_added_token(LexerState* state) {
     NULL
   };
   Token token = state->tokens[array_len(state->tokens) - 1];
-  printf("[RAIZ]: add token (%s)", token_variant_names[token.kind]);
+  printf("[RAIZ]: add token [%u:%u] (%s)",
+      token.line, token.column,
+      token_variant_names[token.kind]);
 
   switch (token.kind) {
   case RAIZ_TOKEN_LITERAL_CHAR:

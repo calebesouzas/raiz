@@ -5,8 +5,8 @@
 
 void push_token(LexerState *state, TokenKind kind) {
   Token token = {
-    .column = state->column,
-    .line = state->line,
+    .column = state->start_column,
+    .line = state->start_line,
     .start = state->start,
     .kind = kind,
     .len = state->index - state->start,
@@ -16,3 +16,16 @@ void push_token(LexerState *state, TokenKind kind) {
   array_push(state->tokens, token);
 }
 
+uint update_state(LexerState *state, char current_char) {
+  switch (current_char) {
+  case '\n':
+    state->line++;
+    state->column = 1;
+    break;
+  default:
+    state->column++;
+    break;
+  }
+
+  return state->index++; // increment and returns it self - 1
+}
