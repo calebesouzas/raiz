@@ -1,6 +1,7 @@
 # Todo List for (and by) Raiz Dev
 ## Build
 - [x] Migrate to "Unity Build" style
+
 ## Errors
 - [ ] Add functions for error and warning prints with a standardized message 
 format
