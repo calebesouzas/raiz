@@ -1,6 +1,8 @@
 #ifndef RAIZ_ARRAY_UTILITY_H
 #define RAIZ_ARRAY_UTILITY_H
 
+#include <stdlib.h> // to auto-include needed memory related functions
+
 #include "raiz_debug/logs.h"
 #include "raiz_debug/variables.h"
 
