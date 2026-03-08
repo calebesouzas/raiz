@@ -4,11 +4,11 @@
 #include "raiz_strings.h"
 
 void handle_string_literal(LexerState *state, char*const source_code) {
-      state->index++; // consume '"'
       backup_start(state);
+      update_state(state, '"'); // consume '"'
 
       for (; source_code[state->index] && source_code[state->index] != '"';
-             update_state(state, source_code[state->index - state->start]));
+             update_state(state, source_code[state->index]));
 
       push_token(state, RAIZ_TOKEN_LITERAL_STRING);
 
