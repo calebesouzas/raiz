@@ -11,6 +11,7 @@ format
 ## Lexer
 - [x] Fix broken tokenizer (and organize the token kind and value handlers)!
 - [x] Fix off-by-one errors about updating the current character index
+- [x] Implement correct position spanning at tokens and lexer state
 
 ## Parser
 - [ ] Implement a parser for the language (you can start simple)!
