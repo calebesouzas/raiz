@@ -2,7 +2,7 @@
 #include <stdlib.h> // exit(), malloc() and free()
 #include <string.h> // strerror()
 
-#define RAIZ_LEXER_IMPLEMENTATION
+#define RAIZ_USE_LEXER
 #include "lexer.h"
 
 #include "raiz_core.h"
