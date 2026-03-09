@@ -113,8 +113,8 @@ void debug_added_token(LexerState* state) {
     NULL
   };
   Token token = state->tokens[array_len(state->tokens) - 1];
-  printf("[RAIZ]: add token [%u:%u] (%s)",
-      token.line, token.column,
+  printf("[RAIZ]: add token [%u:%u:%u] (%s)",
+      token.line, token.column, token.len,
       token_variant_names[token.kind]);
 
   switch (token.kind) {
