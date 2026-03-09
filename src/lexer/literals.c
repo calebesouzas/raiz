@@ -14,7 +14,7 @@ void handle_string_literal(LexerState *state, char*const source_code) {
 
       // with 'i - 1' we ignore the closing '"'
       char* string = NULL;
-      string_push_slice(string, source_code + state->start, 
-                        state->index - state->start);
+      string_push_slice(string, source_code + state->start + 1, 
+                        state->index - state->start - 1);
       set_token_data(state, s_val, string);
 }
