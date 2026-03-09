@@ -10,7 +10,7 @@ void set_if_is_keyword(LexerState *state, char*const word) {
   // i know there is a better way, but i don't know this way (not yet)
   unsigned int keywords_start = (unsigned int) RAIZ_TOKEN_LITERAL_STRING + 1;
 
-  unsigned int len = state->index - state->start;
+  unsigned int len = state->current - state->start;
 
   for (unsigned int i = 0; 
       i < (sizeof(raiz_keywords) / sizeof(raiz_keywords[0]));

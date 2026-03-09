@@ -9,7 +9,7 @@ void push_token(LexerState *state, TokenKind kind) {
     .line = state->start_line,
     .start = state->start,
     .kind = kind,
-    .len = state->index - state->start,
+    .len = state->current - state->start,
     // '.data' remains unset
   };
 
@@ -27,5 +27,5 @@ uint update_state(LexerState *state, char current_char) {
     break;
   }
 
-  return state->index++; // increment and returns it self - 1
+  return state->current++; // increment and returns it self - 1
 }

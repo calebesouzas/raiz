@@ -20,13 +20,13 @@ void debug_added_token(LexerState* state);
 Token* raiz_tokenize(char* const source_code) {
   LexerState state;
   for (state = raiz_init_lexer();
-      source_code[state.index]; update_state(&state, source_code[state.index]))
+      source_code[state.current]; update_state(&state, source_code[state.current]))
   {
     #ifdef RAIZ_DEBUG
     short add = 1;
     #endif
 
-    switch (source_code[state.index]) {
+    switch (source_code[state.current]) {
     case '\n':
     case ' ':
     case '\t':
@@ -38,7 +38,7 @@ Token* raiz_tokenize(char* const source_code) {
     case '"':
       handle_string_literal(&state, source_code);
 
-      if (source_code[state.index] != '"') {
+      if (source_code[state.current] != '"') {
         fprintf(stderr, "raiz: expected '\"' closing string at %u:%u\n",
                 state.line, state.column);
         array_free(state.tokens);
@@ -50,17 +50,17 @@ Token* raiz_tokenize(char* const source_code) {
       // NOTE: only 32 bit integer numbers are handled
       // and there are no prefixes or suffixes
       // (such as '0x', '0b' prefixes or 'u' and 'f' suffixes)
-      else if (is_number(source_code[state.index])) {
+      else if (is_number(source_code[state.current])) {
         // TODO: handle floating numbers
         int number = 0;
         backup_start(&state);
 
         // if entered this 'if' block, will run the loop below at least once
         // Then, the number and it's length are calculated correctly
-        for (; is_number(source_code[state.index]);
-            update_state(&state, source_code[state.index])) {
+        for (; is_number(source_code[state.current]);
+            update_state(&state, source_code[state.current])) {
           // TODO: check for and skip '_'s for better reading of the number
-          number = (number * 10) + (source_code[state.index] - '0');
+          number = (number * 10) + (source_code[state.current] - '0');
         }
 
         push_token(&state, RAIZ_TOKEN_LITERAL_INT);
@@ -68,19 +68,19 @@ Token* raiz_tokenize(char* const source_code) {
         set_token_data(&state, i_val, number);
 
         // don't skip chars after numbers!
-        state.index--;
+        state.current--;
         state.column--;
-      } else if (is_identstart(source_code[state.index])) {
+      } else if (is_identstart(source_code[state.current])) {
         backup_start(&state);
 
         // get identifier length
-        for (; is_identchar(source_code[state.index]);
-            update_state(&state, source_code[state.index]));
+        for (; is_identchar(source_code[state.current]);
+            update_state(&state, source_code[state.current]));
 
         // NOTE: i could implement a hash map for performance and DX reasons
         set_if_is_keyword(&state, source_code + state.start);
 
-        state.index--;
+        state.current--;
         state.column--;
       } else {
         fprintf(
@@ -88,7 +88,7 @@ Token* raiz_tokenize(char* const source_code) {
           "raiz: invalid character at %u:%u: '%c'\n",
           state.line,
           state.column + 1,
-          source_code[state.index]
+          source_code[state.current]
         );
         array_free(state.tokens);
         return NULL;

@@ -5,7 +5,7 @@
 int handle_simple_token(LexerState* state, char*const source_code) {
   backup_start(state);
 
-  switch (source_code[state->index]) {
+  switch (source_code[state->current]) {
   // single character tokens
   case '@': push_token(state, RAIZ_TOKEN_AT);       break;
   case '#': push_token(state, RAIZ_TOKEN_HASH);     break;
@@ -28,100 +28,100 @@ int handle_simple_token(LexerState* state, char*const source_code) {
   // two character tokens
   //// (maybe) composed token
   case '!':
-    if (source_code[state->index] == '=') {
+    if (source_code[state->current] == '=') {
       push_token(state, RAIZ_TOKEN_NOT_EQUAL);
-      state->index++;
+      state->current++;
     } else {
       push_token(state, RAIZ_TOKEN_EXCLAMATION);
     }
     break;
   //// duplicated character tokens
   case '&':
-    if (source_code[state->index + 1] == '&') {
+    if (source_code[state->current + 1] == '&') {
       push_token(state, RAIZ_TOKEN_DOUBLE_AMPERSAND);
-      state->index++;
+      state->current++;
     } else {
       push_token(state, RAIZ_TOKEN_AMPERSAND);
     }
     break;
   case '|':
-    if (source_code[state->index + 1] == '|') {
+    if (source_code[state->current + 1] == '|') {
       push_token(state, RAIZ_TOKEN_DOUBLE_PIPE);
-      state->index++;
+      state->current++;
     } else {
       push_token(state, RAIZ_TOKEN_PIPE);
     }
     break;
   case '^':
-    if (source_code[state->index + 1] == '^') {
+    if (source_code[state->current + 1] == '^') {
       push_token(state, RAIZ_TOKEN_DOUBLE_HAT);
-      state->index++;
+      state->current++;
     } else {
       push_token(state, RAIZ_TOKEN_HAT);
     } 
     break;
   //// maybe duplicated or composed two character tokens
   case '=':
-    switch (source_code[state->index + 1]) {
+    switch (source_code[state->current + 1]) {
     case '=':
       push_token(state, RAIZ_TOKEN_EQUAL);
-      state->index++;
+      state->current++;
       break;
     case '>':
       push_token(state, RAIZ_TOKEN_FAT_ARROW);
-      state->index++;
+      state->current++;
       break;
     default: push_token(state, RAIZ_TOKEN_ASSIGN); break;
     }
     break;
   case '-':
-    switch (source_code[state->index + 1]) {
+    switch (source_code[state->current + 1]) {
     case '>':
       push_token(state, RAIZ_TOKEN_THIN_ARROW);
-      state->index++;
+      state->current++;
       break;
     case '`':
       push_token(state, RAIZ_TOKEN_HALF_THIN_ARROW);
-      state->index++;
+      state->current++;
       break;
     default: push_token(state, RAIZ_TOKEN_MINUS); break;
     }
     break;
   case '~':
-    switch (source_code[state->index + 1]) {
+    switch (source_code[state->current + 1]) {
     case '=':
       push_token(state, RAIZ_TOKEN_ALMOST_EQUAL);
-      state->index++;
+      state->current++;
       break;
     case '>':
       push_token(state, RAIZ_TOKEN_WAVE_ARROW);
-      state->index++;
+      state->current++;
       break;
     default: push_token(state, RAIZ_TOKEN_TILDE); break;
     }
     break;
   case '>':
-    switch (source_code[state->index + 1]) {
+    switch (source_code[state->current + 1]) {
     case '>':
       push_token(state, RAIZ_TOKEN_DOUBLE_GREATER);
-      state->index++;
+      state->current++;
       break;
     case '=':
       push_token(state, RAIZ_TOKEN_GREATER_OR_EQUAL);
-      state->index++;
+      state->current++;
       break;
     default: push_token(state, RAIZ_TOKEN_GREATER_THAN); break;
     }
     break;
   case '<':
-    switch (source_code[state->index + 1]) {
+    switch (source_code[state->current + 1]) {
     case '<':
       push_token(state, RAIZ_TOKEN_DOUBLE_LESS);
-      state->index++;
+      state->current++;
       break;
     case '=':
       push_token(state, RAIZ_TOKEN_LESS_OR_EQUAL);
-      state->index++;
+      state->current++;
       break;
     default: push_token(state, RAIZ_TOKEN_LESS_THAN); break;
     }
@@ -130,7 +130,7 @@ int handle_simple_token(LexerState* state, char*const source_code) {
     return 0;
   }
 
-  unsigned int len = state->index - state->start + 1;
+  unsigned int len = state->current - state->start + 1;
   state->tokens[array_len(state->tokens) - 1].len = len;
 
   return 1;

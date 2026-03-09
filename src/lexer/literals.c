@@ -7,14 +7,14 @@ void handle_string_literal(LexerState *state, char*const source_code) {
       backup_start(state);
       update_state(state, '"'); // consume '"'
 
-      for (; source_code[state->index] && source_code[state->index] != '"';
-             update_state(state, source_code[state->index]));
+      for (; source_code[state->current] && source_code[state->current] != '"';
+             update_state(state, source_code[state->current]));
 
       push_token(state, RAIZ_TOKEN_LITERAL_STRING);
 
       // with 'i - 1' we ignore the closing '"'
       char* string = NULL;
       string_push_slice(string, source_code + state->start + 1, 
-                        state->index - state->start - 1);
+                        state->current - state->start - 1);
       set_token_data(state, s_val, string);
 }

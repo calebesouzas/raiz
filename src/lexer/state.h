@@ -5,7 +5,7 @@
 #include "raiz_arrays.h"
 
 typedef struct {
-  unsigned int index, start, start_line, start_column, line, column;
+  unsigned int current, start, start_line, start_column, line, column;
   Token* tokens;
 } LexerState;
 
@@ -13,7 +13,7 @@ typedef struct {
   (LexerState) {\
     .column = 1,\
     .line = 1,\
-    .index = 0,\
+    .current = 0,\
     .start = 0,\
     .start_line = 1,\
     .start_column = 1,\
@@ -24,7 +24,7 @@ void push_token(LexerState* state, TokenKind kind);
 
 #define backup_start(state)\
   do {\
-    (state)->start = (state)->index;\
+    (state)->start = (state)->current;\
     (state)->start_line = (state)->line;\
     (state)->start_column = (state)->column;\
   } while (0)
