@@ -85,10 +85,9 @@ Token* raiz_tokenize(char* const source_code) {
       } else {
         fprintf(
           stderr,
-          "raiz: invalid character at %u:%u (%s): %c\n",
+          "raiz: invalid character at %u:%u: '%c'\n",
           state.line,
           state.column + 1,
-          "only ASCII characters are accepted outside strings",
           source_code[state.index]
         );
         array_free(state.tokens);
