@@ -22,11 +22,12 @@ format
 - [x] Implement correct position spanning at tokens and lexer state
 
 ## Parser
-- [ ] Start implementing a parser
-- [ ] Define structs and enums for parser things (and some helpers also)
+- [x] Start implementing a parser
+- [x] Define structs and enums for parser things (and some helpers also)
 - [ ] Implement simple (math) operations and variable declaration and 
 assignment parsing (don't worry about chained assignments yet, if it's not that 
 easy to implement...)
+- [ ] Parse static typing at variabls
 
 ## Semantics
 - [ ] Start implementing a semantical checker
