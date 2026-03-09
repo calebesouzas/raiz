@@ -23,6 +23,8 @@ int
 main(int argc, char *argv[]) {
   if (argc == 1) { // only the program name
     printf("Raiz - v%s - Creative Commons Zero\n", RAIZ_VERSION);
+    printf("Usage: raiz <file path>\n");
+    printf("  <file path>: path to file containing valid Raiz code\n");
   }
 
   FILE *p_file = NULL;
