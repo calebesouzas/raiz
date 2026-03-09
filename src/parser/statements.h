@@ -21,4 +21,11 @@ typedef enum {
   RAIZ_STMT_BLOCK,
 } StmtKind;
 
+typedef struct Stmt Stmt;
+struct Stmt {
+  StmtKind kind;
+  Expr* opt_expr;
+  Stmt* opt_block;
+};
+
 #endif // RAIZ_PARSER_STATEMENTS_H
