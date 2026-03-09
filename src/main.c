@@ -7,6 +7,7 @@
 
 #include "raiz_core.h"
 #include "raiz_arrays.h"
+#include "raiz_strings.h"
 #include "raiz_debug/logs.h" // RAIZ_LOG()
 
 #include <errno.h> // errno
@@ -64,17 +65,21 @@ main(int argc, char *argv[]) {
       exit(1);
     }
 
-    source_code_buffer = malloc(file_size);
-    if (!source_code_buffer) {
-      fprintf(
-        stderr,
-        "raiz: failed to allocate memory for code buffer\n"
-      );
-      fclose(p_file);
-      exit(-2);
-    }
-    for (int i = 0; i < file_size; i++) {
-      source_code_buffer[i] = fgetc(p_file);
+    // source_code_buffer = malloc(file_size);
+    // if (!source_code_buffer) {
+    //   fprintf(
+    //     stderr,
+    //     "raiz: failed to allocate memory for code buffer\n"
+    //   );
+    //   fclose(p_file);
+    //   exit(-2);
+    // }
+    // for (int i = 0; i < file_size; i++) {
+    //   source_code_buffer[i] = fgetc(p_file);
+    // }
+    char buffer[1024] = {0};
+    while (fgets(buffer, sizeof(buffer), p_file)) {
+      string_push(source_code_buffer, buffer);
     }
 
     Token* tokens = raiz_tokenize(source_code_buffer);
@@ -89,7 +94,7 @@ main(int argc, char *argv[]) {
   }
 
   if (source_code_buffer != NULL) {
-    free(source_code_buffer);
+    string_free(source_code_buffer);
     source_code_buffer = NULL;
   }
 
