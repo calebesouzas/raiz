@@ -46,5 +46,5 @@ do {\
 \
 } while (0)
 
-#define string_free(string) free((StringHeader*)(string - 1))
+#define string_free(string) free((StringHeader*)(string) - 1)
 #endif // RAIZ_STRINGS_H
