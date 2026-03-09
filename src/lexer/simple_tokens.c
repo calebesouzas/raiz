@@ -1,3 +1,4 @@
+#include "raiz_arrays.h"
 #include "tokens.h"
 #include "state.h"
 
@@ -128,6 +129,9 @@ int handle_simple_token(LexerState* state, char*const source_code) {
   default:
     return 0;
   }
+
+  unsigned int len = state->index - state->start + 1;
+  state->tokens[array_len(state->tokens) - 1].len = len;
 
   return 1;
 }
