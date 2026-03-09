@@ -22,7 +22,7 @@ typedef struct {
         sizeof(*array) * ARRAY_INIT_CAPACITY + sizeof(*header)\
       );\
       RAIZ_LOG(\
-        "init '%s' with %u bytes",\
+        "init '%s' with %lu bytes",\
         STRING_VAR_NAME(array),\
         sizeof(*array) * ARRAY_INIT_CAPACITY + sizeof(*header)\
       );\
@@ -39,7 +39,7 @@ typedef struct {
         header, sizeof(*array) *header->capacity + sizeof(*header)\
       );\
       RAIZ_LOG(\
-        "realloc '%s' with %u bytes",\
+        "realloc '%s' with %lu bytes",\
         STRING_VAR_NAME(array),\
         sizeof(*array) *header->capacity + sizeof(*header)\
       );\
