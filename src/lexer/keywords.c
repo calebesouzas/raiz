@@ -7,7 +7,7 @@
 // each keyword and comparing it with 'word'. Or a switch case at word's
 // length and iterate over the keywords with the same length only
 void set_if_is_keyword(LexerState *state, char*const word) {
- // i know there is a better way, but i don't know this way (not yet)
+  // i know there is a better way, but i don't know this way (not yet)
   unsigned int keywords_start = (unsigned int) RAIZ_TOKEN_LITERAL_STRING + 1;
 
   unsigned int len = state->index - state->start;
