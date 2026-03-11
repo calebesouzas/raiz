@@ -1,0 +1,3 @@
+rm -rf build
+mkdir -p build
+clang -o build/raiz main.c -Wextra -Wpedantic -Werror -Wall -ggdb
