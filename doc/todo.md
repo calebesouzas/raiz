@@ -1,7 +1,12 @@
 # Todo List for (and by) Raiz Dev
 ## Build
 - [x] Migrate to "Unity Build" style
-- [ ] Create a 'build.sh' script (don't use Makefile)
+- [ ] Create a 'build' script (don't use Makefile)
+- [ ] Put 'main.c' at root folder and compile through it (it must be like a 
+'user' of "libraiz"(?))
+- [ ] The source code should be in `raiz/src/` folder
+- [ ] Do NOT put any file in `./include/`, move them to another place, 
+then remove `include/`
 
 ## Errors
 - [ ] Add functions for error and warning prints with a standardized message 
