@@ -74,7 +74,7 @@ static void set_if_is_keyword(Raiz_LexerState *state, char*const word) {
     "match", "shell", "while"
   };
 
-  for (unsigned int i = 0; 
+  for (unsigned int i = 0;
       i < (sizeof(raiz_keywords) / sizeof(raiz_keywords[0]));
       ++i) {
     if (strncmp(word, raiz_keywords[i], len) == 0) {
