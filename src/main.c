@@ -2,13 +2,9 @@
 #include <stdlib.h> // exit(), malloc() and free()
 #include <string.h> // strerror()
 
-#define RAIZ_USE_LEXER
-#include "lexer.h"
-
-#include "raiz_core.h"
-#include "raiz_arrays.h"
-#include "raiz_strings.h"
-#include "raiz_debug/logs.h" // RAIZ_LOG()
+#define RAIZ_IMPLEMENTATION
+#define RAIZ_DEV
+#include "raiz/raiz.h"
 
 #include <errno.h> // errno
 #include <sys/types.h>
@@ -79,11 +75,11 @@ main(int argc, char *argv[]) {
     // }
     char buffer[1024] = {0};
     while (fgets(buffer, sizeof(buffer), p_file)) {
-      string_push(source_code_buffer, buffer);
+      raiz_string_push(source_code_buffer, buffer);
     }
 
-    Token* tokens = raiz_tokenize(source_code_buffer);
-    if (tokens) array_free(tokens);
+    Raiz_Token* tokens = raiz_tokenize(source_code_buffer);
+    if (tokens) raiz_array_free(tokens);
   }
 
 
@@ -94,7 +90,7 @@ main(int argc, char *argv[]) {
   }
 
   if (source_code_buffer != NULL) {
-    string_free(source_code_buffer);
+    raiz_string_free(source_code_buffer);
     source_code_buffer = NULL;
   }
 
