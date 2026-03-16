@@ -29,7 +29,7 @@
 #define set_token_data(lexer, field, value)\
   (lexer)->tokens[array_len((lexer)->tokens) - 1].data.field = (value)
 
-#define is_identstart(c) (isalpha(c) || (c) == '_')
+#define is_identstart(c) (isalpha(c) || (c) == '_' || (c) == '\\')
 #define is_identchar(c) (isalnum(c) || (c) == '_')
 
 static void push_token(Raiz_LexerState *state, Raiz_TokenKind kind) {
@@ -82,10 +82,9 @@ static void set_if_is_keyword(Raiz_LexerState *state, char*const word) {
       return;
     }
   }
-
   push_token(state, RAIZ_TOKEN_IDENTIFIER);
   char* identifier = NULL;
-  raiz_string_push_slice(identifier, word, len);
+  raiz_string_push_slice(identifier, word + state->start, len);
   set_token_data(state, s_val, identifier);
 }
 
@@ -279,8 +278,16 @@ Raiz_Token* raiz_tokenize(char* const source_code) {
         for (; is_identchar(source_code[state.current]);
             update_state(&state, source_code[state.current]));
 
-        // NOTE: i could implement a hash map for performance and DX reasons
-        set_if_is_keyword(&state, source_code + state.start);
+        if (source_code[state.start] == '\\') {
+          update_state(&state, '\\');
+
+          push_token(&state, RAIZ_TOKEN_IDENTIFIER);
+          char* identifier = NULL;
+          raiz_string_push_slice(identifier,
+                                 source_code + state.start,
+                                 state.current - state.start);
+          set_token_data(&state, s_val, identifier);
+        } else set_if_is_keyword(&state, source_code + state.start);
 
         state.current--;
         state.column--;
