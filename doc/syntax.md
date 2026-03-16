@@ -13,7 +13,7 @@ of expressions. But i can replace it with another symbol (will be `!`).
 I have many ideas for designing the syntax... Here are some examples:
 ```
 tab Person {
-  val name @string!
+  val name @string! // '!' marks end of statements
   var age @int!
   met birthday {
     self.age += 1!
@@ -30,3 +30,41 @@ fun main(args [@string]) {
   me.birthday()!
 }
 ```
+Or i could use this:
+```
+tab Person {
+  val name @string
+  var age @int
+}
+
+fun @Person.born name @string => @Person { ; can also use '@self'
+  ; '!' marks function calls (parenthesis are optional)
+  ; and by default, the value of the last expression is returned.
+  ; But you can also return earlier with 'return' keyword
+
+  @Person! { name, .age = 0 } ; this calls the type constructor
+
+  ; the constructor just assigns the values to their respective field.
+  ; We will have a syntax sugar like the one we used with field 'name'
+}
+
+met @Person.birthday => {
+  self.age++
+}
+; I could also allow function and "method" declarations inside their respective
+; tables. But with this syntax, i'll wanted to use Entity Component System
+; the famous ECS programming style instead of OOP. Because it must be a little
+; easier to work with and it would probably be more optimized...
+
+fun main args @[string] => {
+  var me = @Person.born! "Calebe"
+  me.birthday!
+}
+```
+You noticed that in this one i used ';' for comments, but don't worry. I'll 
+allow use of '//' too. And there are many differences... At first i really 
+thought that the first one would be amazing, but i realised: it's still 
+forcing some kind of character to mark statement endings. And i don't want it 
+to happen! I hate when my code doesn't compile just due to a missing ';'... 
+So in this syntax, new lines will mark end of statements (but of course, the 
+lexer or parser need to smart enough and not put 'TOKEN_NEW_LINE' everywhere).
