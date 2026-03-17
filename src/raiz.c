@@ -197,9 +197,9 @@ bool parser_next_node(Parser* p) {
 Expr* parser_parse(Lexer* l) {
   Parser p = parser_init(l);
 
-  while (parser_next_node(p));
+  while (parser_next_node(&p));
 
-  return p->ast;
+  return p.ast;
 }
 
 void parser_free_node(Expr* e) {
