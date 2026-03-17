@@ -112,11 +112,10 @@ Token lexer_next_token(Lexer* l) {
   case '9':
     // TODO: fix repeated digits being skipped
     lexer_backup(l);
-    int number = *l->current - '0';
-    while (isdigit(*(++l->current))) {
+    int number = 0;
+    for (; isdigit(*l->current); lexer_advance(l))
       number = (number * 10) + (*l->current - '0');
-      lexer_advance(l);
-    }
+
     LOG("Found number: %d\n", number);
 
     return (Token) {.kind = TOKEN_LITERAL_NUMBER, .value = number};
