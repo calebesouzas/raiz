@@ -110,6 +110,7 @@ Token lexer_next_token(Lexer* l) {
   case '7':
   case '8':
   case '9':
+    // TODO: fix repeated digits being skipped
     lexer_backup(l);
     int number = *l->current - '0';
     while (isdigit(*(++l->current))) {
@@ -159,7 +160,7 @@ static inline Parser parser_init(Lexer* lex) {
 
 // TODO: finish handler for simple '+' operations and number literals
 // TODO: free() nodes after use!
-bool parser_next_node(Parser* p, Expr* lhs) {
+bool parser_next_node(Parser* p) {
   Token tok = lexer_next_token(p->lex);
   switch (tok.kind) {
   case TOKEN_ERROR:
@@ -194,14 +195,27 @@ bool parser_next_node(Parser* p, Expr* lhs) {
 }
 
 Expr* parser_parse(Lexer* l) {
-  Parser *p = malloc(sizeof(*p));
-  assert(p != NULL);
-  *p = parser_init(l);
+  Parser p = parser_init(l);
 
-  // HACK: used this crazy loop to track END_OF_FILE
-  while (parser_next_node(p, NULL));
+  while (parser_next_node(p));
 
   return p->ast;
+}
+
+void parser_free_node(Expr* e) {
+  if (e) {
+    if (e->lhs) parser_free_node(e->lhs);
+    if (e->rhs) parser_free_node(e->rhs);
+    free(e);
+    e = NULL;
+  }
+}
+
+//////// COMPILER (functions) ////////
+Expr* build_ast(char* const code) {
+  Lexer lexer = lexer_init(code);
+
+  return ast = parser_parse(&lexer);
 }
 
 //////// EVALUATOR (functions) ////////
@@ -218,15 +232,15 @@ int eval(Expr* node) {
 
 int main(void) {
   char code[] = "69 + 44 + 1337";
-  Lexer lexer = lexer_init(code);
-
-  Expr* ast = parser_parse(&lexer);
+  Expr* ast = build_ast(code);
 
   assert(ast->kind == EXPR_BINARY);
   assert(ast->lhs->kind == EXPR_LITERAL);
   assert(ast->rhs->kind == EXPR_LITERAL);
 
   printf("Result: %d\n", eval(ast));
+
+  parser_free_node(ast);
 
   return 0;
 }
