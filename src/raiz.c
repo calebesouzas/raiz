@@ -215,7 +215,7 @@ void parser_free_node(Expr* e) {
 Expr* build_ast(char* const code) {
   Lexer lexer = lexer_init(code);
 
-  return ast = parser_parse(&lexer);
+  return parser_parse(&lexer);
 }
 
 //////// EVALUATOR (functions) ////////
