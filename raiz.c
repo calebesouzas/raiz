@@ -27,6 +27,33 @@ char g_raiz_error_buffer[RAIZ_ERROR_BUFFER_CAPACITY] = {0};
 
 #define PANIC(...) do { fprintf(stderr, __VA_ARGS__); exit(1); } while (0)
 
+#define TODO(message) do { fprintf(stderr, "TODO: %s\n", message); abort(); } while (0)
+
+//////// UTILITIES ////////
+#ifndef DA_INIT_CAPACITY
+#define DA_INIT_CAPACITY (256)
+#endif
+
+#define da_append(array, value)\
+  do {\
+    if (!(array)->items) {\
+      (array)->items = malloc(sizeof(*(array)->items) * DA_INIT_CAPACITY);\
+      if ((array)->items != NULL) {\
+        (array)->capacity = DA_INIT_CAPACITY;\
+        (array)->count = 0;\
+      }\
+    }\
+    if ((array)->count >= (array)->capacity) {\
+      (array)->capacity *= 1.5;\
+      (array)->items = realloc(\
+        (array)->items, sizeof(*(array)->items) * (array)->capacity\
+      );\
+    }\
+    (array)->items[(array)->count++] = (value);\
+  } while (0)
+
+#define da_free(array) (array)->items ? free((array)->items) : ;
+
 //////// LEXER (types) ////////
 typedef enum {
   OP_SUM,
@@ -50,6 +77,12 @@ typedef struct {
     int value;
   } data;
 } Token;
+
+typedef struct {
+  size_t count;
+  size_t capacity;
+  Token *items;
+} Tokens;
 
 typedef struct {
   const char* source;
@@ -112,12 +145,16 @@ Token lexer_next_token(Lexer* l) {
     while (is_white_space(*l->current)) lexer_advance(l);
     return lexer_next_token(l);
   case '+':
+    lexer_advance(l);
     return lexer_make_token(l, TOKEN_OPERATOR, .data.op = OP_SUM);
   case '-':
+    lexer_advance(l);
     return lexer_make_token(l, TOKEN_OPERATOR, .data.op = OP_SUBTRACT);
   case '*':
+    lexer_advance(l);
     return lexer_make_token(l, TOKEN_OPERATOR, .data.op = OP_MULTIPLY);
   case '/':
+    lexer_advance(l);
     return lexer_make_token(l, TOKEN_OPERATOR, .data.op = OP_DIVIDE);
   case '0':
   case '1':
@@ -129,13 +166,10 @@ Token lexer_next_token(Lexer* l) {
   case '7':
   case '8':
   case '9':
-    // TODO: fix repeated digits being skipped
     lexer_backup(l);
     int number = 0;
     for (; isdigit(*l->current); lexer_advance(l))
       number = (number * 10) + (*l->current - '0');
-
-    LOG("Found number: %d\n", number);
 
     return lexer_make_token(l, TOKEN_LITERAL_NUMBER, .data.value = number);
   default:
@@ -150,94 +184,99 @@ Token lexer_next_token(Lexer* l) {
   return lexer_make_token(l, TOKEN_END_OF_FILE);
 }
 
+Tokens lexer_tokenize(Lexer* l) {
+  Tokens tokens = {0};
+  for (;;) {
+    Token token = lexer_next_token(l);
+    da_append(&tokens, token);
+    if (token.kind == TOKEN_END_OF_FILE) break;
+  }
+  return tokens;
+}
+
 //////// PARSER (types) ////////
 typedef enum {
   EXPR_BINARY,
   EXPR_LITERAL,
 } ExprKind;
 
-typedef struct Expr Expr;
-struct Expr {
+typedef struct {
   ExprKind kind;
-  struct Expr* lhs;
-  struct Expr* rhs;
+  size_t left_index;
+  size_t right_index;
   Operator op;
   int value; // if kind == LITERAL
-};
+} Expr;
+
+// NOTE: the '.items[0]' is reserved for the top expression.
+// This is the last one we mount. But the first one to be 'eval()'ed
+typedef struct {
+  size_t count, capacity;
+  Expr* items;
+} ExprArena;
 
 typedef struct {
-  Lexer *lex;
-  Expr *ast; // one single for now
+  Lexer *lexer;
+  ExprArena ast;
 } Parser;
 
 //////// PARSER (functions) ////////
-static inline Parser parser_init(Lexer* lex) {
-  Expr* ast = malloc(sizeof(*ast));
-  assert(ast != NULL);
-  return (Parser) {.lex = lex, .ast = ast};
+#define expr_number(number) (Expr) { .kind = EXPR_LITERAL, .value = (number) }
+
+void parser_push_expr(Parser* parser, Expr expr) {
+  da_append(parser->ast, expr);
 }
 
-// TODO: finish handler for simple '+' operations and number literals
-// TODO: free() nodes after use!
-bool parser_next_node(Parser* p) {
-  Token tok = lexer_next_token(p->lex);
-  switch (tok.kind) {
-  case TOKEN_ERROR:
-    PANIC("%s\n", g_raiz_error_buffer);
-  case TOKEN_OPERATOR:
-    lexer_advance(p->lex); // consume '+'
-    Token next_tok = lexer_next_token(p->lex);
-    if (next_tok.kind != TOKEN_LITERAL_NUMBER) PANIC("expected number");
+Expr* parser_parse(Lexer* lexer) {
+#define current() tokens.items[index]
+#define peek() tokens.items[index - 1]
+#define next() tokens.items[index--]
+#define advance() index--
 
-    Expr* rhs = malloc(sizeof(*rhs));
-    if (rhs) {
-      rhs->kind = EXPR_LITERAL;
-      rhs->value = next_tok.data.value;
+  Parser parser = { .lexer = lexer, .ast = {0} };
+  Tokens tokens = lexer_tokenize(parser.lexer);
+
+  for (size_t index = tokens.count - 1; index >= 0; index--) {
+    Token token = current();
+    switch (token.kind) {
+    case TOKEN_ERROR:
+      PANIC(g_raiz_error_buffer);
+      break;
+    case TOKEN_OPERATOR:
+      // Shouldn't arrive here...
+      TODO("implement unary expressions");
+      break;
+    case TOKEN_LITERAL_NUMBER:
+      Expr right = expr_number(token.data.value);
+      Token next_token;
+      if ((next_token = peek()).kind == OPERATOR)) {
+        advance();
+        Operator op = next_token.data.op;
+        next_token = peek();
+        if (next_token.kind != TOKEN_LITERAL) PANIC("expected number");
+        Expr left = next_token.data.value;
+        advance();
+
+      }
+
+      break;
+    case TOKEN_END_OF_FILE:
+      break;
     }
-
-    // Save current state of AST into left side so we don't lose it
-    Expr* lhs = malloc(sizeof(*lhs));
-    assert(lhs != NULL);
-    memcpy(lhs, p->ast, sizeof(*p->ast));
-
-    p->ast->lhs = lhs;
-    p->ast->kind = EXPR_BINARY;
-    p->ast->rhs = rhs;
-    p->ast->op = tok.data.op;
-    return true;
-  case TOKEN_LITERAL_NUMBER:
-    if (!p->ast->lhs) p->ast->lhs = malloc(sizeof(*p->ast));
-    if (p->ast->lhs)
-      (*p->ast->lhs) = (Expr) {.kind = EXPR_LITERAL, .value = tok.data.value};
-
-    return true;
-  case TOKEN_END_OF_FILE: return false;
   }
+#undef parser_current
+#undef parser_peek
+#undef parser_next
+#undef parser_advance
 }
 
-Expr* parser_parse(Lexer* l) {
-  Parser p = parser_init(l);
-
-  while (parser_next_node(&p));
-
-  return p.ast;
-}
-
-void parser_free_node(Expr* e) {
-  if (e) {
-    if (e->lhs) parser_free_node(e->lhs);
-    if (e->rhs) parser_free_node(e->rhs);
-    free(e);
-    e = NULL;
-  }
-}
 
 //////// COMPILER (functions) ////////
-Expr* build_ast(char* const code) {
-  Lexer lexer = lexer_init(code);
-
-  return parser_parse(&lexer);
-}
+// Expr* build_ast(char* const code) {
+//   Lexer lexer = lexer_init(code);
+//
+//   return parser_parse(&lexer);
+// }
 
 //////// EVALUATOR (functions) ////////
 int eval(Expr* node) {
@@ -277,15 +316,18 @@ int main(void) {
   // 25 * 3
   // 75
   char code[] = "56 + 8 / 2 - 7 * 3";
-  Expr* ast = build_ast(code);
+
+  Lexer lexer = lexer_init(code);
+  Tokens tokens = lexer_tokenize(&lexer);
+  // Expr* ast = build_ast(code);
 
   // assert(ast->kind == EXPR_BINARY);
   // assert(ast->lhs->kind == EXPR_LITERAL);
   // assert(ast->rhs->kind == EXPR_LITERAL);
 
-  printf("Result: %d\n", eval(ast));
+  // printf("Result: %d\n", eval(ast));
 
-  parser_free_node(ast);
+  // parser_free_node(ast);
 
   return 0;
 }
