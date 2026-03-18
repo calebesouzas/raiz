@@ -31,6 +31,8 @@ char g_raiz_error_buffer[RAIZ_ERROR_BUFFER_CAPACITY] = {0};
 typedef enum {
   OP_SUM,
   OP_SUBTRACT,
+  OP_MULTIPLY,
+  OP_DIVIDE,
 } Operator;
 
 typedef enum {
@@ -113,6 +115,10 @@ Token lexer_next_token(Lexer* l) {
     return lexer_make_token(l, TOKEN_OPERATOR, .data.op = OP_SUM);
   case '-':
     return lexer_make_token(l, TOKEN_OPERATOR, .data.op = OP_SUBTRACT);
+  case '*':
+    return lexer_make_token(l, TOKEN_OPERATOR, .data.op = OP_MULTIPLY);
+  case '/':
+    return lexer_make_token(l, TOKEN_OPERATOR, .data.op = OP_DIVIDE);
   case '0':
   case '1':
   case '2':
@@ -249,6 +255,8 @@ int eval(Expr* node) {
     switch (node->op) {
     case OP_SUM: return lhs + rhs;
     case OP_SUBTRACT: return lhs - rhs;
+    case OP_MULTIPLY: return lhs * rhs;
+    case OP_DIVIDE: return lhs / rhs;
     }
   }
 
@@ -257,7 +265,18 @@ int eval(Expr* node) {
 }
 
 int main(void) {
-  char code[] = "69 + 44 + 1337 - 50";
+  // Following precedence:
+  // 56 + 8 / 2 - 7 * 3
+  // 56 + 4 - 21
+  // 60 - 21
+  // 39
+  // From left to right only (what's actually happening):
+  // 56 + 8 / 2 - 7 * 3
+  // 64 / 2 - 7 * 3
+  // 32 - 7 * 3
+  // 25 * 3
+  // 75
+  char code[] = "56 + 8 / 2 - 7 * 3";
   Expr* ast = build_ast(code);
 
   // assert(ast->kind == EXPR_BINARY);
