@@ -29,16 +29,24 @@ char g_raiz_error_buffer[RAIZ_ERROR_BUFFER_CAPACITY] = {0};
 
 //////// LEXER (types) ////////
 typedef enum {
+  OP_SUM,
+  OP_SUBTRACT,
+} Operator;
+
+typedef enum {
   // in case of unrecognized byte or invalid character in current context
   TOKEN_ERROR,
-  TOKEN_PLUS,
+  TOKEN_OPERATOR,
   TOKEN_LITERAL_NUMBER,
   TOKEN_END_OF_FILE
 } TokenKind;
 
 typedef struct {
   TokenKind kind;
-  int value;
+  union {
+    Operator op;
+    int value;
+  } data;
 } Token;
 
 typedef struct {
@@ -81,9 +89,12 @@ static inline void lexer_advance_opt(Lexer* l, struct LexerAdvance_opt opt) {
   }
 }
 
-static inline Token lexer_make_token(Lexer* l, TokenKind kind) {
+#define lexer_make_token(lexer, token_kind, ...)\
+  lexer_make_token_opt((lexer), (Token) {.kind = (token_kind), __VA_ARGS__})
+
+static inline Token lexer_make_token_opt(Lexer* l, Token opt) {
   // TODO: implement position spans
-  return (Token) {.kind = kind};
+  return opt;
 }
 
 static inline bool is_white_space(char c) {
@@ -99,7 +110,9 @@ Token lexer_next_token(Lexer* l) {
     while (is_white_space(*l->current)) lexer_advance(l);
     return lexer_next_token(l);
   case '+':
-    return lexer_make_token(l, TOKEN_PLUS);
+    return lexer_make_token(l, TOKEN_OPERATOR, .data.op = OP_SUM);
+  case '-':
+    return lexer_make_token(l, TOKEN_OPERATOR, .data.op = OP_SUBTRACT);
   case '0':
   case '1':
   case '2':
@@ -118,7 +131,7 @@ Token lexer_next_token(Lexer* l) {
 
     LOG("Found number: %d\n", number);
 
-    return (Token) {.kind = TOKEN_LITERAL_NUMBER, .value = number};
+    return lexer_make_token(l, TOKEN_LITERAL_NUMBER, .data.value = number);
   default:
     if (g_raiz_error_buffer[0] != '\0') // means it is not empty
       memset(g_raiz_error_buffer, 0, RAIZ_ERROR_BUFFER_CAPACITY);
@@ -142,6 +155,7 @@ struct Expr {
   ExprKind kind;
   struct Expr* lhs;
   struct Expr* rhs;
+  Operator op;
   int value; // if kind == LITERAL
 };
 
@@ -164,7 +178,7 @@ bool parser_next_node(Parser* p) {
   switch (tok.kind) {
   case TOKEN_ERROR:
     PANIC("%s\n", g_raiz_error_buffer);
-  case TOKEN_PLUS:
+  case TOKEN_OPERATOR:
     lexer_advance(p->lex); // consume '+'
     Token next_tok = lexer_next_token(p->lex);
     if (next_tok.kind != TOKEN_LITERAL_NUMBER) PANIC("expected number");
@@ -172,7 +186,7 @@ bool parser_next_node(Parser* p) {
     Expr* rhs = malloc(sizeof(*rhs));
     if (rhs) {
       rhs->kind = EXPR_LITERAL;
-      rhs->value = next_tok.value;
+      rhs->value = next_tok.data.value;
     }
 
     // Save current state of AST into left side so we don't lose it
@@ -183,11 +197,12 @@ bool parser_next_node(Parser* p) {
     p->ast->lhs = lhs;
     p->ast->kind = EXPR_BINARY;
     p->ast->rhs = rhs;
+    p->ast->op = tok.data.op;
     return true;
   case TOKEN_LITERAL_NUMBER:
     if (!p->ast->lhs) p->ast->lhs = malloc(sizeof(*p->ast));
     if (p->ast->lhs)
-      (*p->ast->lhs) = (Expr) {.kind = EXPR_LITERAL, .value = tok.value};
+      (*p->ast->lhs) = (Expr) {.kind = EXPR_LITERAL, .value = tok.data.value};
 
     return true;
   case TOKEN_END_OF_FILE: return false;
@@ -231,7 +246,10 @@ int eval(Expr* node) {
     } else {
       return lhs;
     }
-    return lhs + rhs;
+    switch (node->op) {
+    case OP_SUM: return lhs + rhs;
+    case OP_SUBTRACT: return lhs - rhs;
+    }
   }
 
   // if a literal expression:
@@ -239,7 +257,7 @@ int eval(Expr* node) {
 }
 
 int main(void) {
-  char code[] = "69 + 44 + 1337";
+  char code[] = "69 + 44 + 1337 - 50";
   Expr* ast = build_ast(code);
 
   // assert(ast->kind == EXPR_BINARY);
