@@ -198,7 +198,7 @@ Tokens lexer_tokenize(Lexer* l) {
     Token token = lexer_next_token(l);
     da_append(&tokens, token);
     if (token.kind == TOKEN_END_OF_FILE) break;
-    else if (token.kind == TOKEN_ERROR) PANIC(g_raiz_error_buffer);
+    else if (token.kind == TOKEN_ERROR) PANIC("%s\n", g_raiz_error_buffer);
   }
   return tokens;
 }
@@ -265,7 +265,7 @@ uint8_t get_binding_power(Operator op) {
 
 ExprArena arena_init(size_t init_capacity) {
   Expr* pool = malloc(sizeof(Expr) * init_capacity);
-  if (!pool) PANIC("failed to allocate expressions memory pool");
+  if (!pool) PANIC("failed to allocate expressions memory pool\n");
 
   return (ExprArena) {.count = 0, .capacity = init_capacity, .items = pool};
 }
@@ -295,7 +295,7 @@ ExprArena parser_parse(Lexer* lexer) {
     // printf("at index %u (kind id: %d)\n", index, token.kind);
     switch (token.kind) {
     case TOKEN_ERROR:
-      PANIC(g_raiz_error_buffer);
+      PANIC("%s\n", g_raiz_error_buffer);
       break;
     case TOKEN_OPERATOR:
       // If it's literal, it is simple, we just need to bind it to any side(?)
@@ -305,7 +305,7 @@ ExprArena parser_parse(Lexer* lexer) {
       // mounting and the last one we already added to the arena
       if (last_expr().kind == EXPR_LITERAL) {
         Token next_token = peek();
-        if (next_token.kind != TOKEN_LITERAL_NUMBER) PANIC("expected number");
+        if (next_token.kind != TOKEN_LITERAL_NUMBER) PANIC("expected number\n");
         advance();
  
         Expr right = expr_number(token.data.value);
