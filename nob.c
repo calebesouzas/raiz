@@ -13,5 +13,10 @@ int main(int argc, char* argv[]) {
   nob_cmd_append(&cmd, "clang", "-o", BUILD_FOLDER"raiz", "raiz.c", CC_ARGS);
 
   if (!nob_cmd_run(&cmd)) return 1;
+
+  if (argc > 1 && strncmp(argv[1], "run", 3) == 0) {
+    nob_cmd_append(&cmd, "./build/raiz");
+    if (!nob_cmd_run(&cmd)) return 1;
+  }
   return 0;
 }
