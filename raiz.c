@@ -77,6 +77,7 @@ typedef enum {
 
 typedef struct {
   TokenKind kind;
+  size_t len;
   union {
     Operator op;
     int value;
@@ -91,18 +92,20 @@ typedef struct {
 
 typedef struct {
   const char* source;
-  char* current;
-  char* start;
-  size_t len;
+  size_t current, start, len;
 } Lexer;
 
 //////// LEXER (functions) ////////
 static inline Lexer lexer_init(char*const source) {
-  return (Lexer) { .source = source, .current = source, .start = source };
+  return (Lexer) { .source = source, .current = 0, .start = 0 };
 }
 
-static inline void lexer_backup(Lexer* l) {
-  l->start = l->current;
+static inline void lexer_backup(Lexer* lexer) {
+  lexer->start = lexer->current;
+}
+
+static inline void lexer_restore(Lexer* lexer) {
+  lexer->current = lexer->start;
 }
 
 struct LexerAdvance_opt {
@@ -111,26 +114,30 @@ struct LexerAdvance_opt {
 };
 
 // HACK: optional parameters!
-#define lexer_advance(l, ...)\
-  lexer_advance_opt(l, (struct LexerAdvance_opt) { __VA_ARGS__ })
+#define lexer_advance(lexer, ...)\
+  lexer_advance_opt((lexer), (struct LexerAdvance_opt) { __VA_ARGS__ })
 
 // TODO: add checking for equality between a 'char expected' param and the
 // current character, if not equal, panic on that (in debug version only)!
-static inline void lexer_advance_opt(Lexer* l, struct LexerAdvance_opt opt) {
-  if (opt.expected) assert(*l->current == opt.expected);
+static inline void lexer_advance_opt(Lexer* lexer, struct LexerAdvance_opt opt) {
+  if (opt.expected) assert(lexer->source[lexer->current] == opt.expected);
 
   if (!opt.amount) {
-    l->current++;
-    l->len++;
+    lexer->current++;
+    lexer->len++;
   }
   else {
-    l->current += opt.amount;
-    l->len += opt.amount;
+    lexer->current += opt.amount;
+    lexer->len = lexer->current - lexer->start;
   }
 }
 
 #define lexer_make_token(lexer, token_kind, ...)\
-  lexer_make_token_opt((lexer), (Token) {.kind = (token_kind), __VA_ARGS__})
+  lexer_make_token_opt((lexer), (Token) {\
+    .kind = (token_kind),\
+    .len = (lexer)->current - (lexer)->start,\
+    __VA_ARGS__\
+  })
 
 static inline Token lexer_make_token_opt(Lexer* l, Token opt) {
   // TODO: implement position spans
@@ -141,29 +148,30 @@ static inline bool is_white_space(char c) {
   return (c == ' ' || c == '\t' || c == '\r' || c == '\n');
 }
 
-Token lexer_next_token(Lexer* l) {
-  if (l->current == NULL || *l->current == '\0')
-    return lexer_make_token(l, TOKEN_END_OF_FILE);
+#define current() (lexer->source[lexer->current])
+Token lexer_next_token(Lexer* lexer) {
+  if (lexer->source == NULL || current() == '\0')
+    return lexer_make_token(lexer, TOKEN_END_OF_FILE);
 
-  switch (*l->current) {
+  switch (current()) {
   case ' ':
   case '\n':
   case '\t':
   case '\r':
-    while (is_white_space(*l->current)) lexer_advance(l);
-    return lexer_next_token(l);
+    while (is_white_space(current())) lexer_advance(lexer);
+    return lexer_next_token(lexer);
   case '+':
-    lexer_advance(l);
-    return lexer_make_token(l, TOKEN_OPERATOR, .data.op = OP_SUM);
+    lexer_advance(lexer);
+    return lexer_make_token(lexer, TOKEN_OPERATOR, .data.op = OP_SUM);
   case '-':
-    lexer_advance(l);
-    return lexer_make_token(l, TOKEN_OPERATOR, .data.op = OP_SUBTRACT);
+    lexer_advance(lexer);
+    return lexer_make_token(lexer, TOKEN_OPERATOR, .data.op = OP_SUBTRACT);
   case '*':
-    lexer_advance(l);
-    return lexer_make_token(l, TOKEN_OPERATOR, .data.op = OP_MULTIPLY);
+    lexer_advance(lexer);
+    return lexer_make_token(lexer, TOKEN_OPERATOR, .data.op = OP_MULTIPLY);
   case '/':
-    lexer_advance(l);
-    return lexer_make_token(l, TOKEN_OPERATOR, .data.op = OP_DIVIDE);
+    lexer_advance(lexer);
+    return lexer_make_token(lexer, TOKEN_OPERATOR, .data.op = OP_DIVIDE);
   case '0':
   case '1':
   case '2':
@@ -174,33 +182,30 @@ Token lexer_next_token(Lexer* l) {
   case '7':
   case '8':
   case '9':
-    lexer_backup(l);
+    lexer_backup(lexer);
     int number = 0;
-    for (; isdigit(*l->current); lexer_advance(l))
-      number = (number * 10) + (*l->current - '0');
+    for (; isdigit(current()); lexer_advance(lexer))
+      number = (number * 10) + (current() - '0');
 
-    return lexer_make_token(l, TOKEN_LITERAL_NUMBER, .data.value = number);
+    return lexer_make_token(lexer, TOKEN_LITERAL_NUMBER, .data.value = number);
   default:
     if (g_raiz_error_buffer[0] != '\0') // means it is not empty
       memset(g_raiz_error_buffer, 0, RAIZ_ERROR_BUFFER_CAPACITY);
 
     // Here we are sure that the buffer will not overflow
-    sprintf(g_raiz_error_buffer, "unrecognized character: '%c'", *l->current);
-    return lexer_make_token(l, TOKEN_ERROR);
+    sprintf(g_raiz_error_buffer, "unrecognized character: '%c'", current());
+    return lexer_make_token(lexer, TOKEN_ERROR);
   }
 
-  return lexer_make_token(l, TOKEN_END_OF_FILE);
+  return lexer_make_token(lexer, TOKEN_END_OF_FILE);
 }
+#undef current
 
-Tokens lexer_tokenize(Lexer* l) {
-  Tokens tokens = {0};
-  for (;;) {
-    Token token = lexer_next_token(l);
-    da_append(&tokens, token);
-    if (token.kind == TOKEN_END_OF_FILE) break;
-    else if (token.kind == TOKEN_ERROR) PANIC("%s\n", g_raiz_error_buffer);
-  }
-  return tokens;
+Token lexer_peek_token(Lexer* lexer) {
+  lexer_backup(lexer);
+  Token token = lexer_next_token(lexer);
+  lexer_restore(lexer);
+  return token;
 }
 
 //////// PARSER (types) ////////
@@ -233,18 +238,19 @@ typedef struct {
 typedef struct {
   Lexer *lexer;
   ExprArena ast;
+  Token current;
+  Token peeked;
 } Parser;
 
 //////// PARSER (functions) ////////
-
-uint8_t get_binding_power(Operator op) {
+uint8_t parser_get_binding_power(Operator op) {
   switch (op) {
   case OP_SUM:
   case OP_SUBTRACT:
-    return 1;
+    return 1 + (2 << 4);
   case OP_MULTIPLY:
   case OP_DIVIDE:
-    return 2;
+    return 3 + (4 << 4);
   default: UNREACHABLE("operator");
   }
 }
@@ -263,7 +269,7 @@ uint8_t get_binding_power(Operator op) {
     },\
   }
 
-ExprArena arena_init(size_t init_capacity) {
+ExprArena expr_arena_init(size_t init_capacity) {
   Expr* pool = malloc(sizeof(Expr) * init_capacity);
   if (!pool) PANIC("failed to allocate expressions memory pool\n");
 
@@ -280,66 +286,96 @@ void parser_push_expr(Parser* parser, Expr* expr) {
   parser->ast.items[parser->ast.count++] = *expr;
 }
 
-ExprArena parser_parse(Lexer* lexer) {
-#define current() tokens.items[index]
-#define peek() tokens.items[index - 1]
-#define next() tokens.items[index--]
-#define advance() index--
-#define last_expr() parser.ast.items[parser.ast.count-1]
+#define current() (parser->current)
+#define peek() (parser->peeked = lexer_peek_token(parser->lexer))
+#define next() (parser->current = lexer_next_token(parser->lexer))
+#define advance() lexer_advance(parser->lexer, .amount = parser->peeked.len)
+#define last_expr() (parser->ast.items[parser->ast.count-1])
+#define get_expr(index) (parser->ast.items[(index)])
+#define split_powers(left_name, right_name, pair)\
+  uint8_t left_name = pair >> 4;\
+  uint8_t right_name = (pair - left_name) >> 4
 
-  Parser parser = { .lexer = lexer, .ast = arena_init(256)};
-  Tokens tokens = lexer_tokenize(parser.lexer);
-
-  for (int index = tokens.count - 1; index > 0; index--) {
-    Token token = current();
-    // printf("at index %u (kind id: %d)\n", index, token.kind);
-    switch (token.kind) {
+void parser_parse_expr(Parser* parser) {
+  for (;;) {
+    switch (next().kind) {
+    case TOKEN_END_OF_FILE: return;
     case TOKEN_ERROR:
       PANIC("%s\n", g_raiz_error_buffer);
+    case TOKEN_LITERAL_NUMBER:
+      advance();
+      Expr number = expr_number(current().data.value);
+      parser_push_expr(parser, &number);
       break;
     case TOKEN_OPERATOR:
-      // If it's literal, it is simple, we just need to bind it to any side(?)
-      // of a binary expression.
-      // But, if it's a binary expression, we need to know which operator has
-      // the greater binding power between the current expression we're
-      // mounting and the last one we already added to the arena
-      if (last_expr().kind == EXPR_LITERAL) {
-        Token next_token = peek();
-        if (next_token.kind != TOKEN_LITERAL_NUMBER) PANIC("expected number\n");
-        advance();
- 
-        Expr right = expr_number(token.data.value);
-        Expr left = last_expr();
-        Operator op = token.data.op;
-        Expr parent = expr_binary(left, right, op);
-        parser_push_expr(&parser, &parent);
-      } else if (last_expr().kind == EXPR_BINARY) {
-        uint8_t current_bp = get_binding_power(token.data.op);
-        uint8_t child_bp = get_binding_power(last_expr().as.binary.op);
-        if (current_bp > child_bp) {
-          TODO("capture inner expression");
-        } else {
-          TODO("mount binary with binary children");
+      // NOTE: we need to find a way to get the last expression's right side
+      // and bind it to this expression's left side if this expression's
+      // operator has higher binding power than last's...
+      if (peek().kind != TOKEN_LITERAL_NUMBER) PANIC("expected number\n");
+      Operator op = current().data.op;
+      advance();
+
+      // How we should mount expressions:
+      // c = current
+      // p = previous
+      // l = left
+      // r = right
+      // o = operator
+      // 
+      // First i thought about doing this:
+      // If c o > p o:
+      //// c l = p r
+      //// then: p breaks!
+      //
+      // Or i could use this:
+      // If p o > c o:
+      //// p l = c
+      //// then: p l breaks!
+      if (last_expr().kind == EXPR_BINARY) {
+        LOG("after binary\n");
+        Operator last_op = last_expr().as.binary.op;
+        uint8_t last_bind_powers = parser_get_binding_power(last_op);
+        split_powers(last_left_bp, last_right_bp, last_bind_powers);
+        
+        Operator current_op = current().data.op;
+        uint8_t current_bind_powers = parser_get_binding_power(current_op);
+        split_powers(current_left_bp, current_right_bp, current_bind_powers);
+
+        if (current_left_bp > last_right_bp) {
+          LOG("binding\n");
+          Expr right = expr_number(parser->peeked.data.value);
+          parser_push_expr(parser, &right);
+          Expr left = get_expr(last_expr().as.binary.right_id);
+          Expr parent = expr_binary(left, right, op);
+          parser_push_expr(parser, &parent);
         }
+      } else {
+        LOG("after literal\n");
+        Expr right = expr_number(parser->peeked.data.value);
+        parser_push_expr(parser, &right);
+        Expr left = last_expr();
+        Expr parent = expr_binary(left, right, op);
+        parser_push_expr(parser, &parent);
       }
       break;
-    case TOKEN_LITERAL_NUMBER:
-      Expr number = expr_number(token.data.value);
-      parser_push_expr(&parser, &number);
-      break;
-    case TOKEN_END_OF_FILE:
-      break;
+    default: UNREACHABLE("token kind");
     }
   }
-  free(tokens.items);
+}
+
+ExprArena parser_parse(Lexer* lexer) {
+  Parser parser = { .lexer = lexer, .ast = expr_arena_init(256) };
+
+  parser_parse_expr(&parser);
+
   return parser.ast;
+}
 #undef current
 #undef peek
 #undef next
 #undef advance
 #undef last_expr
-}
-
+#undef get_expr
 
 //////// COMPILER (functions) ////////
 ExprArena build_ast(char*const code) {
@@ -348,31 +384,44 @@ ExprArena build_ast(char*const code) {
 }
 
 //////// EVALUATOR (functions) ////////
+#define current() arena->items[arena->current]
 void log_eval(ExprArena* arena, size_t indent) {
   indent++;
   
   for (size_t i = indent; i > 0; i--) printf(" ");
 
-  switch (arena->items[arena->current].kind) {
+  switch (current().kind) {
   case EXPR_LITERAL:
     // TODO: put expression number value into 'buffer'
-    printf("Literal: %d\n", arena->items[arena->current].as.literal);
+    printf("Literal: %d\n", current().as.literal);
     break;
   case EXPR_BINARY:
-    printf("Binary:\n");
-    size_t parent_id = arena->current;
-    arena->current = arena->items[parent_id].as.binary.left_id;
+    printf("Binary");
+    switch(current().as.binary.op) {
+    case OP_SUM:
+      printf("(+):\n");
+      break;
+    case OP_SUBTRACT:
+      printf("(-):\n");
+      break;
+    case OP_MULTIPLY:
+      printf("(*):\n");
+      break;
+    case OP_DIVIDE:
+      printf("(/):\n");
+      break;
+    }
+    arena->current = current().as.binary.left_id;
     log_eval(arena, indent);
 
-    arena->current = arena->items[parent_id].as.binary.right_id;
+    arena->current = current().as.binary.right_id;
     log_eval(arena, indent);
     break;
   }
 }
 
 int eval(ExprArena* arena) {
-#define current() arena->items[arena->current]
-
+  LOG("eval(): current %d\n", arena->current);
   switch (current().kind) {
   case EXPR_LITERAL: return current().as.literal;
   case EXPR_BINARY:
@@ -397,7 +446,7 @@ int eval(ExprArena* arena) {
 #undef current
 }
 
-int main(void) {
+int main(int argc, char* argv[]) {
   // char code[] = "56 + 8 / 2 - 7 * 3";
   // Following precedence:
   // 56 + 8 / 2 - 7 * 3
@@ -411,16 +460,26 @@ int main(void) {
   // 25 * 3
   // 75
 
-  char buffer[1024] = {0};
-  printf("> ");
-  while (fgets(buffer, sizeof(buffer), stdin)) {
-    ExprArena ast = build_ast(buffer);
+  if (argc > 1 && strcmp(argv[1], "inter") == 0) {
+    char buffer[1024] = {0};
+    printf("> ");
+    while (fgets(buffer, sizeof(buffer), stdin)) {
+      ExprArena ast = build_ast(buffer);
+      printf("Result: %d\n", eval(&ast));
+      ast.current = ast.count - 1;
+      log_eval(&ast, 0);
+
+      free(ast.items);
+      printf("> ");
+    }
+  } else {
+    char code[] = "2 + 3 * 4";
+    ExprArena ast = build_ast(code);
     printf("Result: %d\n", eval(&ast));
     ast.current = ast.count - 1;
     log_eval(&ast, 0);
 
     free(ast.items);
-    printf("> ");
   }
 
   return 0;
