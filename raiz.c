@@ -342,11 +342,10 @@ ExprArena parser_parse(Lexer* lexer) {
 
 
 //////// COMPILER (functions) ////////
-// Expr* build_ast(char* const code) {
-//   Lexer lexer = lexer_init(code);
-//
-//   return parser_parse(&lexer);
-// }
+ExprArena build_ast(char*const code) {
+  Lexer lexer = lexer_init(code);
+  return parser_parse(&lexer);
+}
 
 //////// EVALUATOR (functions) ////////
 void log_eval(ExprArena* arena, size_t indent) {
@@ -396,11 +395,6 @@ int eval(ExprArena* arena) {
   UNREACHABLE("eval");
   // return 0;
 #undef current
-}
-
-ExprArena build_ast(char*const code) {
-  Lexer lexer = lexer_init(code);
-  return parser_parse(&lexer);
 }
 
 int main(void) {
