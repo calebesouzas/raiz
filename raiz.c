@@ -245,13 +245,15 @@ typedef struct {
 
 //////// PARSER (functions) ////////
 uint8_t parser_get_binding_power(Operator op) {
+  // HACK: we use bitshifts to put two numbers in one single byte since we 
+  // don't need large numbers.
   switch (op) {
   case OP_SUM:
   case OP_SUBTRACT:
-    return 1 + (2 << 4);
+    return 2 + (1 << 4);
   case OP_MULTIPLY:
   case OP_DIVIDE:
-    return 3 + (4 << 4);
+    return 4 + (3 << 4);
   default: UNREACHABLE("operator");
   }
 }
