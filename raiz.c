@@ -297,10 +297,10 @@ void parser_push_expr(Parser* parser, Expr* expr) {
  * returns the pointer to the pushed expression (in 'parser->ast').
  * If not, returns 'NULL' */
 Expr* parser_push_literal(Parser* parser) {
-  Expr number = expr_number(parser->current.data.value);
-  parser_push_expr(parser, &number);
+  Expr result = expr_number(parser->current.data.value);
+  parser_push_expr(parser, &result);
 
-  return &parser->ast.items[parser->ast.count - 1];
+  return &parser->ast.items[result.id];
 }
 
 /* Function parser_parse_binary:
@@ -316,9 +316,9 @@ Expr* parser_push_binary(
     parser_push_expr(parser, left);
     parser_push_expr(parser, right);
   }
-  Expr result = expr_binary(left, right, op);
+  Expr result = expr_binary(*left, *right, op);
   parser_push_expr(parser, &result);
-  return &parser->ast.items[parser->ast.count - 1];
+  return &parser->ast.items[result.id];
 }
 
 #define current() (parser->current)
