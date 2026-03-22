@@ -245,7 +245,7 @@ typedef struct {
 
 //////// PARSER (functions) ////////
 uint8_t parser_get_binding_power(Operator op) {
-  // HACK: we use bitshifts to put two numbers in one single byte since we 
+  // HACK: we use bitshifts to put two numbers in one single byte since we
   // don't need large numbers.
   switch (op) {
   case OP_SUM:
