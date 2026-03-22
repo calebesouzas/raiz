@@ -210,6 +210,7 @@ Token lexer_peek_token(Lexer* lexer) {
 
 //////// PARSER (types) ////////
 typedef enum {
+  EXPR_ERROR,
   EXPR_BINARY,
   EXPR_LITERAL,
 } ExprKind;
@@ -292,81 +293,61 @@ void parser_push_expr(Parser* parser, Expr* expr) {
 #define advance() lexer_advance(parser->lexer, .amount = parser->peeked.len)
 #define last_expr() (parser->ast.items[parser->ast.count-1])
 #define get_expr(index) (parser->ast.items[(index)])
-#define split_powers(left_name, right_name, pair)\
-  uint8_t left_name = pair >> 4;\
-  uint8_t right_name = (pair - left_name) >> 4
+#define split_powers(left_name, right_name, bind_powers)\
+  uint8_t left_name;\
+  uint8_t right_name;\
+  do {\
+    uint8_t pair = (bind_powers);\
+    left_name = (pair) >> 4;\
+    right_name = ((pair) - left_name) >> 4;\
+  } while (0)
 
-void parser_parse_expr(Parser* parser) {
-  for (;;) {
+size_t parser_parse_expr(Parser* parser, uint8_t min_bp) {
+  while (1) {
+    LOG("in loop\n");
     switch (next().kind) {
-    case TOKEN_END_OF_FILE: return;
     case TOKEN_ERROR:
       PANIC("%s\n", g_raiz_error_buffer);
+    case TOKEN_END_OF_FILE: return parser->ast.count;
     case TOKEN_LITERAL_NUMBER:
-      advance();
-      Expr number = expr_number(current().data.value);
-      parser_push_expr(parser, &number);
-      break;
+      LOG("returning literal\n");
+      Expr num = expr_number(current().data.value);
+      parser_push_expr(parser, &num);
+      return num.id;
     case TOKEN_OPERATOR:
       // NOTE: we need to find a way to get the last expression's right side
       // and bind it to this expression's left side if this expression's
       // operator has higher binding power than last's...
       if (peek().kind != TOKEN_LITERAL_NUMBER) PANIC("expected number\n");
+      LOG("found operator\n");
       Operator op = current().data.op;
-      advance();
+      advance(); // consume peeked number literal
 
-      // How we should mount expressions:
-      // c = current
-      // p = previous
-      // l = left
-      // r = right
-      // o = operator
-      // 
-      // First i thought about doing this:
-      // If c o > p o:
-      //// c l = p r
-      //// then: p breaks!
-      //
-      // Or i could use this:
-      // If p o > c o:
-      //// p l = c
-      //// then: p l breaks!
-      if (last_expr().kind == EXPR_BINARY) {
-        LOG("after binary\n");
-        Operator last_op = last_expr().as.binary.op;
-        uint8_t last_bind_powers = parser_get_binding_power(last_op);
-        split_powers(last_left_bp, last_right_bp, last_bind_powers);
-        
-        Operator current_op = current().data.op;
-        uint8_t current_bind_powers = parser_get_binding_power(current_op);
-        split_powers(current_left_bp, current_right_bp, current_bind_powers);
-
-        if (current_left_bp > last_right_bp) {
-          LOG("binding\n");
-          Expr right = expr_number(parser->peeked.data.value);
-          parser_push_expr(parser, &right);
-          Expr left = get_expr(last_expr().as.binary.right_id);
-          Expr parent = expr_binary(left, right, op);
-          parser_push_expr(parser, &parent);
-        }
-      } else {
-        LOG("after literal\n");
-        Expr right = expr_number(parser->peeked.data.value);
-        parser_push_expr(parser, &right);
-        Expr left = last_expr();
-        Expr parent = expr_binary(left, right, op);
-        parser_push_expr(parser, &parent);
+      split_powers(left_bp, right_bp, parser_get_binding_power(op));
+      if (left_bp < min_bp) {
+        LOG("breaking\n");
+        goto end;
       }
+      advance(); // consume operator
+
+      LOG("mounting binary (id: %d)\n", last_expr().id);
+      size_t right_id = parser_parse_expr(parser, right_bp);
+      last_expr() = expr_binary(last_expr(), get_expr(right_id), op);
+      parser_push_expr(parser, &last_expr());
+
       break;
     default: UNREACHABLE("token kind");
     }
   }
+end:
+  LOG("at end\n");
+  return parser->ast.count;
 }
 
 ExprArena parser_parse(Lexer* lexer) {
   Parser parser = { .lexer = lexer, .ast = expr_arena_init(256) };
 
-  parser_parse_expr(&parser);
+  while (parser_parse_expr(&parser, 0) != parser.ast.count);
 
   return parser.ast;
 }
@@ -475,6 +456,7 @@ int main(int argc, char* argv[]) {
   } else {
     char code[] = "2 + 3 * 4";
     ExprArena ast = build_ast(code);
+    return 0;
     printf("Result: %d\n", eval(&ast));
     ast.current = ast.count - 1;
     log_eval(&ast, 0);
