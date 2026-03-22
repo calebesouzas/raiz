@@ -282,12 +282,43 @@ ExprArena expr_arena_init(size_t init_capacity) {
 
 void parser_push_expr(Parser* parser, Expr* expr) {
   if (parser->ast.count >= parser->ast.capacity) {
+    LOG("reallocating expression arena\n");
     parser->ast.capacity *= 1.5;
     parser->ast.items = realloc(parser->ast.items, parser->ast.capacity);
   }
   expr->id = parser->ast.count;
   parser->ast.current = expr->id;
   parser->ast.items[parser->ast.count++] = *expr;
+  LOG("pushing expression (id: %u)", expr->id);
+}
+
+/* Function parser_parse_literal:
+ * Pushes an 'Expr' of kind EXPR_LITERAL into 'parser->ast' and 
+ * returns the pointer to the pushed expression (in 'parser->ast').
+ * If not, returns 'NULL' */
+Expr* parser_push_literal(Parser* parser) {
+  Expr number = expr_number(parser->current.data.value);
+  parser_push_expr(parser, &number);
+
+  return &parser->ast.items[parser->ast.count - 1];
+}
+
+/* Function parser_parse_binary:
+ * Pushes 'Expr' of kind 'EXPR_BINARY' with 'op', 'left' and 'right'.
+ * After that, returns pointer to the pushed expression.
+ * Otherwise, returns 'NULL'.
+ * If 'push_all' is 'true', pushes 'left' and 'right' into 'parser->ast' before
+ * */
+Expr* parser_push_binary(
+  Parser* parser, Expr* left, Expr* right, Operator op, bool push_all
+) {
+  if (push_all) {
+    parser_push_expr(parser, left);
+    parser_push_expr(parser, right);
+  }
+  Expr result = expr_binary(left, right, op);
+  parser_push_expr(parser, &result);
+  return &parser->ast.items[parser->ast.count - 1];
 }
 
 #define current() (parser->current)
@@ -305,18 +336,17 @@ void parser_push_expr(Parser* parser, Expr* expr) {
     right_name = ((pair) - left_name) >> 4;\
   } while (0)
 
-size_t parser_parse_expr(Parser* parser, uint8_t min_bp) {
+bool parser_parse_expr(Parser* parser, uint8_t min_bp) {
   while (1) {
     LOG("in loop\n");
     switch (next().kind) {
     case TOKEN_ERROR:
       PANIC("%s\n", g_raiz_error_buffer);
-    case TOKEN_END_OF_FILE: return parser->ast.count;
+    case TOKEN_END_OF_FILE: return false;
     case TOKEN_LITERAL_NUMBER:
       LOG("returning literal\n");
-      Expr num = expr_number(current().data.value);
-      parser_push_expr(parser, &num);
-      return num.id;
+      parser_push_literal(parser);
+      return true;
     case TOKEN_OPERATOR:
       // NOTE: we need to find a way to get the last expression's right side
       // and bind it to this expression's left side if this expression's
@@ -329,14 +359,14 @@ size_t parser_parse_expr(Parser* parser, uint8_t min_bp) {
       split_powers(left_bp, right_bp, parser_get_binding_power(op));
       if (left_bp < min_bp) {
         LOG("breaking\n");
-        goto end;
+        return true;
       }
       advance(); // consume operator
 
       LOG("mounting binary (id: %d)\n", last_expr().id);
       size_t right_id = parser_parse_expr(parser, right_bp);
-      last_expr() = expr_binary(last_expr(), get_expr(right_id), op);
-      parser_push_expr(parser, &last_expr());
+      Expr left = expr_binary(last_expr(), get_expr(right_id), op);
+      parser_push_expr(parser, &left);
 
       break;
     default: UNREACHABLE("token kind");
@@ -344,8 +374,9 @@ size_t parser_parse_expr(Parser* parser, uint8_t min_bp) {
   }
 end:
   LOG("at end\n");
-  return parser->ast.count;
+  return true;
 }
+
 
 ExprArena parser_parse(Lexer* lexer) {
   Parser parser = { .lexer = lexer, .ast = expr_arena_init(256) };
@@ -459,7 +490,7 @@ int main(int argc, char* argv[]) {
   } else {
     char code[] = "2 + 3 * 4";
     ExprArena ast = build_ast(code);
-    return 0;
+    // return 0;
     printf("Result: %d\n", eval(&ast));
     ast.current = ast.count - 1;
     log_eval(&ast, 0);
