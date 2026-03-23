@@ -1,66 +1,22 @@
 #include <assert.h>
 #include <ctype.h>
-#include <stdbool.h>
-#include <stdint.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <stdbool.h>
+#include <stdint.h>
 
-//////// DEBUGING ////////
-#define DEBUG
-
-#ifdef DEBUG
-#define log_file stderr
-
-#define LOG(...)\
-  fprintf(log_file, __VA_ARGS__)
-
-#else
-#define LOG(...)
-#endif
-
-//////// ERRORS ////////
-#define RAIZ_ERROR_BUFFER_CAPACITY (1024)
-// NOTE: i'm not sure if using a global buffer to store error messages is a good
-// idea. But i think it is (because we don't need to pass a pointer 
-// to in in every single function that can fail for some reason)
-char g_raiz_error_buffer[RAIZ_ERROR_BUFFER_CAPACITY] = {0};
-
-#define PANIC(...) do { fprintf(stderr, __VA_ARGS__); exit(1); } while (0)
-
-#define TODO(message)\
-  do { fprintf(stderr, "TODO: %s\n", message); abort(); } while (0)
-
-#define UNREACHABLE(message)\
-  PANIC("reached unreachable code at %s:%d: \"%s\"",\
-        __FILE__, __LINE__, message)
-
-//////// UTILITIES ////////
-#ifndef DA_INIT_CAPACITY
-#define DA_INIT_CAPACITY (256)
-#endif
-
-#define da_append(array, value)\
+#define PANIC(...)\
   do {\
-    if (!(array)->items) {\
-      (array)->items = malloc(sizeof(*(array)->items) * DA_INIT_CAPACITY);\
-      if ((array)->items != NULL) {\
-        (array)->capacity = DA_INIT_CAPACITY;\
-        (array)->count = 0;\
-      }\
-    }\
-    if ((array)->count >= (array)->capacity) {\
-      (array)->capacity *= 1.5;\
-      (array)->items = realloc(\
-        (array)->items, sizeof(*(array)->items) * (array)->capacity\
-      );\
-    }\
-    (array)->items[(array)->count++] = (value);\
+    fprintf(stderr, "raiz: panicked at %s:%d\n", __FILE__, __LINE__);\
+    fprintf(stderr, __VA_ARGS__);\
+    abort();\
   } while (0)
 
-#define da_free(array) (array)->items ? free((array)->items) : ;
+#define TODO(message) PANIC("TODO at %s", (message))
 
-//////// LEXER (types) ////////
+#define UNREACHABLE(message) PANIC("reached unreachable code at %s", (message))
+
 typedef enum {
   OP_SUM,
   OP_SUBTRACT,
@@ -69,434 +25,271 @@ typedef enum {
 } Operator;
 
 typedef enum {
-  // in case of unrecognized byte or invalid character in current context
   TOKEN_ERROR,
-  TOKEN_OPERATOR,
-  TOKEN_LITERAL_NUMBER,
-  TOKEN_END_OF_FILE
+  TOKEN_EOF,
+  TOKEN_INT,
+  TOKEN_OP,
 } TokenKind;
+
+union TokenData {
+  Operator op;
+  int literal;
+};
 
 typedef struct {
   TokenKind kind;
-  size_t len;
-  union {
-    Operator op;
-    int value;
-  } data;
+  union TokenData as;
 } Token;
 
 typedef struct {
-  size_t count;
-  size_t capacity;
-  Token *items;
-} Tokens;
-
-typedef struct {
   const char* source;
-  size_t current, start, len;
+  size_t current, end; // strlen(source)
 } Lexer;
 
-//////// LEXER (functions) ////////
-static inline Lexer lexer_init(char*const source) {
-  return (Lexer) { .source = source, .current = 0, .start = 0 };
+Lexer lexer_new(const char* source) {
+  return (Lexer) { .source = source, .current = 0, .end = strlen(source) };
 }
 
-static inline void lexer_backup(Lexer* lexer) {
-  lexer->start = lexer->current;
-}
+struct LexerAdvanceOpt { size_t amount; };
 
-static inline void lexer_restore(Lexer* lexer) {
-  lexer->current = lexer->start;
-}
+Token lexer_make_token(Lexer* lexer, TokenKind kind, struct LexerAdvanceOpt opt); 
 
-struct LexerAdvance_opt {
-  size_t amount;
-  char expected;
-};
-
-// HACK: optional parameters!
-#define lexer_advance(lexer, ...)\
-  lexer_advance_opt((lexer), (struct LexerAdvance_opt) { __VA_ARGS__ })
-
-// TODO: add checking for equality between a 'char expected' param and the
-// current character, if not equal, panic on that (in debug version only)!
-static inline void lexer_advance_opt(Lexer* lexer, struct LexerAdvance_opt opt) {
-  if (opt.expected) assert(lexer->source[lexer->current] == opt.expected);
-
-  if (!opt.amount) {
+Token lexer_next(Lexer* lexer) {
+  if (lexer->current >= lexer->end) return (Token) { .kind = TOKEN_EOF };
+  while (isspace(lexer->source[lexer->current]))
     lexer->current++;
-    lexer->len++;
-  }
-  else {
-    lexer->current += opt.amount;
-    lexer->len = lexer->current - lexer->start;
-  }
-}
-
-#define lexer_make_token(lexer, token_kind, ...)\
-  lexer_make_token_opt((lexer), (Token) {\
-    .kind = (token_kind),\
-    .len = (lexer)->current - (lexer)->start,\
-    __VA_ARGS__\
-  })
-
-static inline Token lexer_make_token_opt(Lexer* l, Token opt) {
-  // TODO: implement position spans
-  return opt;
-}
-
-static inline bool is_white_space(char c) {
-  return (c == ' ' || c == '\t' || c == '\r' || c == '\n');
-}
-
-#define current() (lexer->source[lexer->current])
-Token lexer_next_token(Lexer* lexer) {
-  if (lexer->source == NULL || current() == '\0')
-    return lexer_make_token(lexer, TOKEN_END_OF_FILE);
-
-  switch (current()) {
-  case ' ':
-  case '\n':
-  case '\t':
-  case '\r':
-    while (is_white_space(current())) lexer_advance(lexer);
-    return lexer_next_token(lexer);
+  switch (lexer->source[lexer->current]) {
   case '+':
-    lexer_advance(lexer);
-    return lexer_make_token(lexer, TOKEN_OPERATOR, .data.op = OP_SUM);
+    lexer->current++;
+    return (Token) {.kind = TOKEN_OP, .as.op = OP_SUM };
   case '-':
-    lexer_advance(lexer);
-    return lexer_make_token(lexer, TOKEN_OPERATOR, .data.op = OP_SUBTRACT);
+    lexer->current++;
+    return (Token) {.kind = TOKEN_OP, .as.op = OP_SUBTRACT };
   case '*':
-    lexer_advance(lexer);
-    return lexer_make_token(lexer, TOKEN_OPERATOR, .data.op = OP_MULTIPLY);
+    lexer->current++;
+    return (Token) {.kind = TOKEN_OP, .as.op = OP_MULTIPLY };
   case '/':
-    lexer_advance(lexer);
-    return lexer_make_token(lexer, TOKEN_OPERATOR, .data.op = OP_DIVIDE);
-  case '0':
-  case '1':
-  case '2':
-  case '3':
-  case '4':
-  case '5':
-  case '6':
-  case '7':
-  case '8':
-  case '9':
-    lexer_backup(lexer);
-    int number = 0;
-    for (; isdigit(current()); lexer_advance(lexer))
-      number = (number * 10) + (current() - '0');
-
-    return lexer_make_token(lexer, TOKEN_LITERAL_NUMBER, .data.value = number);
+    lexer->current++;
+    return (Token) {.kind = TOKEN_OP, .as.op = OP_DIVIDE };
   default:
-    if (g_raiz_error_buffer[0] != '\0') // means it is not empty
-      memset(g_raiz_error_buffer, 0, RAIZ_ERROR_BUFFER_CAPACITY);
-
-    // Here we are sure that the buffer will not overflow
-    sprintf(g_raiz_error_buffer, "unrecognized character: '%c'", current());
-    return lexer_make_token(lexer, TOKEN_ERROR);
+    ;
+    int number = 0;
+    for (; isdigit(lexer->source[lexer->current]); lexer->current++)
+      number = (number * 10) + (lexer->source[lexer->current] - '0');
+    return (Token) { .kind = TOKEN_INT, .as.literal = number };
   }
-
-  return lexer_make_token(lexer, TOKEN_END_OF_FILE);
-}
-#undef current
-
-Token lexer_peek_token(Lexer* lexer) {
-  lexer_backup(lexer);
-  Token token = lexer_next_token(lexer);
-  lexer_restore(lexer);
-  return token;
+  return (Token) { .kind = TOKEN_ERROR };
 }
 
-//////// PARSER (types) ////////
+typedef struct {
+  Operator op;
+  size_t left_id, right_id;
+} Expr_Binary;
+
+typedef struct {
+  Operator op;
+  size_t target_id;
+} Expr_Unary;
+
 typedef enum {
-  EXPR_ERROR,
-  EXPR_BINARY,
   EXPR_LITERAL,
+  EXPR_UNARY,
+  EXPR_BINARY,
 } ExprKind;
 
 typedef struct {
   ExprKind kind;
-  size_t id; // index relative to 'ExprArena.items' array at 'Parser.ast'
+  size_t id;
+  bool in_arena;
   union {
-    struct {
-      size_t left_id;
-      size_t right_id;
-      Operator op;
-    } binary;
     int literal;
+    Expr_Binary binary;
+    Expr_Unary unary;
   } as;
 } Expr;
 
-// NOTE: the '.items[0]' is reserved for the top expression.
-// This is the last one we mount. But the first one to be 'eval()'ed
+
 typedef struct {
   size_t count, capacity;
-  size_t current; // use at 'eval()' only!
   Expr* items;
 } ExprArena;
 
-typedef struct {
-  Lexer *lexer;
-  ExprArena ast;
-  Token current;
-  Token peeked;
-} Parser;
 
-//////// PARSER (functions) ////////
-uint8_t parser_get_binding_power(Operator op) {
-  // HACK: we use bitshifts to put two numbers in one single byte since we
-  // don't need large numbers.
+void push_expr(ExprArena* arena, Expr* expr) {
+  if (arena->capacity == 0) {
+    arena->capacity = 256;
+    arena->items = malloc(sizeof(Expr) * arena->capacity);
+  }
+  if (arena->count >= arena->capacity) {
+    arena->capacity *= 2;
+    arena->items = realloc(arena->items, sizeof(Expr) * arena->capacity);
+  }
+  if (!expr->in_arena && arena->items != NULL) {
+    expr->id = arena->count;
+    arena->items[arena->count++] = *expr;
+    expr->in_arena = true;
+  }
+}
+
+
+Expr* expr_binary(ExprArena* arena, Expr* left, Expr* right, Operator op) {
+  Expr result = (Expr) {
+    .kind = EXPR_BINARY,
+    .as.binary = (Expr_Binary) {
+      .left_id = left->id,
+      .right_id = right->id,
+      .op = op,
+    }
+  };
+  push_expr(arena, &result);
+  assert(result.in_arena);
+  return &arena->items[result.id];
+}
+
+Expr* expr_unary(ExprArena* arena, Expr* target) {
+  Expr result = (Expr) {
+    .kind = EXPR_UNARY,
+    .as.unary = (Expr_Unary) {
+      .op = OP_SUBTRACT,
+      .target_id = target->id,
+    }
+  };
+  push_expr(arena, &result);
+  assert(result.in_arena);
+  return &arena->items[result.id];
+}
+
+Expr* expr_literal(ExprArena* arena, int value) {
+  Expr result = (Expr) {
+    .kind = EXPR_LITERAL,
+    .as.literal = value,
+  };
+  push_expr(arena, &result);
+  assert(result.in_arena);
+  return &arena->items[result.id];
+}
+
+#define GET_RIGHT_BP(bind_powers) ((bind_powers) & 0x0f) // 16
+#define GET_LEFT_BP(bind_powers) ((bind_powers) >> 4)
+
+uint8_t get_binding_power(Operator op) {
   switch (op) {
   case OP_SUM:
   case OP_SUBTRACT:
+    // format: RIGHT + (LEFT << 4)
     return 2 + (1 << 4);
   case OP_MULTIPLY:
   case OP_DIVIDE:
-    return 4 + (3 << 4);
-  default: UNREACHABLE("operator");
+    return 3 + (4 << 4);
+  default: UNREACHABLE("get_binding_power(): operator");
   }
 }
 
-// 'Expr' generators (helpers)
-#define expr_number(number)\
-  (Expr){.kind = EXPR_LITERAL, .as.literal = (number)}
+typedef struct {
+  Lexer* lexer;
+  Token current;
+  Token next;
+  ExprArena* arena;
+} Parser;
 
-#define expr_binary(left, right, op)\
-  (Expr) {\
-    .kind = EXPR_BINARY,\
-    .as.binary = {\
-      .left_id = (left).id,\
-      .right_id = (right).id,\
-      .op = (op),\
-    },\
+void parser_advance(Parser* parser) {
+  parser->current = parser->next;
+  parser->next = lexer_next(parser->lexer);
+}
+
+static inline Token parser_peek(Parser* parser) {
+  return parser->next;
+}
+
+Parser parser_new(Lexer* lexer, ExprArena* arena) {
+  Parser parser = {0};
+  parser.lexer = lexer;
+  parser.arena = arena;
+  parser_advance(&parser); // bootstrap 'parser.next'
+  parser_advance(&parser); // fill 'parser.current' and update 'parser.next'
+  return parser;
+};
+
+Expr* parser_parse_nud(Parser* parser) {
+  if (parser->current.kind == TOKEN_OP
+      && parser->current.as.op == OP_SUBTRACT) {
+    TODO("parser_parse_nud(): unary expressions\n");
+  } else if (parser->current.kind != TOKEN_INT) {
+    PANIC(
+      "parser_parse_nud(): expected number token (found %d)\n",
+      parser->current.kind
+    );
   }
-
-ExprArena expr_arena_init(size_t init_capacity) {
-  Expr* pool = malloc(sizeof(Expr) * init_capacity);
-  if (!pool) PANIC("failed to allocate expressions memory pool\n");
-
-  return (ExprArena) {.count = 0, .capacity = init_capacity, .items = pool};
+  // parser_advance(parser);
+  return expr_literal(parser->arena, parser->current.as.literal);
 }
 
-void parser_push_expr(Parser* parser, Expr* expr) {
-  if (parser->ast.count >= parser->ast.capacity) {
-    LOG("reallocating expression arena\n");
-    parser->ast.capacity *= 1.5;
-    parser->ast.items = realloc(parser->ast.items, parser->ast.capacity);
-  }
-  expr->id = parser->ast.count;
-  parser->ast.current = expr->id;
-  parser->ast.items[parser->ast.count++] = *expr;
-  LOG("pushing expression (id: %u)", expr->id);
-}
+Expr* parser_parse_expr(Parser* parser, uint8_t min_bp) {
+  Expr* left_side = parser_parse_nud(parser);
+  parser_advance(parser);
 
-/* Function parser_parse_literal:
- * Pushes an 'Expr' of kind EXPR_LITERAL into 'parser->ast' and 
- * returns the pointer to the pushed expression (in 'parser->ast').
- * If not, returns 'NULL' */
-Expr* parser_push_literal(Parser* parser) {
-  Expr result = expr_number(parser->current.data.value);
-  parser_push_expr(parser, &result);
-
-  return &parser->ast.items[result.id];
-}
-
-/* Function parser_parse_binary:
- * Pushes 'Expr' of kind 'EXPR_BINARY' with 'op', 'left' and 'right'.
- * After that, returns pointer to the pushed expression.
- * Otherwise, returns 'NULL'.
- * If 'push_all' is 'true', pushes 'left' and 'right' into 'parser->ast' before
- * */
-Expr* parser_push_binary(
-  Parser* parser, Expr* left, Expr* right, Operator op, bool push_all
-) {
-  if (push_all) {
-    parser_push_expr(parser, left);
-    parser_push_expr(parser, right);
-  }
-  Expr result = expr_binary(*left, *right, op);
-  parser_push_expr(parser, &result);
-  return &parser->ast.items[result.id];
-}
-
-#define current() (parser->current)
-#define peek() (parser->peeked = lexer_peek_token(parser->lexer))
-#define next() (parser->current = lexer_next_token(parser->lexer))
-#define advance() lexer_advance(parser->lexer, .amount = parser->peeked.len)
-#define last_expr() (parser->ast.items[parser->ast.count-1])
-#define get_expr(index) (parser->ast.items[(index)])
-#define split_powers(left_name, right_name, bind_powers)\
-  uint8_t left_name;\
-  uint8_t right_name;\
-  do {\
-    uint8_t pair = (bind_powers);\
-    left_name = (pair) >> 4;\
-    right_name = ((pair) - left_name) >> 4;\
-  } while (0)
-
-bool parser_parse_expr(Parser* parser, uint8_t min_bp) {
   while (1) {
-    LOG("in loop\n");
-    switch (next().kind) {
-    case TOKEN_ERROR:
-      PANIC("%s\n", g_raiz_error_buffer);
-    case TOKEN_END_OF_FILE: return false;
-    case TOKEN_LITERAL_NUMBER:
-      LOG("returning literal\n");
-      parser_push_literal(parser);
-      return true;
-    case TOKEN_OPERATOR:
-      // NOTE: we need to find a way to get the last expression's right side
-      // and bind it to this expression's left side if this expression's
-      // operator has higher binding power than last's...
-      if (peek().kind != TOKEN_LITERAL_NUMBER) PANIC("expected number\n");
-      LOG("found operator\n");
-      Operator op = current().data.op;
-      advance(); // consume peeked number literal
+    if (parser->current.kind == TOKEN_EOF) break;
+    Token op_token = parser->current;
+    if (op_token.kind != TOKEN_OP)
+      PANIC(
+        "parser_parse_expr(): expected operator (found: %d)\n", op_token.kind
+      );
 
-      split_powers(left_bp, right_bp, parser_get_binding_power(op));
-      if (left_bp < min_bp) {
-        LOG("breaking\n");
-        return true;
-      }
-      advance(); // consume operator
+    uint8_t bps = get_binding_power(op_token.as.op);
+    if (GET_LEFT_BP(bps) < min_bp) break;
+    parser_advance(parser); // consume operator token
 
-      LOG("mounting binary (id: %d)\n", last_expr().id);
-      size_t right_id = parser_parse_expr(parser, right_bp);
-      Expr left = expr_binary(last_expr(), get_expr(right_id), op);
-      parser_push_expr(parser, &left);
-
-      break;
-    default: UNREACHABLE("token kind");
-    }
+    Expr* right_side = parser_parse_expr(parser, GET_RIGHT_BP(bps));
+    left_side = expr_binary(parser->arena,
+                            left_side, right_side, op_token.as.op);
   }
-end:
-  LOG("at end\n");
-  return true;
+
+  return left_side;
 }
 
-
-ExprArena parser_parse(Lexer* lexer) {
-  Parser parser = { .lexer = lexer, .ast = expr_arena_init(256) };
-
-  while (parser_parse_expr(&parser, 0) != parser.ast.count);
-
-  return parser.ast;
-}
-#undef current
-#undef peek
-#undef next
-#undef advance
-#undef last_expr
-#undef get_expr
-
-//////// COMPILER (functions) ////////
-ExprArena build_ast(char*const code) {
-  Lexer lexer = lexer_init(code);
-  return parser_parse(&lexer);
+Expr* parser_build_ast(ExprArena* arena, const char* source) {
+  Lexer lexer = lexer_new(source);
+  Parser parser = parser_new(&lexer, arena);
+  return parser_parse_expr(&parser, 0);
 }
 
-//////// EVALUATOR (functions) ////////
-#define current() arena->items[arena->current]
-void log_eval(ExprArena* arena, size_t indent) {
-  indent++;
-  
-  for (size_t i = indent; i > 0; i--) printf(" ");
-
-  switch (current().kind) {
-  case EXPR_LITERAL:
-    // TODO: put expression number value into 'buffer'
-    printf("Literal: %d\n", current().as.literal);
-    break;
+int eval(ExprArena* arena, size_t current) {
+  switch (arena->items[current].kind) {
+  case EXPR_LITERAL: return arena->items[current].as.literal;
+  case EXPR_UNARY:
+    if (arena->items[current].as.unary.op != OP_SUBTRACT)
+      PANIC("use unary with '-' operator\n");
+    current = arena->items[current].as.unary.target_id;
+    return -eval(arena, current);
   case EXPR_BINARY:
-    printf("Binary");
-    switch(current().as.binary.op) {
-    case OP_SUM:
-      printf("(+):\n");
-      break;
-    case OP_SUBTRACT:
-      printf("(-):\n");
-      break;
-    case OP_MULTIPLY:
-      printf("(*):\n");
-      break;
-    case OP_DIVIDE:
-      printf("(/):\n");
-      break;
-    }
-    arena->current = current().as.binary.left_id;
-    log_eval(arena, indent);
+    ; // HACK this thing literally made "declaration after label is a C23 
+      // extension" compiler warning disappear!
+    int left = eval(arena, arena->items[current].as.binary.left_id);
+    int right = eval(arena, arena->items[current].as.binary.right_id);
 
-    arena->current = current().as.binary.right_id;
-    log_eval(arena, indent);
-    break;
-  }
-}
-
-int eval(ExprArena* arena) {
-  LOG("eval(): current %d\n", arena->current);
-  switch (current().kind) {
-  case EXPR_LITERAL: return current().as.literal;
-  case EXPR_BINARY:
-    // save id for later use
-    size_t parent_id = arena->current;
-
-    arena->current = current().as.binary.left_id;
-    int left = eval(arena);
-
-    arena->current = current().as.binary.right_id;
-    int right = eval(arena);
-
-    switch (arena->items[parent_id].as.binary.op) {
-    case OP_SUM: return left + right;
+    switch (arena->items[current].as.binary.op) {
+    case OP_SUM:      return left + right;
     case OP_SUBTRACT: return left - right;
     case OP_MULTIPLY: return left * right;
-    case OP_DIVIDE: return left / right;
+    case OP_DIVIDE:   return left / right;
+    default: UNREACHABLE("eval(): operator\n");
     }
+  default: // switch (arena->items[current].kind)
+    UNREACHABLE("eval(): expression kind\n");
   }
-  UNREACHABLE("eval");
-  // return 0;
-#undef current
 }
 
-int main(int argc, char* argv[]) {
-  // char code[] = "56 + 8 / 2 - 7 * 3";
-  // Following precedence:
-  // 56 + 8 / 2 - 7 * 3
-  // 56 + 4 - 21
-  // 60 - 21
-  // 39
-  // From left to right only (what's actually happening):
-  // 56 + 8 / 2 - 7 * 3
-  // 64 / 2 - 7 * 3
-  // 32 - 7 * 3
-  // 25 * 3
-  // 75
+int eval_arena(ExprArena* arena) {
+  return eval(arena, arena->count - 1);
+}
 
-  if (argc > 1 && strcmp(argv[1], "inter") == 0) {
-    char buffer[1024] = {0};
-    printf("> ");
-    while (fgets(buffer, sizeof(buffer), stdin)) {
-      ExprArena ast = build_ast(buffer);
-      printf("Result: %d\n", eval(&ast));
-      ast.current = ast.count - 1;
-      log_eval(&ast, 0);
+int main(void) {
+  ExprArena arena = {0};
+  (void)parser_build_ast(&arena, "2 - 4 + 2");
 
-      free(ast.items);
-      printf("> ");
-    }
-  } else {
-    char code[] = "2 + 3 * 4";
-    ExprArena ast = build_ast(code);
-    // return 0;
-    printf("Result: %d\n", eval(&ast));
-    ast.current = ast.count - 1;
-    log_eval(&ast, 0);
+  printf("Result: %d\n", eval_arena(&arena));
 
-    free(ast.items);
-  }
-
+  free(arena.items);
   return 0;
 }
