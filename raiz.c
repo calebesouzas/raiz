@@ -102,6 +102,8 @@ Token lexer_next(Lexer* lexer)
     case '/':
       lexer->current++;
       return (Token) {.kind = TOKEN_OP, .as.op = OP_DIVIDE };
+    case '\0':
+      return (Token) {.kind = TOKEN_EOF };
     default:
       ;
       int number = 0;
