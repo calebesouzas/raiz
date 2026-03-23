@@ -8,7 +8,7 @@ something is needed, then do it. DO NOT TRY TO PREDICT EVERY POSSIBILITY!
 
 # Todo List for (and by) Raiz Dev
 ## Lexer + Parser
-- [ ] Use an on-demand lexer (it means parser with lazy lexer)
-- [ ] Build AST for simple 2 + 2 at least
-- [ ] Add support for more operations (like subtraction, division, etc)
-- [ ] Add support for grouped expressions (inside parentheses)
+- [x] Use an on-demand lexer (it means parser with lazy lexer)
+- [x] Build AST for simple 2 + 2 at least
+- [x] Add support for more operations (like subtraction, division, etc)
+- [x] Add support for grouped expressions (inside parentheses)
