@@ -210,17 +210,20 @@ Parser parser_new(Lexer* lexer, ExprArena* arena) {
   return parser;
 };
 
+Expr* parser_parse_expr(Parser* parser, uint8_t min_bp);
+
 Expr* parser_parse_nud(Parser* parser) {
   if (parser->current.kind == TOKEN_OP
       && parser->current.as.op == OP_SUBTRACT) {
-    TODO("parser_parse_nud(): unary expressions\n");
+    uint8_t bind_power = GET_LEFT_BP(get_binding_power(parser->current.as.op));
+    parser_advance(parser); // consume operator token
+    return expr_unary(parser->arena, parser_parse_expr(parser, bind_power));
   } else if (parser->current.kind != TOKEN_INT) {
     PANIC(
       "parser_parse_nud(): expected number token (found %d)\n",
       parser->current.kind
     );
   }
-  // parser_advance(parser);
   return expr_literal(parser->arena, parser->current.as.literal);
 }
 
@@ -286,7 +289,7 @@ int eval_arena(ExprArena* arena) {
 
 int main(void) {
   ExprArena arena = {0};
-  (void)parser_build_ast(&arena, "2 - 4 + 2");
+  (void)parser_build_ast(&arena, "-4 * -2");
 
   printf("Result: %d\n", eval_arena(&arena));
 
