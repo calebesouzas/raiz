@@ -24,11 +24,18 @@ typedef enum {
   OP_DIVIDE,
 } Operator;
 
+#define TOKEN_X_MACRO_TABLE\
+  X(TOKEN_ERROR, "<TOKEN_ERROR>")\
+  X(TOKEN_EOF, "<TOKEN_EOF>")\
+  X(TOKEN_INT, "<TOKEN_INT>")\
+  X(TOKEN_OP, "<TOKEN_OP>")\
+  X(TOKEN_LPAREN, "<TOKEN_LPAREN>")\
+  X(TOKEN_RPAREN, "<TOKEN_RPAREN>")
+
 typedef enum {
-  TOKEN_ERROR,
-  TOKEN_EOF,
-  TOKEN_INT,
-  TOKEN_OP,
+  #define X(variant, string) variant,
+  TOKEN_X_MACRO_TABLE
+  #undef X
 } TokenKind;
 
 union TokenData {
@@ -46,6 +53,16 @@ typedef struct {
   size_t current, end; // strlen(source)
 } Lexer;
 
+const char* lexer_extract_token(Token token) {
+  // char buffer[512] = {0};
+  const char* raiz_tokens[] = {
+    #define X(variant, string) string,
+    TOKEN_X_MACRO_TABLE
+    #undef X
+  };
+  return raiz_tokens[token.kind];
+}
+
 Lexer lexer_new(const char* source) {
   return (Lexer) { .source = source, .current = 0, .end = strlen(source) };
 }
@@ -59,6 +76,12 @@ Token lexer_next(Lexer* lexer) {
   while (isspace(lexer->source[lexer->current]))
     lexer->current++;
   switch (lexer->source[lexer->current]) {
+  case '(':
+    lexer->current++;
+    return (Token) {.kind = TOKEN_LPAREN, };
+  case ')':
+    lexer->current++;
+    return (Token) {.kind = TOKEN_RPAREN, };
   case '+':
     lexer->current++;
     return (Token) {.kind = TOKEN_OP, .as.op = OP_SUM };
@@ -190,6 +213,7 @@ typedef struct {
   Token current;
   Token next;
   ExprArena* arena;
+  size_t callno; // for debugging purpose
 } Parser;
 
 void parser_advance(Parser* parser) {
@@ -218,25 +242,36 @@ Expr* parser_parse_nud(Parser* parser) {
     uint8_t bind_power = GET_LEFT_BP(get_binding_power(parser->current.as.op));
     parser_advance(parser); // consume operator token
     return expr_unary(parser->arena, parser_parse_expr(parser, bind_power));
+  } else if (parser->current.kind == TOKEN_LPAREN) {
+    parser_advance(parser); // consume '('
+    Expr *result = parser_parse_expr(parser, 0);
+    if (parser->current.kind != TOKEN_RPAREN) {
+      PANIC("parser_parse_nud(): expected ')'");
+    }
+    return result;
   } else if (parser->current.kind != TOKEN_INT) {
     PANIC(
-      "parser_parse_nud(): expected number token (found %d)\n",
-      parser->current.kind
+      "parser_parse_nud(): expected number token (found %s, call: #%u)\n",
+      lexer_extract_token(parser->current), parser->callno
     );
   }
   return expr_literal(parser->arena, parser->current.as.literal);
 }
 
 Expr* parser_parse_expr(Parser* parser, uint8_t min_bp) {
+  parser->callno++;
   Expr* left_side = parser_parse_nud(parser);
   parser_advance(parser);
 
   while (1) {
-    if (parser->current.kind == TOKEN_EOF) break;
+    if (parser->current.kind == TOKEN_EOF
+        || parser->current.kind == TOKEN_RPAREN)
+      break;
     Token op_token = parser->current;
     if (op_token.kind != TOKEN_OP)
       PANIC(
-        "parser_parse_expr(): expected operator (found: %d)\n", op_token.kind
+        "parser_parse_expr(): expected operator (found: %s, call: #%u)\n",
+        lexer_extract_token(op_token), parser->callno
       );
 
     uint8_t bps = get_binding_power(op_token.as.op);
@@ -289,7 +324,7 @@ int eval_arena(ExprArena* arena) {
 
 int main(void) {
   ExprArena arena = {0};
-  (void)parser_build_ast(&arena, "-4 * -2");
+  (void)parser_build_ast(&arena, "(3 + 5) * 8");
 
   printf("Result: %d\n", eval_arena(&arena));
 
