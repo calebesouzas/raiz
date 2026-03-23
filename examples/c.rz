@@ -1,0 +1,69 @@
+; this file shows some crazy things we'll have in Raiz programming language!
+
+; TODO: finish the showcase 'def syntax' block for 'json' syntax
+
+mod json
+
+; Tagged union, enums where variants can have values inside!
+
+; You can always extract that value using '(variable @TagUniName).extract!'.
+; It will return a value based on what variant 'variable' is but if there is no
+; value in the variant or it's not of the same type as the other "object" you're
+; assigning to, the program will just panic, so be careful!
+; To prevent this, you can use either '.extract_or! alternative_value' or
+; '.extract_or_else! something_of_callable_type' instead.
+
+uni JsonObject
+{
+  String(@string),
+  Int(@int),
+  Float(@float),
+  Bool(@bool),
+  ; NOTE: these two will be allocated on the heap automatically and
+  ; Raiz will throw a warning about it (in strict mode we need to wrap the
+  ; value(s) inside '@box', unless, the code won't compile)
+  Array(@[JsonObject]),
+  Object(@JsonObject), ; last comma does nothing, you can actually omit that
+}
+
+; By defining syntax, the identifier after 'syntax' becomes a keyword and
+; everytime it is used in the code (unless if it is escaped), the parser will
+; literally parse with the rules you 'def'ined! At least it should do..
+
+; NOTE: the parser will not ignore comments (of any kind) by default.
+; You can disable this behaviour by manually 'ignore'ing tokens untill some
+; sort of condition or just all the times. It's your choice!
+def syntax json
+{
+  accepts on start: literal string
+  ; 'start' means right after 'json' block or a recursive call to 'parse json'
+  ; inside this 'def syntax' block. You are able to know how many recursive
+  ; calls happened by using 'current_call'. It's useful if you need to provide
+  ; a recursion depth limit, but Raiz will use the default one if you don't.
+  accepts after literal string and ::
+    literals:
+      string
+      int
+      float
+      bool
+      []
+      {}
+    end
+  end
+  on accepted literals:
+    insert @JsonObject.
+    insert case:
+      string: String
+      int: Int
+      float: Float
+      bool: Bool
+      [:
+        consume [
+        parse json
+        expect ]: ; if the current token is not this one, the parser will panic
+          message "bruh" ; if it's provided, it'll be also printed after the
+                         ; default error message for custom syntaxes as a BONUS
+      end
+    insert "($value)"
+  end
+}

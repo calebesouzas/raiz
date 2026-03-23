@@ -1,0 +1,6 @@
+val list @[int, 5] = [69, 420, 1337, 88086, 624]
+
+for item list
+{
+  print! `Current item: {item}`
+}

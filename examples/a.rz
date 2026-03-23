@@ -1,0 +1,33 @@
+fun command_help _ =>
+{
+  print! "Detailed usage: ..."
+}
+
+fun command_todo args @[string] =>
+; Can put '@<type>' after '=>' and before '{'.
+; If no type is provided, it is automayically set to '@void'.
+{
+  for arg args
+  ; no need for 'in' keyword, since first identifier is the temporary variable's
+  ; name and after it we'll always have the expression returning an array, then
+  ; a '@callable' expression, witch is the block to be "exploded".
+  {
+    print! `Got argument: {arg}`
+  }
+}
+
+fun main args @[string] =>
+{
+  if args.len! == 0 print! "Usage: program(.exe) <command> [--|-options]"
+  else
+  {
+    ; some commands may ignore 'args' array (witch means it won't be evaluated)
+    `command_{args[1]}`! args[2..args.len! - 1]
+    any error?
+    {
+      print! `Command "{args[1]}" not found`
+      exit! 1
+    }
+  }
+}
+
