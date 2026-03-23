@@ -79,31 +79,31 @@ Token lexer_next(Lexer* lexer)
 
   switch (lexer->source[lexer->current])
   {
-  case '(':
-    lexer->current++;
-    return (Token) {.kind = TOKEN_LPAREN, };
-  case ')':
-    lexer->current++;
-    return (Token) {.kind = TOKEN_RPAREN, };
-  case '+':
-    lexer->current++;
-    return (Token) {.kind = TOKEN_OP, .as.op = OP_SUM };
-  case '-':
-    lexer->current++;
-    return (Token) {.kind = TOKEN_OP, .as.op = OP_SUBTRACT };
-  case '*':
-    lexer->current++;
-    return (Token) {.kind = TOKEN_OP, .as.op = OP_MULTIPLY };
-  case '/':
-    lexer->current++;
-    return (Token) {.kind = TOKEN_OP, .as.op = OP_DIVIDE };
-  default:
-    ;
-    int number = 0;
-    for (; isdigit(lexer->source[lexer->current]); lexer->current++)
-      number = (number * 10) + (lexer->source[lexer->current] - '0');
+    case '(':
+      lexer->current++;
+      return (Token) {.kind = TOKEN_LPAREN, };
+    case ')':
+      lexer->current++;
+      return (Token) {.kind = TOKEN_RPAREN, };
+    case '+':
+      lexer->current++;
+      return (Token) {.kind = TOKEN_OP, .as.op = OP_SUM };
+    case '-':
+      lexer->current++;
+      return (Token) {.kind = TOKEN_OP, .as.op = OP_SUBTRACT };
+    case '*':
+      lexer->current++;
+      return (Token) {.kind = TOKEN_OP, .as.op = OP_MULTIPLY };
+    case '/':
+      lexer->current++;
+      return (Token) {.kind = TOKEN_OP, .as.op = OP_DIVIDE };
+    default:
+      ;
+      int number = 0;
+      for (; isdigit(lexer->source[lexer->current]); lexer->current++)
+        number = (number * 10) + (lexer->source[lexer->current] - '0');
 
-    return (Token) { .kind = TOKEN_INT, .as.literal = number };
+      return (Token) { .kind = TOKEN_INT, .as.literal = number };
   }
   return (Token) { .kind = TOKEN_ERROR };
 }
@@ -210,14 +210,14 @@ uint8_t get_binding_power(Operator op)
 {
   switch (op)
   {
-  case OP_SUM:
-  case OP_SUBTRACT:
-    // format: RIGHT + (LEFT << 4)
-    return 2 + (1 << 4);
-  case OP_MULTIPLY:
-  case OP_DIVIDE:
-    return 3 + (4 << 4);
-  default: UNREACHABLE("get_binding_power(): operator");
+    case OP_SUM:
+    case OP_SUBTRACT:
+      // format: RIGHT + (LEFT << 4)
+      return 2 + (1 << 4);
+    case OP_MULTIPLY:
+    case OP_DIVIDE:
+      return 3 + (4 << 4);
+    default: UNREACHABLE("get_binding_power(): operator");
   }
 }
 
@@ -321,29 +321,29 @@ int eval(ExprArena* arena, size_t current)
 {
   switch (arena->items[current].kind)
   {
-  case EXPR_LITERAL: return arena->items[current].as.literal;
-  case EXPR_UNARY:
-    if (arena->items[current].as.unary.op != OP_SUBTRACT)
-      PANIC("use unary with '-' operator\n");
+    case EXPR_LITERAL: return arena->items[current].as.literal;
+    case EXPR_UNARY:
+      if (arena->items[current].as.unary.op != OP_SUBTRACT)
+        PANIC("use unary with '-' operator\n");
 
-    current = arena->items[current].as.unary.target_id;
-    return -eval(arena, current);
-  case EXPR_BINARY:
-    ; // HACK this thing literally made "declaration after label is a C23 
-      // extension" compiler warning disappear!
-    int left = eval(arena, arena->items[current].as.binary.left_id);
-    int right = eval(arena, arena->items[current].as.binary.right_id);
+      current = arena->items[current].as.unary.target_id;
+      return -eval(arena, current);
+    case EXPR_BINARY:
+      ; // HACK this thing literally made "declaration after label is a C23
+        // extension" compiler warning disappear!
+      int left = eval(arena, arena->items[current].as.binary.left_id);
+      int right = eval(arena, arena->items[current].as.binary.right_id);
 
-    switch (arena->items[current].as.binary.op)
-    {
-    case OP_SUM:      return left + right;
-    case OP_SUBTRACT: return left - right;
-    case OP_MULTIPLY: return left * right;
-    case OP_DIVIDE:   return left / right;
-    default: UNREACHABLE("eval(): operator\n");
-    }
-  default: // switch (arena->items[current].kind)
-    UNREACHABLE("eval(): expression kind\n");
+      switch (arena->items[current].as.binary.op)
+      {
+        case OP_SUM:      return left + right;
+        case OP_SUBTRACT: return left - right;
+        case OP_MULTIPLY: return left * right;
+        case OP_DIVIDE:   return left / right;
+        default: UNREACHABLE("eval(): operator\n");
+      }
+    default: // switch (arena->items[current].kind)
+      UNREACHABLE("eval(): expression kind\n");
   }
 }
 
