@@ -7,7 +7,8 @@
 #include <stdint.h>
 
 #define PANIC(...)\
-  do {\
+  do\
+  {\
     fprintf(stderr, "raiz: panicked at %s:%d\n", __FILE__, __LINE__);\
     fprintf(stderr, __VA_ARGS__);\
     abort();\
@@ -53,7 +54,8 @@ typedef struct {
   size_t current, end; // strlen(source)
 } Lexer;
 
-const char* lexer_extract_token(Token token) {
+const char* lexer_extract_token(Token token)
+{
   // char buffer[512] = {0};
   const char* raiz_tokens[] = {
     #define X(variant, string) string,
@@ -63,19 +65,20 @@ const char* lexer_extract_token(Token token) {
   return raiz_tokens[token.kind];
 }
 
-Lexer lexer_new(const char* source) {
+Lexer lexer_new(const char* source)
+{
   return (Lexer) { .source = source, .current = 0, .end = strlen(source) };
 }
 
-struct LexerAdvanceOpt { size_t amount; };
-
-Token lexer_make_token(Lexer* lexer, TokenKind kind, struct LexerAdvanceOpt opt); 
-
-Token lexer_next(Lexer* lexer) {
+Token lexer_next(Lexer* lexer)
+{
   if (lexer->current >= lexer->end) return (Token) { .kind = TOKEN_EOF };
+
   while (isspace(lexer->source[lexer->current]))
     lexer->current++;
-  switch (lexer->source[lexer->current]) {
+
+  switch (lexer->source[lexer->current])
+  {
   case '(':
     lexer->current++;
     return (Token) {.kind = TOKEN_LPAREN, };
@@ -99,6 +102,7 @@ Token lexer_next(Lexer* lexer) {
     int number = 0;
     for (; isdigit(lexer->source[lexer->current]); lexer->current++)
       number = (number * 10) + (lexer->source[lexer->current] - '0');
+
     return (Token) { .kind = TOKEN_INT, .as.literal = number };
   }
   return (Token) { .kind = TOKEN_ERROR };
@@ -138,16 +142,20 @@ typedef struct {
 } ExprArena;
 
 
-void push_expr(ExprArena* arena, Expr* expr) {
-  if (arena->capacity == 0) {
+void push_expr(ExprArena* arena, Expr* expr)
+{
+  if (arena->capacity == 0)
+  {
     arena->capacity = 256;
     arena->items = malloc(sizeof(Expr) * arena->capacity);
   }
-  if (arena->count >= arena->capacity) {
+  if (arena->count >= arena->capacity)
+  {
     arena->capacity *= 2;
     arena->items = realloc(arena->items, sizeof(Expr) * arena->capacity);
   }
-  if (!expr->in_arena && arena->items != NULL) {
+  if (!expr->in_arena && arena->items != NULL)
+  {
     expr->id = arena->count;
     arena->items[arena->count++] = *expr;
     expr->in_arena = true;
@@ -155,7 +163,8 @@ void push_expr(ExprArena* arena, Expr* expr) {
 }
 
 
-Expr* expr_binary(ExprArena* arena, Expr* left, Expr* right, Operator op) {
+Expr* expr_binary(ExprArena* arena, Expr* left, Expr* right, Operator op)
+{
   Expr result = (Expr) {
     .kind = EXPR_BINARY,
     .as.binary = (Expr_Binary) {
@@ -169,7 +178,8 @@ Expr* expr_binary(ExprArena* arena, Expr* left, Expr* right, Operator op) {
   return &arena->items[result.id];
 }
 
-Expr* expr_unary(ExprArena* arena, Expr* target) {
+Expr* expr_unary(ExprArena* arena, Expr* target)
+{
   Expr result = (Expr) {
     .kind = EXPR_UNARY,
     .as.unary = (Expr_Unary) {
@@ -182,7 +192,8 @@ Expr* expr_unary(ExprArena* arena, Expr* target) {
   return &arena->items[result.id];
 }
 
-Expr* expr_literal(ExprArena* arena, int value) {
+Expr* expr_literal(ExprArena* arena, int value)
+{
   Expr result = (Expr) {
     .kind = EXPR_LITERAL,
     .as.literal = value,
@@ -195,8 +206,10 @@ Expr* expr_literal(ExprArena* arena, int value) {
 #define GET_RIGHT_BP(bind_powers) ((bind_powers) & 0x0f) // 16
 #define GET_LEFT_BP(bind_powers) ((bind_powers) >> 4)
 
-uint8_t get_binding_power(Operator op) {
-  switch (op) {
+uint8_t get_binding_power(Operator op)
+{
+  switch (op)
+  {
   case OP_SUM:
   case OP_SUBTRACT:
     // format: RIGHT + (LEFT << 4)
@@ -216,16 +229,19 @@ typedef struct {
   size_t callno; // for debugging purpose
 } Parser;
 
-void parser_advance(Parser* parser) {
+void parser_advance(Parser* parser)
+{
   parser->current = parser->next;
   parser->next = lexer_next(parser->lexer);
 }
 
-static inline Token parser_peek(Parser* parser) {
+static inline Token parser_peek(Parser* parser)
+{
   return parser->next;
 }
 
-Parser parser_new(Lexer* lexer, ExprArena* arena) {
+Parser parser_new(Lexer* lexer, ExprArena* arena)
+{
   Parser parser = {0};
   parser.lexer = lexer;
   parser.arena = arena;
@@ -236,68 +252,80 @@ Parser parser_new(Lexer* lexer, ExprArena* arena) {
 
 Expr* parser_parse_expr(Parser* parser, uint8_t min_bp);
 
-Expr* parser_parse_nud(Parser* parser) {
-  if (parser->current.kind == TOKEN_OP
-      && parser->current.as.op == OP_SUBTRACT) {
+Expr* parser_parse_nud(Parser* parser)
+{
+  if (parser->current.kind == TOKEN_OP && parser->current.as.op == OP_SUBTRACT)
+  {
     uint8_t bind_power = GET_LEFT_BP(get_binding_power(parser->current.as.op));
     parser_advance(parser); // consume operator token
     return expr_unary(parser->arena, parser_parse_expr(parser, bind_power));
-  } else if (parser->current.kind == TOKEN_LPAREN) {
+  }
+  else if (parser->current.kind == TOKEN_LPAREN)
+  {
     parser_advance(parser); // consume '('
     Expr *result = parser_parse_expr(parser, 0);
-    if (parser->current.kind != TOKEN_RPAREN) {
+    if (parser->current.kind != TOKEN_RPAREN)
+    {
       PANIC("parser_parse_nud(): expected ')'");
     }
     return result;
-  } else if (parser->current.kind != TOKEN_INT) {
-    PANIC(
-      "parser_parse_nud(): expected number token (found %s, call: #%u)\n",
-      lexer_extract_token(parser->current), parser->callno
+  }
+  else if (parser->current.kind != TOKEN_INT)
+  {
+    PANIC("parser_parse_nud(): expected number token (found %s, call: #%u)\n",
+          lexer_extract_token(parser->current), parser->callno
     );
   }
   return expr_literal(parser->arena, parser->current.as.literal);
 }
 
-Expr* parser_parse_expr(Parser* parser, uint8_t min_bp) {
+Expr* parser_parse_expr(Parser* parser, uint8_t min_bp)
+{
   parser->callno++;
   Expr* left_side = parser_parse_nud(parser);
   parser_advance(parser);
 
-  while (1) {
+  while (1)
+  {
     if (parser->current.kind == TOKEN_EOF
         || parser->current.kind == TOKEN_RPAREN)
       break;
+
     Token op_token = parser->current;
     if (op_token.kind != TOKEN_OP)
-      PANIC(
-        "parser_parse_expr(): expected operator (found: %s, call: #%u)\n",
-        lexer_extract_token(op_token), parser->callno
-      );
+    {
+      PANIC("parser_parse_expr(): expected operator (found: %s, call: #%u)\n",
+            lexer_extract_token(op_token), parser->callno);
+    }
 
     uint8_t bps = get_binding_power(op_token.as.op);
     if (GET_LEFT_BP(bps) < min_bp) break;
     parser_advance(parser); // consume operator token
 
     Expr* right_side = parser_parse_expr(parser, GET_RIGHT_BP(bps));
-    left_side = expr_binary(parser->arena,
-                            left_side, right_side, op_token.as.op);
+    left_side = expr_binary(parser->arena, left_side, right_side,
+                            op_token.as.op);
   }
 
   return left_side;
 }
 
-Expr* parser_build_ast(ExprArena* arena, const char* source) {
+Expr* parser_build_ast(ExprArena* arena, const char* source)
+{
   Lexer lexer = lexer_new(source);
   Parser parser = parser_new(&lexer, arena);
   return parser_parse_expr(&parser, 0);
 }
 
-int eval(ExprArena* arena, size_t current) {
-  switch (arena->items[current].kind) {
+int eval(ExprArena* arena, size_t current)
+{
+  switch (arena->items[current].kind)
+  {
   case EXPR_LITERAL: return arena->items[current].as.literal;
   case EXPR_UNARY:
     if (arena->items[current].as.unary.op != OP_SUBTRACT)
       PANIC("use unary with '-' operator\n");
+
     current = arena->items[current].as.unary.target_id;
     return -eval(arena, current);
   case EXPR_BINARY:
@@ -306,7 +334,8 @@ int eval(ExprArena* arena, size_t current) {
     int left = eval(arena, arena->items[current].as.binary.left_id);
     int right = eval(arena, arena->items[current].as.binary.right_id);
 
-    switch (arena->items[current].as.binary.op) {
+    switch (arena->items[current].as.binary.op)
+    {
     case OP_SUM:      return left + right;
     case OP_SUBTRACT: return left - right;
     case OP_MULTIPLY: return left * right;
@@ -318,11 +347,13 @@ int eval(ExprArena* arena, size_t current) {
   }
 }
 
-int eval_arena(ExprArena* arena) {
+int eval_arena(ExprArena* arena)
+{
   return eval(arena, arena->count - 1);
 }
 
-int main(void) {
+int main(void)
+{
   ExprArena arena = {0};
   (void)parser_build_ast(&arena, "(3 + 5) * 8");
 
