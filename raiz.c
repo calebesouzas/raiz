@@ -280,7 +280,8 @@ Expr* parser_parse_nud(Parser* parser)
     Expr *result = parser_parse_expr(parser, 0);
     if (parser->current.kind != TOKEN_RPAREN)
     {
-      PANIC("parser_parse_nud(): expected ')'");
+      PANIC("parser_parse_nud(): expected ')' (found: %s, call: #%u)\n",
+            lexer_extract_token(parser->current), parser->callno);
     }
     return result;
   }
