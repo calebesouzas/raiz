@@ -18,7 +18,8 @@
 
 #define UNREACHABLE(message) PANIC("reached unreachable code at %s", (message))
 
-typedef enum {
+typedef enum
+{
   OP_SUM,
   OP_SUBTRACT,
   OP_MULTIPLY,
@@ -33,23 +34,27 @@ typedef enum {
   X(TOKEN_LPAREN, "<TOKEN_LPAREN>")\
   X(TOKEN_RPAREN, "<TOKEN_RPAREN>")
 
-typedef enum {
+typedef enum
+{
   #define X(variant, string) variant,
   TOKEN_X_MACRO_TABLE
   #undef X
 } TokenKind;
 
-union TokenData {
+union TokenData
+{
   Operator op;
   int literal;
 };
 
-typedef struct {
+typedef struct
+{
   TokenKind kind;
   union TokenData as;
 } Token;
 
-typedef struct {
+typedef struct
+{
   const char* source;
   size_t current, end; // strlen(source)
 } Lexer;
@@ -108,27 +113,32 @@ Token lexer_next(Lexer* lexer)
   return (Token) { .kind = TOKEN_ERROR };
 }
 
-typedef struct {
+typedef struct
+{
   Operator op;
   size_t left_id, right_id;
 } Expr_Binary;
 
-typedef struct {
+typedef struct
+{
   Operator op;
   size_t target_id;
 } Expr_Unary;
 
-typedef enum {
+typedef enum
+{
   EXPR_LITERAL,
   EXPR_UNARY,
   EXPR_BINARY,
 } ExprKind;
 
-typedef struct {
+typedef struct
+{
   ExprKind kind;
   size_t id;
   bool in_arena;
-  union {
+  union
+  {
     int literal;
     Expr_Binary binary;
     Expr_Unary unary;
@@ -136,7 +146,8 @@ typedef struct {
 } Expr;
 
 
-typedef struct {
+typedef struct
+{
   size_t count, capacity;
   Expr* items;
 } ExprArena;
@@ -221,7 +232,8 @@ uint8_t get_binding_power(Operator op)
   }
 }
 
-typedef struct {
+typedef struct
+{
   Lexer* lexer;
   Token current;
   Token next;
