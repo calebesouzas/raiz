@@ -366,11 +366,19 @@ int eval_arena(ExprArena* arena)
 
 int main(void)
 {
-  ExprArena arena = {0};
-  (void)parser_build_ast(&arena, "(3 + 5) * 8");
+  char buffer[1024] = {0};
 
-  printf("Result: %d\n", eval_arena(&arena));
+  printf("$> ");
+  while (fgets(buffer, sizeof(buffer), stdin))
+  {
+    if (strncmp(buffer, "exit", 4) == 0) break;
 
-  free(arena.items);
+    ExprArena arena = {0};
+    (void)parser_build_ast(&arena, buffer);
+    printf("%d\n", eval_arena(&arena));
+    free(arena.items);
+
+    printf("$> ");
+  }
   return 0;
 }
