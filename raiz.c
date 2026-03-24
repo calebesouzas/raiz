@@ -317,7 +317,7 @@ Expr* parser_parse_nud(Parser* parser)
   if (parser->current.kind == TOKEN_OP && parser->current.as.op == OP_SUBTRACT)
   {
     LOG("parser_parse_nud(): mounting unary\n");
-    uint8_t bind_power = GET_LEFT_BP(get_binding_power(parser->current.as.op));
+    uint8_t bind_power = GET_RIGHT_BP(get_binding_power(parser->current.as.op));
     parser_advance(parser, TOKEN_OP);
     return expr_unary(parser->arena, parser_parse_expr(parser, bind_power));
   }
