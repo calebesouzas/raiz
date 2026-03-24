@@ -521,6 +521,48 @@ int eval(ExprArena* arena, size_t current)
   }
 }
 
+void dump_ast(ExprArena* arena, Expr* ast, size_t level)
+{
+  for (int i = 0; i < level; i++) printf("  ");
+  switch (arena->items[ast->id].kind)
+  {
+    case EXPR_LITERAL: printf("Literal %d\n", ast->as.literal);
+    case EXPR_UNARY:
+      dump_ast(arena, &arena->items[ast->as.unary.target_id], level + 1);
+    case EXPR_BINARY:
+      ; // HACK this thing literally made "declaration after label is a C23
+        // extension" compiler warning disappear!
+      dump_ast(arena, &arena->items[ast->as.unary.target_id], level + 1);
+      int left = eval(arena, arena->items[current].as.binary.left_id);
+      int right = eval(arena, arena->items[current].as.binary.right_id);
+
+      switch (arena->items[current].as.binary.op)
+      {
+        case OP_SUM:        return left + right;
+        case OP_SUBTRACT:   return left - right;
+        case OP_MULTIPLY:   return left * right;
+        case OP_DIVIDE:     return left / right;
+        case OP_MODULE:     return left % right;
+        case OP_GREATER:    return left > right;
+        case OP_LESS:       return left < right;
+        case OP_BIT_OR:     return left | right;
+        case OP_BIT_XOR:    return left ^ right;
+        case OP_BIT_AND:    return left & right;
+        case OP_BIT_RSHIFT: return left >> right;
+        case OP_BIT_LSHIFT: return left << right;
+        case OP_EQUAL:      return left == right;
+        case OP_NOT_EQUAL:  return left != right;
+        case OP_GREATER_EQ: return left >= right;
+        case OP_LESS_EQ:    return left <= right;
+        case OP_BOOL_AND:   return left && right;
+        case OP_BOOL_OR:    return left || right;
+        default: UNREACHABLE("eval(): operator\n");
+      }
+    default: // switch (arena->items[current].kind)
+      UNREACHABLE("eval(): expression kind\n");
+  }
+}
+
 int eval_arena(ExprArena* arena)
 {
   return eval(arena, arena->count - 1);
