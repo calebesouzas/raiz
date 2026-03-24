@@ -125,13 +125,25 @@ Token lexer_next(Lexer* lexer)
       return (Token) {.kind = TOKEN_OP, .as.op = OP_DIVIDE };
     case '\0':
       return (Token) {.kind = TOKEN_EOF };
-    default:
+    case '0':
+    case '1':
+    case '2':
+    case '3':
+    case '4':
+    case '5':
+    case '6':
+    case '7':
+    case '8':
+    case '9':
       ;
       int number = 0;
       for (; isdigit(lexer->source[lexer->current]); lexer->current++)
         number = (number * 10) + (lexer->source[lexer->current] - '0');
 
       return (Token) { .kind = TOKEN_INT, .as.literal = number };
+    default:
+      PANIC("lexer_next(): invalid token at index %u: '%c'\n",
+            lexer->current, lexer->source[lexer->current]);
   }
   return (Token) { .kind = TOKEN_ERROR };
 }
