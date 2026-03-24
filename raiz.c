@@ -46,6 +46,8 @@ typedef enum
   OP_MULTIPLY,
   OP_DIVIDE,
   OP_MODULE,
+  OP_EQUAL,
+  OP_NOT_EQUAL,
 } Operator;
 
 #define TOKEN_X_MACRO_TABLE\
@@ -129,6 +131,20 @@ Token lexer_next(Lexer* lexer)
       return (Token) {.kind = TOKEN_OP, .as.op = OP_MODULE };
     case '\0':
       return (Token) {.kind = TOKEN_EOF };
+    case '=':
+      if (lexer->source[lexer->current + 1] != '=')
+      {
+        PANIC("lexer_next(): no support for assignments yet\n");
+      }
+      lexer->current += 2;
+      return (Token) {.kind = TOKEN_OP, .as.op = OP_EQUAL };
+    case '!':
+      if (lexer->source[lexer->current + 1] != '=')
+      {
+        PANIC("lexer_next(): no support for function explosions yet\n");
+      }
+      lexer->current += 2;
+      return (Token) {.kind = TOKEN_OP, .as.op = OP_NOT_EQUAL };
     case '0':
     case '1':
     case '2':
@@ -259,20 +275,23 @@ Expr* expr_literal(ExprArena* arena, int value)
 
 uint8_t get_binding_power(Operator op)
 {
+  // format: RIGHT + (LEFT << 4)
+  // to get LEFT: (PAIR >> 4)
+  // to get right: (PAIR & 0x0F)
+  // 0x0F == 16 == 00001111
   switch (op)
   {
+    case OP_NOT_EQUAL:
+    case OP_EQUAL:
+      return 2 + (1 << 4);
     case OP_SUM:
     case OP_SUBTRACT:
-      // format: RIGHT + (LEFT << 4)
-      // to get LEFT: (PAIR >> 4)
-      // to get right: (PAIR & 0x0F)
-      // 0x0F == 16 == 00001111
-      return 2 + (1 << 4);
+      return 3 + (2 << 4);
     case OP_MULTIPLY:
     case OP_DIVIDE:
-      return 3 + (4 << 4);
+      return 4 + (5 << 4);
     case OP_MODULE:
-      return 6 + (5 << 4);
+      return 7 + (6 << 4);
     default: UNREACHABLE("get_binding_power(): operator\n");
   }
 }
@@ -417,11 +436,13 @@ int eval(ExprArena* arena, size_t current)
 
       switch (arena->items[current].as.binary.op)
       {
-        case OP_SUM:      return left + right;
-        case OP_SUBTRACT: return left - right;
-        case OP_MULTIPLY: return left * right;
-        case OP_DIVIDE:   return left / right;
-        case OP_MODULE:   return left % right;
+        case OP_SUM:       return left + right;
+        case OP_SUBTRACT:  return left - right;
+        case OP_MULTIPLY:  return left * right;
+        case OP_DIVIDE:    return left / right;
+        case OP_MODULE:    return left % right;
+        case OP_EQUAL:     return left == right;
+        case OP_NOT_EQUAL: return left != right;
         default: UNREACHABLE("eval(): operator\n");
       }
     default: // switch (arena->items[current].kind)
