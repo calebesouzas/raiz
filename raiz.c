@@ -382,7 +382,7 @@ Parser parser_new(Lexer* lexer, ExprArena* arena)
   // fill 'parser.current' and update 'parser.next'
   parser_advance(&parser, TOKEN_ERROR);
   return parser;
-};
+}
 
 Expr* parser_parse_expr(Parser* parser, uint8_t min_bp);
 
