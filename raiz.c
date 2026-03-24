@@ -114,14 +114,14 @@ typedef struct
 
 typedef struct
 {
-  const char* source;
+  const char *source;
   size_t current, end; // strlen(source)
 } Lexer;
 
-const char* lexer_extract_token(Token token)
+const char *lexer_extract_token(Token token)
 {
   // char buffer[512] = {0};
-  const char* raiz_tokens[] = {
+  const char *raiz_tokens[] = {
     #define X(variant, string) string,
     TOKEN_X_MACRO_TABLE
     #undef X
@@ -129,12 +129,12 @@ const char* lexer_extract_token(Token token)
   return raiz_tokens[token.kind];
 }
 
-Lexer lexer_new(const char* source)
+Lexer lexer_new(const char *source)
 {
   return (Lexer) { .source = source, .current = 0, .end = strlen(source) };
 }
 
-Token lexer_next(Lexer* lexer)
+Token lexer_next(Lexer *lexer)
 {
   if (lexer->current >= lexer->end) return (Token) { .kind = TOKEN_EOF };
 
@@ -276,11 +276,11 @@ typedef struct
 typedef struct
 {
   size_t count, capacity;
-  Expr* items;
+  Expr *items;
 } ExprArena;
 
 
-void push_expr(ExprArena* arena, Expr* expr)
+void push_expr(ExprArena *arena, Expr *expr)
 {
   if (arena->capacity == 0)
   {
@@ -302,7 +302,7 @@ void push_expr(ExprArena* arena, Expr* expr)
 }
 
 
-Expr* expr_binary(ExprArena* arena, Expr* left, Expr* right, Operator op)
+Expr *expr_binary(ExprArena *arena, Expr *left, Expr *right, Operator op)
 {
   Expr result = (Expr) {
     .kind = EXPR_BINARY,
@@ -317,7 +317,7 @@ Expr* expr_binary(ExprArena* arena, Expr* left, Expr* right, Operator op)
   return &arena->items[result.id];
 }
 
-Expr* expr_unary(ExprArena* arena, Expr* target)
+Expr *expr_unary(ExprArena *arena, Expr *target)
 {
   Expr result = (Expr) {
     .kind = EXPR_UNARY,
@@ -331,7 +331,7 @@ Expr* expr_unary(ExprArena* arena, Expr* target)
   return &arena->items[result.id];
 }
 
-Expr* expr_literal(ExprArena* arena, int value)
+Expr *expr_literal(ExprArena *arena, int value)
 {
   Expr result = (Expr) {
     .kind = EXPR_LITERAL,
@@ -344,15 +344,15 @@ Expr* expr_literal(ExprArena* arena, int value)
 
 typedef struct
 {
-  Lexer* lexer;
+  Lexer *lexer;
   Token current;
   Token next;
-  ExprArena* arena;
+  ExprArena *arena;
   size_t callno; // for debugging purpose
   size_t depth; // for limits and debugging purpose
 } Parser;
 
-void parser_advance(Parser* parser, TokenKind expected_current_kind)
+void parser_advance(Parser *parser, TokenKind expected_current_kind)
 {
   ASSERT_EQ(parser->current.kind, expected_current_kind);
   LOG("------------------------------------\n");
@@ -366,12 +366,12 @@ void parser_advance(Parser* parser, TokenKind expected_current_kind)
   LOG("------------------------------------\n");
 }
 
-static inline Token parser_peek(Parser* parser)
+static inline Token parser_peek(Parser *parser)
 {
   return parser->next;
 }
 
-Parser parser_new(Lexer* lexer, ExprArena* arena)
+Parser parser_new(Lexer *lexer, ExprArena *arena)
 {
   Parser parser = {0};
   parser.lexer = lexer;
@@ -384,9 +384,9 @@ Parser parser_new(Lexer* lexer, ExprArena* arena)
   return parser;
 }
 
-Expr* parser_parse_expr(Parser* parser, uint8_t min_bp);
+Expr *parser_parse_expr(Parser *parser, uint8_t min_bp);
 
-Expr* parser_parse_nud(Parser* parser)
+Expr *parser_parse_nud(Parser *parser)
 {
   if (parser->current.kind == TOKEN_OP && parser->current.as.op == OP_SUBTRACT)
   {
@@ -421,11 +421,11 @@ Expr* parser_parse_nud(Parser* parser)
   return expr_literal(parser->arena, lit);
 }
 
-Expr* parser_parse_expr(Parser* parser, uint8_t min_bp)
+Expr *parser_parse_expr(Parser *parser, uint8_t min_bp)
 {
   LOG("parser_parse_expr(): call #%u, depth %u\n",
       ++parser->callno, ++parser->depth);
-  Expr* left_side = parser_parse_nud(parser);
+  Expr *left_side = parser_parse_nud(parser);
 
   while (parser->next.kind != TOKEN_EOF && parser->current.kind != TOKEN_RPAREN)
   {
@@ -446,7 +446,7 @@ Expr* parser_parse_expr(Parser* parser, uint8_t min_bp)
     parser_advance(parser, TOKEN_OP);
 
     LOG("parser_parse_expr(): mounting right side\n");
-    Expr* right_side = parser_parse_expr(parser, GET_RIGHT_BP(bps));
+    Expr *right_side = parser_parse_expr(parser, GET_RIGHT_BP(bps));
 
     LOG("parser_parse_expr(): re-mounting left side\n");
     left_side = expr_binary(parser->arena, left_side, right_side, op);
@@ -456,14 +456,14 @@ Expr* parser_parse_expr(Parser* parser, uint8_t min_bp)
   return left_side;
 }
 
-Expr* parser_build_ast(ExprArena* arena, const char* source)
+Expr *parser_build_ast(ExprArena *arena, const char *source)
 {
   Lexer lexer = lexer_new(source);
   Parser parser = parser_new(&lexer, arena);
   return parser_parse_expr(&parser, 0);
 }
 
-int eval(ExprArena* arena, size_t current)
+int eval(ExprArena *arena, size_t current)
 {
   switch (arena->items[current].kind)
   {
@@ -507,11 +507,11 @@ int eval(ExprArena* arena, size_t current)
   }
 }
 
-void dump_ast(ExprArena* arena, Expr* ast, size_t level)
+void dump_ast(ExprArena *arena, Expr *ast, size_t level)
 {
   for (size_t i = 0; i < level; i++) printf("  ");
 
-  char* operators[] = {
+  char *operators[] = {
     #define X(variant, token, bind_power) token,
     OP_X_MACRO_TABLE
     #undef X
@@ -539,7 +539,7 @@ void dump_ast(ExprArena* arena, Expr* ast, size_t level)
   }
 }
 
-int eval_arena(ExprArena* arena)
+int eval_arena(ExprArena *arena)
 {
   return eval(arena, arena->count - 1);
 }
@@ -554,7 +554,7 @@ int main(void)
     if (strncmp(buffer, "exit", 4) == 0) break;
 
     ExprArena arena = {0};
-    Expr* ast = parser_build_ast(&arena, buffer);
+    Expr *ast = parser_build_ast(&arena, buffer);
 
     printf("---- AST ----\n");
     dump_ast(&arena, ast, 1);
