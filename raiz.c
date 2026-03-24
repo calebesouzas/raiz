@@ -6,6 +6,18 @@
 #include <stdbool.h>
 #include <stdint.h>
 
+#define DEBUG_MODE
+#if defined(DEBUG_MODE) && !defined(DISABLE_LOGS)
+#define LOG(...)\
+  do\
+  {\
+    fprintf(stderr, "raiz(info): ");\
+    fprintf(stderr, __VA_ARGS__);\
+  } while (0)
+#else
+#define LOG(...)
+#endif // DEBUG_MODE and !DISABLE_LOGS
+
 #define PANIC(...)\
   do\
   {\
@@ -17,6 +29,15 @@
 #define TODO(message) PANIC("TODO at %s", (message))
 
 #define UNREACHABLE(message) PANIC("reached unreachable code at %s", (message))
+
+#define ASSERT_EQ(left, right)\
+  do\
+  {\
+    if ((left) != (right))\
+    {\
+      PANIC("assertion failed\n%s != %s\n", #left, #right);\
+    }\
+  } while (0)
 
 typedef enum
 {
@@ -172,6 +193,7 @@ void push_expr(ExprArena* arena, Expr* expr)
     expr->id = arena->count;
     arena->items[arena->count++] = *expr;
     expr->in_arena = true;
+    LOG("push_expr(): pushing expression #%u\n", expr->id);
   }
 }
 
@@ -241,12 +263,21 @@ typedef struct
   Token next;
   ExprArena* arena;
   size_t callno; // for debugging purpose
+  size_t depth; // for limits and debugging purpose
 } Parser;
 
-void parser_advance(Parser* parser)
+void parser_advance(Parser* parser, TokenKind expected_current_kind)
 {
+  ASSERT_EQ(parser->current.kind, expected_current_kind);
+  LOG("------------------------------------\n");
   parser->current = parser->next;
   parser->next = lexer_next(parser->lexer);
+
+  LOG("parser_advance(): new current = %s\n",
+      lexer_extract_token(parser->current));
+  LOG("parser_advance(): new next = %s\n",
+      lexer_extract_token(parser->next));
+  LOG("------------------------------------\n");
 }
 
 static inline Token parser_peek(Parser* parser)
@@ -259,8 +290,11 @@ Parser parser_new(Lexer* lexer, ExprArena* arena)
   Parser parser = {0};
   parser.lexer = lexer;
   parser.arena = arena;
-  parser_advance(&parser); // bootstrap 'parser.next'
-  parser_advance(&parser); // fill 'parser.current' and update 'parser.next'
+  LOG("parser_new(): initializing parser...\n");
+  // bootstrap 'parser.next'
+  parser_advance(&parser, TOKEN_ERROR);
+  // fill 'parser.current' and update 'parser.next'
+  parser_advance(&parser, TOKEN_ERROR);
   return parser;
 };
 
@@ -270,19 +304,22 @@ Expr* parser_parse_nud(Parser* parser)
 {
   if (parser->current.kind == TOKEN_OP && parser->current.as.op == OP_SUBTRACT)
   {
+    LOG("parser_parse_nud(): mounting unary\n");
     uint8_t bind_power = GET_LEFT_BP(get_binding_power(parser->current.as.op));
-    parser_advance(parser); // consume operator token
+    parser_advance(parser, TOKEN_OP);
     return expr_unary(parser->arena, parser_parse_expr(parser, bind_power));
   }
   else if (parser->current.kind == TOKEN_LPAREN)
   {
-    parser_advance(parser); // consume '('
+    LOG("parser_parse_nud(): mounting group\n");
+    parser_advance(parser, TOKEN_LPAREN);
     Expr *result = parser_parse_expr(parser, 0);
     if (parser->current.kind != TOKEN_RPAREN)
     {
       PANIC("parser_parse_nud(): expected ')' (found: %s, call: #%u)\n",
-            lexer_extract_token(parser->current), parser->callno);
+            lexer_extract_token(parser->next), parser->callno);
     }
+    parser_advance(parser, TOKEN_RPAREN);
     return result;
   }
   else if (parser->current.kind != TOKEN_INT)
@@ -291,37 +328,45 @@ Expr* parser_parse_nud(Parser* parser)
           lexer_extract_token(parser->current), parser->callno
     );
   }
-  return expr_literal(parser->arena, parser->current.as.literal);
+  LOG("parser_parse_nud(): returning literal\n");
+
+  int lit = parser->current.as.literal;
+  parser_advance(parser, TOKEN_INT);
+  return expr_literal(parser->arena, lit);
 }
 
 Expr* parser_parse_expr(Parser* parser, uint8_t min_bp)
 {
-  parser->callno++;
+  LOG("parser_parse_expr(): call #%u, depth %u\n",
+      ++parser->callno, ++parser->depth);
   Expr* left_side = parser_parse_nud(parser);
-  parser_advance(parser);
 
-  while (1)
+  while (parser->next.kind != TOKEN_EOF && parser->current.kind != TOKEN_RPAREN)
   {
-    if (parser->current.kind == TOKEN_EOF
-        || parser->current.kind == TOKEN_RPAREN)
-      break;
-
-    Token op_token = parser->current;
-    if (op_token.kind != TOKEN_OP)
+    if (parser->current.kind != TOKEN_OP)
     {
       PANIC("parser_parse_expr(): expected operator (found: %s, call: #%u)\n",
-            lexer_extract_token(op_token), parser->callno);
+            lexer_extract_token(parser->current), parser->callno);
     }
 
-    uint8_t bps = get_binding_power(op_token.as.op);
-    if (GET_LEFT_BP(bps) < min_bp) break;
-    parser_advance(parser); // consume operator token
+    Operator op = parser->current.as.op;
 
+    uint8_t bps = get_binding_power(op);
+    if (GET_LEFT_BP(bps) < min_bp)
+    {
+      LOG("parser_parse_expr(): breaking loop\n");
+      break;
+    }
+    parser_advance(parser, TOKEN_OP);
+
+    LOG("parser_parse_expr(): mounting right side\n");
     Expr* right_side = parser_parse_expr(parser, GET_RIGHT_BP(bps));
-    left_side = expr_binary(parser->arena, left_side, right_side,
-                            op_token.as.op);
+
+    LOG("parser_parse_expr(): re-mounting left side\n");
+    left_side = expr_binary(parser->arena, left_side, right_side, op);
   }
 
+  parser->depth--;
   return left_side;
 }
 
