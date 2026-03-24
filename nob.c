@@ -39,7 +39,12 @@ int main(int argc, char* argv[])
     }
     else if (strncmp(argv[1], "strict", 6) == 0)
     {
-      // TODO: build with strict flags
+      TODO("build with strict flags");
+    }
+    else if (strncmp(argv[1], "--no-logs", 9) == 0)
+    {
+      cmd_append(&cmd, "clang", "-o", OUTPUT_PATH, RAIZ_SOURCE,
+                 CC_ARGS, "-DDISABLE_LOGS");
     }
 
     if (!cmd_run(&cmd)) return 1;
