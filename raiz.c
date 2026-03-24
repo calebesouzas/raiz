@@ -48,6 +48,17 @@ typedef enum
   OP_MODULE,
   OP_EQUAL,
   OP_NOT_EQUAL,
+  OP_BOOL_AND,
+  OP_BOOL_OR,
+  OP_GREATER,
+  OP_LESS,
+  OP_GREATER_EQ,
+  OP_LESS_EQ,
+  OP_BIT_AND,
+  OP_BIT_OR,
+  OP_BIT_XOR,
+  OP_BIT_RSHIFT,
+  OP_BIT_LSHIFT,
 } Operator;
 
 #define TOKEN_X_MACRO_TABLE\
@@ -145,16 +156,53 @@ Token lexer_next(Lexer* lexer)
       }
       lexer->current += 2;
       return (Token) {.kind = TOKEN_OP, .as.op = OP_NOT_EQUAL };
-    case '0':
-    case '1':
-    case '2':
-    case '3':
-    case '4':
-    case '5':
-    case '6':
-    case '7':
-    case '8':
-    case '9':
+    case '>':
+      if (lexer->source[lexer->current + 1] == '=')
+      {
+        lexer->current += 2;
+        return (Token) {.kind = TOKEN_OP, .as.op = OP_GREATER_EQ };
+      }
+      else if (lexer->source[lexer->current + 1] == '>')
+      {
+        lexer->current += 2;
+        return (Token) {.kind = TOKEN_OP, .as.op = OP_BIT_RSHIFT };
+      }
+      lexer->current++;
+      return (Token) {.kind = TOKEN_OP, .as.op = OP_GREATER };
+    case '<':
+      if (lexer->source[lexer->current + 1] == '=')
+      {
+        lexer->current += 2;
+        return (Token) {.kind = TOKEN_OP, .as.op = OP_LESS_EQ };
+      }
+      else if (lexer->source[lexer->current + 1] == '<')
+      {
+        lexer->current += 2;
+        return (Token) {.kind = TOKEN_OP, .as.op = OP_BIT_LSHIFT };
+      }
+      lexer->current++;
+      return (Token) {.kind = TOKEN_OP, .as.op = OP_LESS };
+    case '^':
+      lexer->current++;
+      return (Token) {.kind = TOKEN_OP, .as.op = OP_BIT_XOR };
+    case '|':
+      if (lexer->source[lexer->current + 1] == '|')
+      {
+        lexer->current += 2;
+        return (Token) {.kind = TOKEN_OP, .as.op = OP_BOOL_OR };
+      }
+      lexer->current++;
+      return (Token) {.kind = TOKEN_OP, .as.op = OP_BIT_OR };
+    case '&':
+      if (lexer->source[lexer->current + 1] == '&')
+      {
+        lexer->current += 2;
+        return (Token) {.kind = TOKEN_OP, .as.op = OP_BOOL_AND };
+      }
+      lexer->current++;
+      return (Token) {.kind = TOKEN_OP, .as.op = OP_BIT_AND };
+    case '0': case '1': case '2': case '3': case '4':
+    case '5': case '6': case '7': case '8': case '9':
       ;
       int number = 0;
       for (; isdigit(lexer->source[lexer->current]); lexer->current++)
@@ -272,6 +320,7 @@ Expr* expr_literal(ExprArena* arena, int value)
 
 #define GET_RIGHT_BP(bind_powers) ((bind_powers) & 0x0f) // 16
 #define GET_LEFT_BP(bind_powers) ((bind_powers) >> 4)
+#define BP_PAIR(left_bp, right_bp) ((right_bp) + ((left_bp) << 4))
 
 uint8_t get_binding_power(Operator op)
 {
@@ -283,15 +332,26 @@ uint8_t get_binding_power(Operator op)
   {
     case OP_NOT_EQUAL:
     case OP_EQUAL:
-      return 2 + (1 << 4);
+    case OP_GREATER:
+    case OP_GREATER_EQ:
+    case OP_LESS:
+    case OP_LESS_EQ:
+    case OP_BOOL_AND:
+    case OP_BOOL_OR:
+    case OP_BIT_OR:
+    case OP_BIT_XOR:
+    case OP_BIT_AND:
+      return BP_PAIR(1, 2);
     case OP_SUM:
     case OP_SUBTRACT:
-      return 3 + (2 << 4);
+    case OP_BIT_RSHIFT:
+    case OP_BIT_LSHIFT:
+      return BP_PAIR(3, 4);
     case OP_MULTIPLY:
     case OP_DIVIDE:
-      return 4 + (5 << 4);
+      return BP_PAIR(5, 6);
     case OP_MODULE:
-      return 7 + (6 << 4);
+      return BP_PAIR(8, 7);
     default: UNREACHABLE("get_binding_power(): operator\n");
   }
 }
@@ -436,13 +496,24 @@ int eval(ExprArena* arena, size_t current)
 
       switch (arena->items[current].as.binary.op)
       {
-        case OP_SUM:       return left + right;
-        case OP_SUBTRACT:  return left - right;
-        case OP_MULTIPLY:  return left * right;
-        case OP_DIVIDE:    return left / right;
-        case OP_MODULE:    return left % right;
-        case OP_EQUAL:     return left == right;
-        case OP_NOT_EQUAL: return left != right;
+        case OP_SUM:        return left + right;
+        case OP_SUBTRACT:   return left - right;
+        case OP_MULTIPLY:   return left * right;
+        case OP_DIVIDE:     return left / right;
+        case OP_MODULE:     return left % right;
+        case OP_GREATER:    return left > right;
+        case OP_LESS:       return left < right;
+        case OP_BIT_OR:     return left | right;
+        case OP_BIT_XOR:    return left ^ right;
+        case OP_BIT_AND:    return left & right;
+        case OP_BIT_RSHIFT: return left >> right;
+        case OP_BIT_LSHIFT: return left << right;
+        case OP_EQUAL:      return left == right;
+        case OP_NOT_EQUAL:  return left != right;
+        case OP_GREATER_EQ: return left >= right;
+        case OP_LESS_EQ:    return left <= right;
+        case OP_BOOL_AND:   return left && right;
+        case OP_BOOL_OR:    return left || right;
         default: UNREACHABLE("eval(): operator\n");
       }
     default: // switch (arena->items[current].kind)
