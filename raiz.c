@@ -39,27 +39,51 @@
     }\
   } while (0)
 
+/* format: LEFT << 8 | RIGHT
+ * to get LEFT: (PAIR >> 8)
+ * to get right: (PAIR & 0xFF)
+ * 0xFF == 255 == 11111111 */
+#define PAIR_BP(left_bp, right_bp) (((left_bp) << 8) | (right_bp))
+#define GET_RIGHT_BP(bind_powers) ((bind_powers) & 0xFF)
+#define GET_LEFT_BP(bind_powers) ((bind_powers) >> 8)
+
+#define OP_X_MACRO_TABLE\
+  X(OP_EQUAL,      "==", PAIR_BP( 1,  2))\
+  X(OP_NOT_EQUAL,  "!=", PAIR_BP( 1,  2))\
+  X(OP_BOOL_OR,    "||", PAIR_BP( 2,  3))\
+  X(OP_BOOL_AND,   "&&", PAIR_BP( 4,  5))\
+  X(OP_BIT_AND,    "&",  PAIR_BP( 6,  7))\
+  X(OP_BIT_OR,     "|",  PAIR_BP( 6,  7))\
+  X(OP_BIT_XOR,    "^",  PAIR_BP( 6,  7))\
+  X(OP_BIT_RSHIFT, ">>", PAIR_BP( 6,  7))\
+  X(OP_BIT_LSHIFT, "<<", PAIR_BP( 6,  7))\
+  X(OP_GREATER,    ">",  PAIR_BP( 8,  9))\
+  X(OP_LESS,       "<",  PAIR_BP( 8,  9))\
+  X(OP_GREATER_EQ, ">=", PAIR_BP( 8,  9))\
+  X(OP_LESS_EQ,    "<=", PAIR_BP( 8,  9))\
+  X(OP_SUM,        "+",  PAIR_BP(10, 11))\
+  X(OP_SUBTRACT,   "-",  PAIR_BP(10, 11))\
+  X(OP_MULTIPLY,   "*",  PAIR_BP(12, 13))\
+  X(OP_DIVIDE,     "/",  PAIR_BP(12, 13))\
+  X(OP_MODULE,     "%",  PAIR_BP(12, 13))
+
 typedef enum
 {
-  OP_SUM,
-  OP_SUBTRACT,
-  OP_MULTIPLY,
-  OP_DIVIDE,
-  OP_MODULE,
-  OP_EQUAL,
-  OP_NOT_EQUAL,
-  OP_BOOL_AND,
-  OP_BOOL_OR,
-  OP_GREATER,
-  OP_LESS,
-  OP_GREATER_EQ,
-  OP_LESS_EQ,
-  OP_BIT_AND,
-  OP_BIT_OR,
-  OP_BIT_XOR,
-  OP_BIT_RSHIFT,
-  OP_BIT_LSHIFT,
+  #define X(variant, token, power) variant,
+  OP_X_MACRO_TABLE
+  #undef X
 } Operator;
+
+uint16_t get_binding_power(Operator op)
+{
+  uint16_t powers[] = {
+    #define X(variant, token, binding_power) binding_power,
+    OP_X_MACRO_TABLE
+    #undef X
+  };
+
+  return powers[op];
+}
 
 #define TOKEN_X_MACRO_TABLE\
   X(TOKEN_ERROR, "<TOKEN_ERROR>")\
@@ -318,44 +342,6 @@ Expr* expr_literal(ExprArena* arena, int value)
   return &arena->items[result.id];
 }
 
-#define GET_RIGHT_BP(bind_powers) ((bind_powers) & 0x0f) // 16
-#define GET_LEFT_BP(bind_powers) ((bind_powers) >> 4)
-#define BP_PAIR(left_bp, right_bp) ((right_bp) + ((left_bp) << 4))
-
-uint8_t get_binding_power(Operator op)
-{
-  // format: RIGHT + (LEFT << 4)
-  // to get LEFT: (PAIR >> 4)
-  // to get right: (PAIR & 0x0F)
-  // 0x0F == 16 == 00001111
-  switch (op)
-  {
-    case OP_NOT_EQUAL:
-    case OP_EQUAL:
-    case OP_GREATER:
-    case OP_GREATER_EQ:
-    case OP_LESS:
-    case OP_LESS_EQ:
-    case OP_BOOL_AND:
-    case OP_BOOL_OR:
-    case OP_BIT_OR:
-    case OP_BIT_XOR:
-    case OP_BIT_AND:
-      return BP_PAIR(1, 2);
-    case OP_SUM:
-    case OP_SUBTRACT:
-    case OP_BIT_RSHIFT:
-    case OP_BIT_LSHIFT:
-      return BP_PAIR(3, 4);
-    case OP_MULTIPLY:
-    case OP_DIVIDE:
-      return BP_PAIR(5, 6);
-    case OP_MODULE:
-      return BP_PAIR(8, 7);
-    default: UNREACHABLE("get_binding_power(): operator\n");
-  }
-}
-
 typedef struct
 {
   Lexer* lexer;
@@ -523,43 +509,33 @@ int eval(ExprArena* arena, size_t current)
 
 void dump_ast(ExprArena* arena, Expr* ast, size_t level)
 {
-  for (int i = 0; i < level; i++) printf("  ");
+  for (size_t i = 0; i < level; i++) printf("  ");
+
+  char* operators[] = {
+    #define X(variant, token, bind_power) token,
+    OP_X_MACRO_TABLE
+    #undef X
+  };
+
   switch (arena->items[ast->id].kind)
   {
-    case EXPR_LITERAL: printf("Literal %d\n", ast->as.literal);
+    case EXPR_LITERAL:
+      printf("Literal %d\n", ast->as.literal);
+      break;
     case EXPR_UNARY:
+      printf("Unary %s\n", operators[ast->as.unary.op]);
       dump_ast(arena, &arena->items[ast->as.unary.target_id], level + 1);
+      break;
     case EXPR_BINARY:
       ; // HACK this thing literally made "declaration after label is a C23
         // extension" compiler warning disappear!
-      dump_ast(arena, &arena->items[ast->as.unary.target_id], level + 1);
-      int left = eval(arena, arena->items[current].as.binary.left_id);
-      int right = eval(arena, arena->items[current].as.binary.right_id);
+      printf("Binary %s\n", operators[ast->as.binary.op]);
+      dump_ast(arena, &arena->items[ast->as.binary.left_id],  level + 1);
+      dump_ast(arena, &arena->items[ast->as.binary.right_id], level + 1);
+      break;
 
-      switch (arena->items[current].as.binary.op)
-      {
-        case OP_SUM:        return left + right;
-        case OP_SUBTRACT:   return left - right;
-        case OP_MULTIPLY:   return left * right;
-        case OP_DIVIDE:     return left / right;
-        case OP_MODULE:     return left % right;
-        case OP_GREATER:    return left > right;
-        case OP_LESS:       return left < right;
-        case OP_BIT_OR:     return left | right;
-        case OP_BIT_XOR:    return left ^ right;
-        case OP_BIT_AND:    return left & right;
-        case OP_BIT_RSHIFT: return left >> right;
-        case OP_BIT_LSHIFT: return left << right;
-        case OP_EQUAL:      return left == right;
-        case OP_NOT_EQUAL:  return left != right;
-        case OP_GREATER_EQ: return left >= right;
-        case OP_LESS_EQ:    return left <= right;
-        case OP_BOOL_AND:   return left && right;
-        case OP_BOOL_OR:    return left || right;
-        default: UNREACHABLE("eval(): operator\n");
-      }
     default: // switch (arena->items[current].kind)
-      UNREACHABLE("eval(): expression kind\n");
+      UNREACHABLE("dump_ast(): expression kind\n");
   }
 }
 
@@ -578,10 +554,14 @@ int main(void)
     if (strncmp(buffer, "exit", 4) == 0) break;
 
     ExprArena arena = {0};
-    (void)parser_build_ast(&arena, buffer);
-    printf("%d\n", eval_arena(&arena));
-    free(arena.items);
+    Expr* ast = parser_build_ast(&arena, buffer);
 
+    printf("---- AST ----\n");
+    dump_ast(&arena, ast, 1);
+
+    printf("Result %d\n", eval_arena(&arena));
+
+    free(arena.items);
     printf("$> ");
   }
   return 0;
