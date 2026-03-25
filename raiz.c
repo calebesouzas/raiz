@@ -44,28 +44,28 @@
  * to get right: (PAIR & 0xFF)
  * 0xFF == 255 == 11111111 */
 #define PAIR_BP(left_bp, right_bp) (((left_bp) << 8) | (right_bp))
-#define GET_RIGHT_BP(bind_powers) ((bind_powers) & 0xFF)
-#define GET_LEFT_BP(bind_powers) ((bind_powers) >> 8)
+#define GET_RIGHT_BP(bind_powers) ((uint8_t)((bind_powers) & 0xFF))
+#define GET_LEFT_BP(bind_powers) ((uint8_t)((bind_powers) >> 8))
 
 #define OP_X_MACRO_TABLE\
   X(OP_EQUAL,      "==", PAIR_BP( 1,  2))\
   X(OP_NOT_EQUAL,  "!=", PAIR_BP( 1,  2))\
-  X(OP_BOOL_OR,    "||", PAIR_BP( 2,  3))\
-  X(OP_BOOL_AND,   "&&", PAIR_BP( 4,  5))\
-  X(OP_BIT_AND,    "&",  PAIR_BP( 6,  7))\
-  X(OP_BIT_OR,     "|",  PAIR_BP( 6,  7))\
-  X(OP_BIT_XOR,    "^",  PAIR_BP( 6,  7))\
-  X(OP_BIT_RSHIFT, ">>", PAIR_BP( 6,  7))\
-  X(OP_BIT_LSHIFT, "<<", PAIR_BP( 6,  7))\
+  X(OP_BOOL_OR,    "||", PAIR_BP( 4,  5))\
+  X(OP_BOOL_AND,   "&&", PAIR_BP( 6,  7))\
   X(OP_GREATER,    ">",  PAIR_BP( 8,  9))\
   X(OP_LESS,       "<",  PAIR_BP( 8,  9))\
   X(OP_GREATER_EQ, ">=", PAIR_BP( 8,  9))\
   X(OP_LESS_EQ,    "<=", PAIR_BP( 8,  9))\
-  X(OP_SUM,        "+",  PAIR_BP(10, 11))\
-  X(OP_SUBTRACT,   "-",  PAIR_BP(10, 11))\
-  X(OP_MULTIPLY,   "*",  PAIR_BP(12, 13))\
-  X(OP_DIVIDE,     "/",  PAIR_BP(12, 13))\
-  X(OP_MODULE,     "%",  PAIR_BP(12, 13))
+  X(OP_BIT_AND,    "&",  PAIR_BP(10, 11))\
+  X(OP_BIT_OR,     "|",  PAIR_BP(10, 11))\
+  X(OP_BIT_XOR,    "^",  PAIR_BP(10, 11))\
+  X(OP_BIT_RSHIFT, ">>", PAIR_BP(10, 11))\
+  X(OP_BIT_LSHIFT, "<<", PAIR_BP(10, 11))\
+  X(OP_SUM,        "+",  PAIR_BP(12, 13))\
+  X(OP_SUBTRACT,   "-",  PAIR_BP(12, 13))\
+  X(OP_MULTIPLY,   "*",  PAIR_BP(14, 15))\
+  X(OP_DIVIDE,     "/",  PAIR_BP(14, 15))\
+  X(OP_MODULE,     "%",  PAIR_BP(14, 15))
 
 typedef enum
 {
@@ -437,7 +437,7 @@ Expr *parser_parse_expr(Parser *parser, uint8_t min_bp)
 
     Operator op = parser->current.as.op;
 
-    uint8_t bps = get_binding_power(op);
+    uint16_t bps = get_binding_power(op);
     if (GET_LEFT_BP(bps) < min_bp)
     {
       LOG("parser_parse_expr(): breaking loop\n");
