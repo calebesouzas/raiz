@@ -86,12 +86,13 @@ uint16_t get_binding_power(Operator op)
 }
 
 #define TOKEN_X_MACRO_TABLE\
-  X(TOKEN_ERROR, "<TOKEN_ERROR>")\
-  X(TOKEN_EOF, "<TOKEN_EOF>")\
-  X(TOKEN_INT, "<TOKEN_INT>")\
-  X(TOKEN_OP, "<TOKEN_OP>")\
-  X(TOKEN_LPAREN, "<TOKEN_LPAREN>")\
-  X(TOKEN_RPAREN, "<TOKEN_RPAREN>")
+  X(TOKEN_ERROR,  "error"      )\
+  X(TOKEN_EOF,    "end of file")\
+  X(TOKEN_INT,    "integer "   )\
+  X(TOKEN_IDENT,  "identifier ")\
+  X(TOKEN_OP,     "operator "  )\
+  X(TOKEN_LPAREN, "'('"        )\
+  X(TOKEN_RPAREN, "')'"        )
 
 typedef enum
 {
@@ -109,13 +110,15 @@ union TokenData
 typedef struct
 {
   TokenKind kind;
+  size_t len;
+  char *lexeme;
   union TokenData as;
 } Token;
 
 typedef struct
 {
   const char *source;
-  size_t current, end; // strlen(source)
+  size_t start, current, end; // strlen(source)
 } Lexer;
 
 const char *lexer_extract_token(Token token)
@@ -131,7 +134,12 @@ const char *lexer_extract_token(Token token)
 
 Lexer lexer_new(const char *source)
 {
-  return (Lexer) { .source = source, .current = 0, .end = strlen(source) };
+  return (Lexer) {
+    .source = source,
+    .start = 0,
+    .current = 0,
+    .end = strlen(source)
+  };
 }
 
 Token lexer_next(Lexer *lexer)
@@ -140,6 +148,8 @@ Token lexer_next(Lexer *lexer)
 
   while (isspace(lexer->source[lexer->current]))
     lexer->current++;
+
+  lexer->start = lexer->current;
 
   switch (lexer->source[lexer->current])
   {
