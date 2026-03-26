@@ -1,3 +1,6 @@
+#ifndef RAIZ_PARSER_SOURCE
+#define RAIZ_PARSER_SOURCE
+
 /* format: LEFT << 8 | RIGHT
  * to get LEFT: (PAIR >> 8)
  * to get right: (PAIR & 0xFF)
@@ -7,28 +10,29 @@
 #define GET_LEFT_BP(bind_powers) ((uint8_t)((bind_powers) >> 8))
 
 #define OP_X_MACRO_TABLE\
-  X(OP_EQUAL,      "==", PAIR_BP( 1,  2))\
-  X(OP_NOT_EQUAL,  "!=", PAIR_BP( 1,  2))\
-  X(OP_BOOL_OR,    "||", PAIR_BP( 4,  5))\
-  X(OP_BOOL_AND,   "&&", PAIR_BP( 6,  7))\
-  X(OP_GREATER,    ">",  PAIR_BP( 8,  9))\
-  X(OP_LESS,       "<",  PAIR_BP( 8,  9))\
-  X(OP_GREATER_EQ, ">=", PAIR_BP( 8,  9))\
-  X(OP_LESS_EQ,    "<=", PAIR_BP( 8,  9))\
-  X(OP_BIT_AND,    "&",  PAIR_BP(10, 11))\
-  X(OP_BIT_OR,     "|",  PAIR_BP(10, 11))\
-  X(OP_BIT_XOR,    "^",  PAIR_BP(10, 11))\
-  X(OP_BIT_RSHIFT, ">>", PAIR_BP(10, 11))\
-  X(OP_BIT_LSHIFT, "<<", PAIR_BP(10, 11))\
-  X(OP_SUM,        "+",  PAIR_BP(12, 13))\
-  X(OP_SUBTRACT,   "-",  PAIR_BP(12, 13))\
-  X(OP_MULTIPLY,   "*",  PAIR_BP(14, 15))\
-  X(OP_DIVIDE,     "/",  PAIR_BP(14, 15))\
-  X(OP_MODULE,     "%",  PAIR_BP(14, 15))
+  X(OP_ASSIGN,     PAIR_BP( 2,  1))\
+  X(OP_EQUAL,      PAIR_BP( 3,  4))\
+  X(OP_NOT_EQUAL,  PAIR_BP( 3,  4))\
+  X(OP_BOOL_OR,    PAIR_BP( 6,  7))\
+  X(OP_BOOL_AND,   PAIR_BP( 8,  9))\
+  X(OP_GREATER,    PAIR_BP(10, 11))\
+  X(OP_LESS,       PAIR_BP(10, 11))\
+  X(OP_GREATER_EQ, PAIR_BP(10, 11))\
+  X(OP_LESS_EQ,    PAIR_BP(10, 11))\
+  X(OP_BIT_AND,    PAIR_BP(12, 13))\
+  X(OP_BIT_OR,     PAIR_BP(12, 13))\
+  X(OP_BIT_XOR,    PAIR_BP(12, 13))\
+  X(OP_BIT_RSHIFT, PAIR_BP(12, 13))\
+  X(OP_BIT_LSHIFT, PAIR_BP(12, 13))\
+  X(OP_SUM,        PAIR_BP(14, 15))\
+  X(OP_SUBTRACT,   PAIR_BP(14, 15))\
+  X(OP_MULTIPLY,   PAIR_BP(16, 17))\
+  X(OP_DIVIDE,     PAIR_BP(16, 17))\
+  X(OP_MODULE,     PAIR_BP(16, 17))
 
 typedef enum
 {
-  #define X(variant, token, power) variant,
+  #define X(variant, power) variant,
   OP_X_MACRO_TABLE
   #undef X
 } Operator;
@@ -36,7 +40,7 @@ typedef enum
 uint16_t get_binding_power(Operator op)
 {
   uint16_t powers[] = {
-    #define X(variant, token, binding_power) binding_power,
+    #define X(variant, binding_power) binding_power,
     OP_X_MACRO_TABLE
     #undef X
   };
@@ -44,19 +48,14 @@ uint16_t get_binding_power(Operator op)
   return powers[op];
 }
 
-#define TOKEN_X_MACRO_TABLE\
-  X(TOKEN_ERROR, "<TOKEN_ERROR>")\
-  X(TOKEN_EOF, "<TOKEN_EOF>")\
-  X(TOKEN_INT, "<TOKEN_INT>")\
-  X(TOKEN_OP, "<TOKEN_OP>")\
-  X(TOKEN_LPAREN, "<TOKEN_LPAREN>")\
-  X(TOKEN_RPAREN, "<TOKEN_RPAREN>")
-
 typedef enum
 {
-  #define X(variant, string) variant,
-  TOKEN_X_MACRO_TABLE
-  #undef X
+  TOKEN_ERROR,
+  TOKEN_EOF,
+  TOKEN_LIT_INT,
+  TOKEN_OP,
+  TOKEN_LPAREN,
+  TOKEN_RPAREN,
 } TokenKind;
 
 union TokenData
@@ -69,130 +68,79 @@ typedef struct
 {
   TokenKind kind;
   union TokenData as;
+  char *lexeme;
+  size_t len;
 } Token;
 
 typedef struct
 {
   const char *source;
-  size_t current, end; // strlen(source)
+  size_t current, source_len;
 } Lexer;
 
-const char *lexer_extract_token(Token token)
-{
-  // char buffer[512] = {0};
-  const char *raiz_tokens[] = {
-    #define X(variant, string) string,
-    TOKEN_X_MACRO_TABLE
-    #undef X
-  };
-  return raiz_tokens[token.kind];
-}
 
-Lexer lexer_new(const char *source)
-{
-  return (Lexer) { .source = source, .current = 0, .end = strlen(source) };
-}
+#define lexer_format_token(token) (token).len, (token).lexeme
 
 Token lexer_next(Lexer *lexer)
 {
   if (lexer->current >= lexer->end) return (Token) { .kind = TOKEN_EOF };
 
-  while (isspace(lexer->source[lexer->current]))
-    lexer->current++;
+  while (isspace(lexer->source[lexer->current])) lexer->current++;
 
-  switch (lexer->source[lexer->current])
+  switch (lexer->source[lexer->current++])
   {
-    case '(':
-      lexer->current++;
-      return (Token) {.kind = TOKEN_LPAREN, };
-    case ')':
-      lexer->current++;
-      return (Token) {.kind = TOKEN_RPAREN, };
-    case '+':
-      lexer->current++;
-      return (Token) {.kind = TOKEN_OP, .as.op = OP_SUM };
-    case '-':
-      lexer->current++;
-      return (Token) {.kind = TOKEN_OP, .as.op = OP_SUBTRACT };
-    case '*':
-      lexer->current++;
-      return (Token) {.kind = TOKEN_OP, .as.op = OP_MULTIPLY };
-    case '/':
-      lexer->current++;
-      return (Token) {.kind = TOKEN_OP, .as.op = OP_DIVIDE };
-    case '%':
-      lexer->current++;
-      return (Token) {.kind = TOKEN_OP, .as.op = OP_MODULE };
-    case '\0':
-      return (Token) {.kind = TOKEN_EOF };
+    case '\0':return (Token) {.kind = TOKEN_EOF };
+    case '(': return (Token) {.kind = TOKEN_LPAREN, };
+    case ')': return (Token) {.kind = TOKEN_RPAREN, };
+    case '+': return (Token) {.kind = TOKEN_OP, .as.op = OP_SUM };
+    case '-': return (Token) {.kind = TOKEN_OP, .as.op = OP_SUBTRACT };
+    case '*': return (Token) {.kind = TOKEN_OP, .as.op = OP_MULTIPLY };
+    case '/': return (Token) {.kind = TOKEN_OP, .as.op = OP_DIVIDE };
+    case '%': return (Token) {.kind = TOKEN_OP, .as.op = OP_MODULE };
     case '=':
-      if (lexer->source[lexer->current + 1] != '=')
-      {
-        PANIC("lexer_next(): no support for assignments yet\n");
-      }
-      lexer->current += 2;
-      return (Token) {.kind = TOKEN_OP, .as.op = OP_EQUAL };
+      if (lexer->source[lexer->current] == '=')
+        return (Token) {.kind = TOKEN_OP, .as.op = OP_EQUAL };
+      return (Token) {.kind = TOKEN_OP, .as.op = OP_ASSIGN };
     case '!':
-      if (lexer->source[lexer->current + 1] != '=')
-      {
+      if (lexer->source[lexer->current] != '=')
         PANIC("lexer_next(): no support for function explosions yet\n");
-      }
-      lexer->current += 2;
       return (Token) {.kind = TOKEN_OP, .as.op = OP_NOT_EQUAL };
     case '>':
-      if (lexer->source[lexer->current + 1] == '=')
-      {
-        lexer->current += 2;
+      if (lexer->source[lexer->current] == '=')
         return (Token) {.kind = TOKEN_OP, .as.op = OP_GREATER_EQ };
-      }
-      else if (lexer->source[lexer->current + 1] == '>')
-      {
-        lexer->current += 2;
+      else if (lexer->source[lexer->current] == '>')
         return (Token) {.kind = TOKEN_OP, .as.op = OP_BIT_RSHIFT };
-      }
-      lexer->current++;
       return (Token) {.kind = TOKEN_OP, .as.op = OP_GREATER };
     case '<':
-      if (lexer->source[lexer->current + 1] == '=')
-      {
-        lexer->current += 2;
+      if (lexer->source[lexer->current] == '=')
         return (Token) {.kind = TOKEN_OP, .as.op = OP_LESS_EQ };
-      }
-      else if (lexer->source[lexer->current + 1] == '<')
-      {
-        lexer->current += 2;
+      else if (lexer->source[lexer->current] == '<')
         return (Token) {.kind = TOKEN_OP, .as.op = OP_BIT_LSHIFT };
-      }
-      lexer->current++;
       return (Token) {.kind = TOKEN_OP, .as.op = OP_LESS };
     case '^':
-      lexer->current++;
       return (Token) {.kind = TOKEN_OP, .as.op = OP_BIT_XOR };
     case '|':
-      if (lexer->source[lexer->current + 1] == '|')
-      {
-        lexer->current += 2;
+      if (lexer->source[lexer->current] == '|')
         return (Token) {.kind = TOKEN_OP, .as.op = OP_BOOL_OR };
-      }
-      lexer->current++;
       return (Token) {.kind = TOKEN_OP, .as.op = OP_BIT_OR };
     case '&':
-      if (lexer->source[lexer->current + 1] == '&')
-      {
-        lexer->current += 2;
+      if (lexer->source[lexer->current] == '&')
         return (Token) {.kind = TOKEN_OP, .as.op = OP_BOOL_AND };
-      }
-      lexer->current++;
       return (Token) {.kind = TOKEN_OP, .as.op = OP_BIT_AND };
-    case '0': case '1': case '2': case '3': case '4':
-    case '5': case '6': case '7': case '8': case '9':
-      ;
-      int number = 0;
-      for (; isdigit(lexer->source[lexer->current]); lexer->current++)
-        number = (number * 10) + (lexer->source[lexer->current] - '0');
-
-      return (Token) { .kind = TOKEN_INT, .as.literal = number };
     default:
+      if (isdigit(lexer->source[--lexer->current]))
+      {
+        int number = lexer->source[lexer->current] - '0';
+        while (isdigit(lexer->source[lexer->current])
+          number = (number * 10) + (lexer->source[lexer->current] - '0');
+
+        return (Token) { .kind = TOKEN_INT, .as.literal = number };
+      }
+      else if (isalpha(lexer->source[--lexer->current]))
+      {
+        while (isalnum(lexer->source[lexer->current)) lexer->current++;
+        return (Token) {.kind = TOKEN_IDENT };
+      }
       PANIC("lexer_next(): invalid token at index %u: '%c'\n",
             lexer->current, lexer->source[lexer->current]);
   }
@@ -256,7 +204,6 @@ void push_expr(ExprArena *arena, Expr *expr)
     expr->id = arena->count;
     arena->items[arena->count++] = *expr;
     expr->in_arena = true;
-    LOG("push_expr(): pushing expression #%u\n", expr->id);
   }
 }
 
@@ -314,15 +261,8 @@ typedef struct
 void parser_advance(Parser *parser, TokenKind expected_current_kind)
 {
   ASSERT_EQ(parser->current.kind, expected_current_kind);
-  LOG("------------------------------------\n");
   parser->current = parser->next;
   parser->next = lexer_next(parser->lexer);
-
-  LOG("parser_advance(): new current = %s\n",
-      lexer_extract_token(parser->current));
-  LOG("parser_advance(): new next = %s\n",
-      lexer_extract_token(parser->next));
-  LOG("------------------------------------\n");
 }
 
 static inline Token parser_peek(Parser *parser)
@@ -335,7 +275,6 @@ Parser parser_new(Lexer *lexer, ExprArena *arena)
   Parser parser = {0};
   parser.lexer = lexer;
   parser.arena = arena;
-  LOG("parser_new(): initializing parser...\n");
   // bootstrap 'parser.next'
   parser_advance(&parser, TOKEN_ERROR);
   // fill 'parser.current' and update 'parser.next'
@@ -349,20 +288,18 @@ Expr *parser_parse_nud(Parser *parser)
 {
   if (parser->current.kind == TOKEN_OP && parser->current.as.op == OP_SUBTRACT)
   {
-    LOG("parser_parse_nud(): mounting unary\n");
     uint8_t bind_power = GET_RIGHT_BP(get_binding_power(parser->current.as.op));
     parser_advance(parser, TOKEN_OP);
     return expr_unary(parser->arena, parser_parse_expr(parser, bind_power));
   }
   else if (parser->current.kind == TOKEN_LPAREN)
   {
-    LOG("parser_parse_nud(): mounting group\n");
     parser_advance(parser, TOKEN_LPAREN);
     Expr *result = parser_parse_expr(parser, 0);
     if (parser->current.kind != TOKEN_RPAREN)
     {
       PANIC("parser_parse_nud(): expected ')' (found: %s, call: #%u)\n",
-            lexer_extract_token(parser->next), parser->callno);
+            lexer_format_token(parser->next), parser->callno);
     }
     parser_advance(parser, TOKEN_RPAREN);
     return result;
@@ -370,10 +307,9 @@ Expr *parser_parse_nud(Parser *parser)
   else if (parser->current.kind != TOKEN_INT)
   {
     PANIC("parser_parse_nud(): expected number token (found %s, call: #%u)\n",
-          lexer_extract_token(parser->current), parser->callno
+          lexer_format_token(parser->current), parser->callno
     );
   }
-  LOG("parser_parse_nud(): returning literal\n");
 
   int lit = parser->current.as.literal;
   parser_advance(parser, TOKEN_INT);
@@ -382,8 +318,6 @@ Expr *parser_parse_nud(Parser *parser)
 
 Expr *parser_parse_expr(Parser *parser, uint8_t min_bp)
 {
-  LOG("parser_parse_expr(): call #%u, depth %u\n",
-      ++parser->callno, ++parser->depth);
   Expr *left_side = parser_parse_nud(parser);
 
   while (parser->next.kind != TOKEN_EOF && parser->current.kind != TOKEN_RPAREN)
@@ -391,7 +325,7 @@ Expr *parser_parse_expr(Parser *parser, uint8_t min_bp)
     if (parser->current.kind != TOKEN_OP)
     {
       PANIC("parser_parse_expr(): expected operator (found: %s, call: #%u)\n",
-            lexer_extract_token(parser->current), parser->callno);
+            lexer_format_token(parser->current), parser->callno);
     }
 
     Operator op = parser->current.as.op;
@@ -399,18 +333,17 @@ Expr *parser_parse_expr(Parser *parser, uint8_t min_bp)
     uint16_t bps = get_binding_power(op);
     if (GET_LEFT_BP(bps) < min_bp)
     {
-      LOG("parser_parse_expr(): breaking loop\n");
       break;
     }
     parser_advance(parser, TOKEN_OP);
 
-    LOG("parser_parse_expr(): mounting right side\n");
     Expr *right_side = parser_parse_expr(parser, GET_RIGHT_BP(bps));
 
-    LOG("parser_parse_expr(): re-mounting left side\n");
     left_side = expr_binary(parser->arena, left_side, right_side, op);
   }
 
   parser->depth--;
   return left_side;
 }
+
+#endif // RAIZ_PARSER_SOURCE
