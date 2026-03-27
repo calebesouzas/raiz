@@ -8,7 +8,7 @@ something is needed, then do it. DO NOT TRY TO PREDICT EVERY POSSIBILITY!
 
 # Todo List for (and by) Raiz Dev
 ## Lexer + Parser
-- [x] Use an on-demand lexer (it means parser with lazy lexer)
-- [x] Build AST for simple 2 + 2 at least
-- [x] Add support for more operations (like subtraction, division, etc)
-- [x] Add support for grouped expressions (inside parentheses)
+- [ ] Fix conflicts between lexer and parser helper functions. 
+We need to keep them inside the source
+files, put "public" lexer function declatations inside 'lexer.h' and
+include only the header file.
