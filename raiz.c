@@ -46,38 +46,6 @@ int eval(ExprArena *arena, size_t current)
   }
 }
 
-void dump_ast(ExprArena *arena, Expr *ast, size_t level)
-{
-  for (size_t i = 0; i < level; i++) printf("  ");
-
-  char *operators[] = {
-    #define X(variant, token, bind_power) token,
-    OP_X_MACRO_TABLE
-    #undef X
-  };
-
-  switch (arena->items[ast->id].kind)
-  {
-    case EXPR_LITERAL:
-      printf("Literal %d\n", ast->as.literal);
-      break;
-    case EXPR_UNARY:
-      printf("Unary %s\n", operators[ast->as.unary.op]);
-      dump_ast(arena, &arena->items[ast->as.unary.target_id], level + 1);
-      break;
-    case EXPR_BINARY:
-      ; // HACK this thing literally made "declaration after label is a C23
-        // extension" compiler warning disappear!
-      printf("Binary %s\n", operators[ast->as.binary.op]);
-      dump_ast(arena, &arena->items[ast->as.binary.left_id],  level + 1);
-      dump_ast(arena, &arena->items[ast->as.binary.right_id], level + 1);
-      break;
-
-    default: // switch (arena->items[current].kind)
-      UNREACHABLE("dump_ast(): expression kind\n");
-  }
-}
-
 int eval_arena(ExprArena *arena)
 {
   return eval(arena, arena->count - 1);
@@ -93,10 +61,7 @@ int main(void)
     if (strncmp(buffer, "exit", 4) == 0) break;
 
     ExprArena arena = {0};
-    Expr *ast = parser_build_ast(&arena, buffer);
-
-    printf("---- AST ----\n");
-    dump_ast(&arena, ast, 1);
+    (void)parser_build_ast(&arena, buffer);
 
     printf("Result %d\n", eval_arena(&arena));
 

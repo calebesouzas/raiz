@@ -7,26 +7,23 @@
 #include "expressions.c"
 
 /*** Helpers definitions (declarations and info are in the top part) ***/
-static inline bool parser_match_next_op(Parser *par, Operator expected)
+
+#define peek(p)             parser_peek(p)
+#define next(p)             parser_next(p)
+#define advance(p)          parser_advance(p)
+#define match(p, e)         parser_match(p, e)
+#define match_op(p, o)      parser_match_op(p, o)
+#define match_next(p, e)    parser_match_next(p, e)
+#define match_next_op(p, o) parser_match_next_op(p, o)
+
+static inline Token parser_peek(Parser *par)
 {
-  return (match_next(par, TOKEN_OP) && next(par).as.op == expected);
+  return par->current;
 }
 
-static inline bool parser_match_next(Parser *par, TokenKind expected)
+static inline Token parser_next(Parser *par)
 {
-  return (next(par).kind == expected);
-}
-
-static inline bool parser_match_op(Parser *par, Operator expected)
-{
-  if (peek(par).kind != TOKEN_OP || par->next.as.op != expected) return false;
-  return true;
-}
-
-static inline bool parser_match(Parser *par, TokenKind expected)
-{
-  if (peek(par).kind != expected) return false;
-  return true;
+  return par->next;
 }
 
 static inline Token parser_advance(Parser *par)
@@ -36,23 +33,27 @@ static inline Token parser_advance(Parser *par)
   return par->current;
 }
 
-static inline Token parser_next(Parser *par)
+static inline bool parser_match(Parser *par, TokenKind expected)
 {
-  return par->next;
+  if (peek(par).kind != expected) return false;
+  return true;
 }
 
-static inline Token parser_peek(Parser *par)
+static inline bool parser_match_op(Parser *par, Operator expected)
 {
-  return par->current;
+  if (peek(par).kind != TOKEN_OP || par->next.as.op != expected) return false;
+  return true;
 }
 
-#define peek(p)             parser_peek(p)
-#define next(p)             parser_next(p)
-#define advance(p)          parser_advance(p)
-#define match(p, e)         parser_match(p, e)
-#define match_op(p, o)      parser_match_op(p, o)
-#define match_next(p, e)    parser_match_next(p, e)
-#define match_next_op(p, o) parser_match_next_op(p, o)
+static inline bool parser_match_next(Parser *par, TokenKind expected)
+{
+  return (next(par).kind == expected);
+}
+
+static inline bool parser_match_next_op(Parser *par, Operator expected)
+{
+  return (match_next(par, TOKEN_OP) && next(par).as.op == expected);
+}
 
 // The main expression parsing function. It uses Pratt Parsing technique
 Expr *parse_expr(Parser *par, uint8_t min_bp);

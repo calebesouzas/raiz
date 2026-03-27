@@ -11,7 +11,9 @@
 /* Creates a lexer from nul-terminated string */
 Lexer lexer_new(const char *source)
 {
-  return (Lexer) { .source = source, .current = 0, .end = strlen(source) };
+  return (Lexer) {
+    .source = source, .current = 0, .source_len = strlen(source)
+  };
 }
 
 /* Some forward declarations because the compilers are obsessed with extremely
@@ -25,6 +27,16 @@ static inline Token identifier(Lexer *lex);
 
 /*** Some helpers, because i don't want to get crazy of so much typing ***/
 
+// It's really annoying that using Unity Build style - when we organize
+// '#include's in a way that every header and source ends in one single compile
+// unit - 'static' doesn't make functions private...
+#define peek(l)     lexer_peek(l)
+#define next(l)     lexer_next(l)
+#define prev(l)     lexer_prev(l)
+#define match(l, e) lexer_match(l, e)
+#define advance(l)  lexer_advance(l)
+#define error(m)    lexer_error(m)
+
 /* just returns the current character */
 static inline char lexer_peek(Lexer *lex)
 {
@@ -36,6 +48,12 @@ static inline char lexer_next(Lexer *lex)
 {
   if (lex->current + 1 >= lex->source_len) return '\0';
   return lex->source[lex->current + 1];
+}
+
+static inline char lexer_prev(Lexer *lex)
+{
+  if (lex->current - 1 >= lex->source_len) return '\0';
+  return lex->source[lex->current - 1];
 }
 
 /* returns the current character after advancing the position */
@@ -53,14 +71,6 @@ static inline bool lexer_match(Lexer *lex, char expected)
   return true;
 }
 
-// It's really annoying that using Unity Build style - when we organize
-// '#include's in a way that every header and source ends in one single compile
-// unit - 'static' doesn't make functions private...
-#define peek lexer_peek
-#define next lexer_next
-#define match lexer_match
-#define advance lexer_advance
-#define error lexer_error
 /* skip_whitespace() will skip unrelevant characters */
 /* NOTE: as Raiz gets developed, we need to take care about '\n' (line feed)
  * character, since this is what will be used to mark end of "statements" */
@@ -139,6 +149,7 @@ Token lexer_next_token(Lexer *lex)
 static inline Token number_literal(Lexer *lex)
 {
   int number = 0;
+  lex->current--; // this will prevent us from skipping the first digit
 
   // TODO: learn how to do the reverse operation (extract string from a number)
   while (isdigit(peek(lex))) number = (number * 10) + (advance(lex) - '0');
@@ -175,6 +186,7 @@ static inline Token error(const char *message)
 
 #undef peek
 #undef next
+#undef prev
 #undef advance
 #undef match
 #undef error

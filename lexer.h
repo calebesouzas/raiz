@@ -43,6 +43,7 @@ typedef enum
   TOKEN_ERROR,
   TOKEN_EOF,
   TOKEN_LIT_INT,
+  TOKEN_IDENT,
   TOKEN_OP,
   TOKEN_LPAREN,
   TOKEN_RPAREN,
@@ -58,14 +59,14 @@ typedef struct
 {
   TokenKind kind;
   union TokenData as;
-  char *lexeme;
+  const char *lexeme;
   size_t len;
 } Token;
 
 typedef struct
 {
   const char *source;
-  size_t current, source_len;
+  size_t start, current, source_len;
 } Lexer;
 
 Token lexer_next_token(Lexer *lex);
