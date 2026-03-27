@@ -11,6 +11,7 @@
 #include <stdint.h>
 
 // Raiz headers
+#include "raiz.h"
 #include "debug.h"
 
 #endif // RAIZ_COMMON_HEADERS_H

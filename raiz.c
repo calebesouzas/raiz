@@ -1,12 +1,6 @@
 #include "common.h"
+#include "lexer.c"
 #include "parser.c"
-
-Expr *parser_build_ast(ExprArena *arena, const char *source)
-{
-  Lexer lexer = lexer_new(source);
-  Parser parser = parser_new(&lexer, arena);
-  return parser_parse_expr(&parser, 0);
-}
 
 int eval(ExprArena *arena, size_t current)
 {
