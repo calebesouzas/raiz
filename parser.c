@@ -1,10 +1,58 @@
 #ifndef RAIZ_PARSER_SOURCE
 #define RAIZ_PARSER_SOURCE
 
-#include "lexer.c"
+#include "lexer.h"
 #include "common.h"
 #include "parser.h"
 #include "expressions.c"
+
+/*** Helpers definitions (declarations and info are in the top part) ***/
+static inline bool parser_match_next_op(Parser *par, Operator expected)
+{
+  return (match_next(par, TOKEN_OP) && next(par).as.op == expected);
+}
+
+static inline bool parser_match_next(Parser *par, TokenKind expected)
+{
+  return (next(par).kind == expected);
+}
+
+static inline bool parser_match_op(Parser *par, Operator expected)
+{
+  if (peek(par).kind != TOKEN_OP || par->next.as.op != expected) return false;
+  return true;
+}
+
+static inline bool parser_match(Parser *par, TokenKind expected)
+{
+  if (peek(par).kind != expected) return false;
+  return true;
+}
+
+static inline Token parser_advance(Parser *par)
+{
+  par->current = par->next;
+  par->next = lexer_next_token(par->lexer);
+  return par->current;
+}
+
+static inline Token parser_next(Parser *par)
+{
+  return par->next;
+}
+
+static inline Token parser_peek(Parser *par)
+{
+  return par->current;
+}
+
+#define peek(p)             parser_peek(p)
+#define next(p)             parser_next(p)
+#define advance(p)          parser_advance(p)
+#define match(p, e)         parser_match(p, e)
+#define match_op(p, o)      parser_match_op(p, o)
+#define match_next(p, e)    parser_match_next(p, e)
+#define match_next_op(p, o) parser_match_next_op(p, o)
 
 // The main expression parsing function. It uses Pratt Parsing technique
 Expr *parse_expr(Parser *par, uint8_t min_bp);
@@ -90,44 +138,12 @@ Expr *parser_build_ast(ExprArena *arena, const char *source)
   return parse_expr(&parser, 0);
 }
 
-/*** Helpers definitions (declarations and info are in the top part) ***/
-static inline bool match_next_op(Parser *par, Operator expected)
-{
-  return (match_next(par, TOKEN_OP) && next(par).as.op == expected);
-}
-
-static inline bool match_next(Parser *par, TokenKind expected)
-{
-  return (next(par).kind == expected);
-}
-
-static inline bool match_op(Parser *par, Operator expected)
-{
-  if (peek(par).kind != TOKEN_OP || par->next.as.op != expected) return false;
-  return true;
-}
-
-static inline bool match(Parser *par, TokenKind expected)
-{
-  if (peek(par).kind != expected) return false;
-  return true;
-}
-
-static inline Token advance(Parser *par)
-{
-  par->current = par->next;
-  par->next = lexer_next_token(par->lexer);
-  return par->current;
-}
-
-static inline Token next(Parser *par)
-{
-  return par->next;
-}
-
-static inline Token peek(Parser *par)
-{
-  return par->current;
-}
+#undef match_next_op
+#undef match_next
+#undef match_op
+#undef match
+#undef advance
+#undef next
+#undef peek
 
 #endif // RAIZ_PARSER_SOURCE

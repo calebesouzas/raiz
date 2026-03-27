@@ -20,39 +20,47 @@ Lexer lexer_new(const char *source)
 
 static inline Token number_literal(Lexer *lex);
 static inline Token operator(Lexer *lex, Operator op);
-static inline Token error(const char *message);
+static inline Token lexer_error(const char *message);
 static inline Token identifier(Lexer *lex);
 
 /*** Some helpers, because i don't want to get crazy of so much typing ***/
 
 /* just returns the current character */
-static inline char peek(Lexer *lex)
+static inline char lexer_peek(Lexer *lex)
 {
   return lex->source[lex->current];
 }
 
 /* returns the next character if there is one */
-static inline char next(Lexer *lex)
+static inline char lexer_next(Lexer *lex)
 {
   if (lex->current + 1 >= lex->source_len) return '\0';
   return lex->source[lex->current + 1];
 }
 
 /* returns the current character after advancing the position */
-static inline char advance(Lexer *lex)
+static inline char lexer_advance(Lexer *lex)
 {
   return lex->source[lex->current++];
 }
 
 /* returns 'true' if the next character is equal to the expected one
  * and updates the lexer's position if it is, else, returns 'false' */
-static inline bool match(Lexer *lex, char expected)
+static inline bool lexer_match(Lexer *lex, char expected)
 {
   if (next(lex) != expected) return false;
   lex->current++;
   return true;
 }
 
+// It's really annoying that using Unity Build style - when we organize
+// '#include's in a way that every header and source ends in one single compile
+// unit - 'static' doesn't make functions private...
+#define peek lexer_peek
+#define next lexer_next
+#define match lexer_match
+#define advance lexer_advance
+#define error lexer_error
 /* skip_whitespace() will skip unrelevant characters */
 /* NOTE: as Raiz gets developed, we need to take care about '\n' (line feed)
  * character, since this is what will be used to mark end of "statements" */
@@ -108,7 +116,7 @@ Token lexer_next_token(Lexer *lex)
                                      : match(lex, '=')
                                        ? operator(lex, OP_GREATER_EQ)
                                        : operator(lex, OP_GREATER);
-    case '<': return match(lex, '<') ? operator(lex, OP_BIT_LSHIGT)
+    case '<': return match(lex, '<') ? operator(lex, OP_BIT_LSHIFT)
                                      : match(lex, '=')
                                        ? operator(lex, OP_LESS_EQ)
                                        : operator(lex, OP_LESS);
@@ -164,5 +172,11 @@ static inline Token error(const char *message)
     .len = strlen(message)
   };
 }
+
+#undef peek
+#undef next
+#undef advance
+#undef match
+#undef error
 
 #endif // RAIZ_LEXER_SOURCE

@@ -28,7 +28,8 @@
   X(OP_SUBTRACT,   PAIR_BP(14, 15))\
   X(OP_MULTIPLY,   PAIR_BP(16, 17))\
   X(OP_DIVIDE,     PAIR_BP(16, 17))\
-  X(OP_MODULE,     PAIR_BP(16, 17))
+  X(OP_MODULE,     PAIR_BP(16, 17))\
+  X(OP_BANG,       PAIR_BP(18, 19))
 
 typedef enum
 {
@@ -66,5 +67,7 @@ typedef struct
   const char *source;
   size_t current, source_len;
 } Lexer;
+
+Token lexer_next_token(Lexer *lex);
 
 #endif // RAIZ_LEXER_H

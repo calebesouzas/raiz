@@ -54,27 +54,4 @@ typedef struct
   char error_buffer[RAIZ_COLUMN_LIMIT + RAIZ_COLUMN_LIMIT / 2];
 } Parser;
 
-/*** Some helpers again, why not? ***/
-
-/* returns the current token */
-static inline Token peek(Parser *par);
-
-/* just returns the next token */
-static inline Token next(Parser *par);
-
-/* sets 'current' to next, gets a new 'next' and returns 'current' */
-static inline Token advance(Parser *par);
-
-/* checks if 'current' is 'expected' */
-static inline bool match(Parser *par, TokenKind expected);
-
-/* same as 'match()' but now we expect operators */
-static inline bool match_op(Parser *par, Operator expected);
-
-/* check if the next token's kind is 'expected' */
-static inline bool match_next(Parser *par, TokenKind expected);
-
-/* check if the next token is an operator and the same as 'expected' */
-static inline bool match_next_op(Parser *par, Operator expected);
-
 #endif // RAIZ_PARSER_H
