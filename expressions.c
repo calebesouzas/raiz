@@ -1,28 +1,28 @@
 #ifndef RAIZ_EXPRESSIONS_SOURCE
 #define RAIZ_EXPRESSIONS_SOURCE
 
-uint16_t get_binding_power(Operator op)
+uint16_t rz_get_binding_power(Rz_Operator op)
 {
   uint16_t powers[] = {
     #define X(variant, binding_power) binding_power,
-    OP_X_MACRO_TABLE
+    RZ_OP_X_MACRO_TABLE
     #undef X
   };
 
   return powers[op];
 }
 
-void push_expr(ExprArena *arena, Expr *expr)
+void rz_push_expr(Rz_ExprArena *arena, Rz_Expr *expr)
 {
   if (arena->capacity == 0)
   {
     arena->capacity = 256;
-    arena->items = malloc(sizeof(Expr) * arena->capacity);
+    arena->items = malloc(sizeof(Rz_Expr) * arena->capacity);
   }
   if (arena->count >= arena->capacity)
   {
     arena->capacity *= 2;
-    arena->items = realloc(arena->items, sizeof(Expr) * arena->capacity);
+    arena->items = realloc(arena->items, sizeof(Rz_Expr) * arena->capacity);
   }
   if (!expr->in_arena && arena->items != NULL)
   {
@@ -32,42 +32,46 @@ void push_expr(ExprArena *arena, Expr *expr)
   }
 }
 
-Expr *expr_binary(ExprArena *arena, Expr *left, Expr *right, Operator op)
+Rz_Expr *rz_expr_binary(
+    Rz_ExprArena *arena,
+    Rz_Expr *left, Rz_Expr *right,
+    Rz_Operator op
+)
 {
-  Expr result = (Expr) {
-    .kind = EXPR_BINARY,
-    .as.binary = (Expr_Binary) {
+  Rz_Expr result = (Rz_Expr) {
+    .kind = RZ_EXPR_BINARY,
+    .as.binary = (Rz_Expr_Binary) {
       .left_id = left->id,
       .right_id = right->id,
       .op = op,
     }
   };
-  push_expr(arena, &result);
+  rz_push_expr(arena, &result);
   assert(result.in_arena);
   return &arena->items[result.id];
 }
 
-Expr *expr_unary(ExprArena *arena, Expr *target)
+Rz_Expr *rz_expr_unary(Rz_ExprArena *arena, Rz_Expr *target)
 {
-  Expr result = (Expr) {
-    .kind = EXPR_UNARY,
-    .as.unary = (Expr_Unary) {
-      .op = OP_SUBTRACT,
+  Rz_Expr result = (Rz_Expr) {
+    .kind = RZ_EXPR_UNARY,
+    .as.unary = (Rz_Expr_Unary) {
+      .op = RZ_OP_SUBTRACT,
       .target_id = target->id,
     }
   };
-  push_expr(arena, &result);
+  rz_push_expr(arena, &result);
   assert(result.in_arena);
   return &arena->items[result.id];
 }
 
-Expr *expr_literal(ExprArena *arena, int value)
+Rz_Expr *rz_expr_literal(Rz_ExprArena *arena, int value)
 {
-  Expr result = (Expr) {
-    .kind = EXPR_LITERAL,
+  Rz_Expr result = (Rz_Expr) {
+    .kind = RZ_EXPR_LITERAL,
     .as.literal = value,
   };
-  push_expr(arena, &result);
+  rz_push_expr(arena, &result);
   assert(result.in_arena);
   return &arena->items[result.id];
 }

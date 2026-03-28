@@ -16,89 +16,90 @@
 #define match_next(p, e)    parser_match_next(p, e)
 #define match_next_op(p, o) parser_match_next_op(p, o)
 
-static inline Token parser_peek(Parser *par)
+static inline Rz_Token parser_peek(Rz_Parser *par)
 {
   return par->current;
 }
 
-static inline Token parser_next(Parser *par)
+static inline Rz_Token parser_next(Rz_Parser *par)
 {
   return par->next;
 }
 
-static inline Token parser_advance(Parser *par)
+static inline Rz_Token parser_advance(Rz_Parser *par)
 {
-  Token saved = par->current;
+  Rz_Token saved = par->current;
   par->current = par->next;
-  par->next = lexer_next_token(par->lexer);
+  par->next = rz_lexer_next_token(par->lexer);
   return saved;
 }
 
-static inline bool parser_match(Parser *par, TokenKind expected)
+static inline bool parser_match(Rz_Parser *par, Rz_TokenKind expected)
 {
   if (peek(par).kind != expected) return false;
   return true;
 }
 
-static inline bool parser_match_op(Parser *par, Operator expected)
+static inline bool parser_match_op(Rz_Parser *par, Rz_Operator expected)
 {
-  if (peek(par).kind != TOKEN_OP || par->next.as.op != expected) return false;
+  if (peek(par).kind != RZ_TOKEN_OP || par->next.as.op != expected) return false;
   return true;
 }
 
-static inline bool parser_match_next(Parser *par, TokenKind expected)
+static inline bool parser_match_next(Rz_Parser *par, Rz_TokenKind expected)
 {
   return (next(par).kind == expected);
 }
 
-static inline bool parser_match_next_op(Parser *par, Operator expected)
+static inline bool parser_match_next_op(Rz_Parser *par, Rz_Operator expected)
 {
-  return (match_next(par, TOKEN_OP) && next(par).as.op == expected);
+  return (match_next(par, RZ_TOKEN_OP) && next(par).as.op == expected);
 }
 
 // The main expression parsing function. It uses Pratt Parsing technique
-Expr *parse_expr(Parser *par, uint8_t min_bp);
+Rz_Expr *rz_parse_expr(Rz_Parser *par, uint8_t min_bp);
 
 /* parse_nud():
  * responsible for parsing single expressions, like literals, unary expressions
  * (only negative for now) and variables (not added yet).
  * It returns a pointer to the resulting expression */
-Expr *parse_nud(Parser *par)
+Rz_Expr *rz_parse_nud(Rz_Parser *par)
 {
   switch (peek(par).kind)
   {
     // i should take care of 'return NULL' parts... They'll certainly cause
     // segfaults... When we call 'push_expr()'. Or maybe even before it...
     // TODO: print the error or put it somewhere
-    case TOKEN_ERROR: advance(par); return parse_nud(par);
-    case TOKEN_EOF: PANIC("unexpected end of file\n");
-    case TOKEN_LIT_INT:
-      return expr_literal(par->arena, advance(par).as.literal);
-    case TOKEN_IDENT:
-      TODO("parse_nud(): handle variable expressions\n");
-    case TOKEN_OP:
-      if (match_op(par, OP_SUBTRACT))
+    case RZ_TOKEN_ERROR: advance(par); return rz_parse_nud(par);
+    case RZ_TOKEN_EOF: RZ_PANIC("unexpected end of file\n");
+    case RZ_TOKEN_LIT_INT:
+      return rz_expr_literal(par->arena, advance(par).as.literal);
+    case RZ_TOKEN_IDENT:
+      RZ_TODO("parse_nud(): handle variable expressions\n");
+    case RZ_TOKEN_OP:
+      if (match_op(par, RZ_OP_SUBTRACT))
       {
-        uint8_t bind_power = GET_RIGHT_BP(get_binding_power(peek(par).as.op));
-        return expr_unary(par->arena, parse_expr(par, bind_power));
+        uint8_t bind_power = RZ_GET_RIGHT_BP(
+            rz_get_binding_power(peek(par).as.op));
+        return rz_expr_unary(par->arena, rz_parse_expr(par, bind_power));
       }
-      PANIC("invalid unary operator: '%.*s'\n",
+      RZ_PANIC("invalid unary operator: '%.*s'\n",
           peek(par).len, peek(par).lexeme);
-    case TOKEN_LPAREN:
+    case RZ_TOKEN_LPAREN:
       advance(par);
-      Expr *result = parse_expr(par, 0);
-      if (!match(par, TOKEN_RPAREN))
+      Rz_Expr *result = rz_parse_expr(par, 0);
+      if (!match(par, RZ_TOKEN_RPAREN))
       {
-        PANIC("syntax-error: expected ')' before '%.*s'\n",
+        RZ_PANIC("syntax-error: expected ')' before '%.*s'\n",
             peek(par).len, peek(par).lexeme);
       }
       advance(par);
       return result;
-    case TOKEN_RPAREN:
+    case RZ_TOKEN_RPAREN:
       // TODO: should i really panic on it?
-      PANIC("trailing ')' before '%.*s'\n", next(par).len, next(par).lexeme);
+      RZ_PANIC("trailing ')' before '%.*s'\n", next(par).len, next(par).lexeme);
     default:
-    UNREACHABLE("parse_nud(): token kind");
+    RZ_UNREACHABLE("parse_nud(): token kind");
   }
 }
 
@@ -107,35 +108,35 @@ Expr *parse_nud(Parser *par)
  * It uses Pratt Parsing technique to mount binary expressions.
  * Returns a pointer to the resulting expression.
  * (with 'id' relative to 'par.arena.items' and is contained in there) */
-Expr *parse_expr(Parser *par, uint8_t min_bp)
+Rz_Expr *rz_parse_expr(Rz_Parser *par, uint8_t min_bp)
 {
-  Expr *left_side = parse_nud(par);
+  Rz_Expr *left_side = rz_parse_nud(par);
 
-  while (!match(par, TOKEN_EOF) && !match(par, TOKEN_RPAREN))
+  while (!match(par, RZ_TOKEN_EOF) && !match(par, RZ_TOKEN_RPAREN))
   {
-    if (!match(par, TOKEN_OP))
+    if (!match(par, RZ_TOKEN_OP))
     {
-      PANIC("syntax-error: expected an operator, found '%.*s'\n",
+      RZ_PANIC("syntax-error: expected an operator, found '%.*s'\n",
           peek(par).len, peek(par).lexeme);
     }
 
-    Operator op = peek(par).as.op;
+    Rz_Operator op = peek(par).as.op;
 
-    uint16_t powers = get_binding_power(op);
-    if (GET_LEFT_BP(powers) < min_bp) break;
+    uint16_t powers = rz_get_binding_power(op);
+    if (RZ_GET_LEFT_BP(powers) < min_bp) break;
     advance(par);
 
-    Expr *right_side = parse_expr(par, GET_RIGHT_BP(powers));
+    Rz_Expr *right_side = rz_parse_expr(par, RZ_GET_RIGHT_BP(powers));
 
-    left_side = expr_binary(par->arena, left_side, right_side, op);
+    left_side = rz_expr_binary(par->arena, left_side, right_side, op);
   }
 
   return left_side;
 }
 
-Parser parser_new(Lexer *lexer, ExprArena *arena)
+Rz_Parser rz_parser_new(Rz_Lexer *lexer, Rz_ExprArena *arena)
 {
-  Parser par = {0};
+  Rz_Parser par = {0};
   par.lexer = lexer;
   par.arena = arena;
   // bootstrap 'par.next'
@@ -145,11 +146,11 @@ Parser parser_new(Lexer *lexer, ExprArena *arena)
   return par;
 }
 
-Expr *parser_build_ast(ExprArena *arena, const char *source)
+Rz_Expr *rz_parser_build_ast(Rz_ExprArena *arena, const char *source)
 {
-  Lexer lexer = lexer_new(source);
-  Parser parser = parser_new(&lexer, arena);
-  return parse_expr(&parser, 0);
+  Rz_Lexer lexer = rz_lexer_new(source);
+  Rz_Parser parser = rz_parser_new(&lexer, arena);
+  return rz_parse_expr(&parser, 0);
 }
 
 #undef match_next_op

@@ -7,59 +7,59 @@
 // If we're going to have code which expects a specific kind.
 typedef struct
 {
-  Operator op;
+  Rz_Operator op;
   size_t left_id, right_id;
-} Expr_Binary;
+} Rz_Expr_Binary;
 
 typedef struct
 {
-  Operator op;
+  Rz_Operator op;
   size_t target_id;
-} Expr_Unary;
+} Rz_Expr_Unary;
 
 typedef struct
 {
   const char *data;
   size_t size;
-} Expr_Variable;
+} Rz_Expr_Variable;
 
 typedef enum
 {
-  EXPR_LITERAL,
-  EXPR_UNARY,
-  EXPR_BINARY,
-  EXPR_VARIABLE,
-} ExprKind;
+  RZ_EXPR_LITERAL,
+  RZ_EXPR_UNARY,
+  RZ_EXPR_BINARY,
+  RZ_EXPR_VARIABLE,
+} Rz_ExprKind;
 
 typedef struct
 {
-  ExprKind kind;
+  Rz_ExprKind kind;
   size_t id;
   bool in_arena;
   union
   {
     int literal;
-    Expr_Binary binary;
-    Expr_Unary unary;
-    Expr_Variable variable;
+    Rz_Expr_Binary binary;
+    Rz_Expr_Unary unary;
+    Rz_Expr_Variable variable;
   } as;
-} Expr;
+} Rz_Expr;
 
 // A dynamic array, but it's not intended to be iterated through directly
 typedef struct
 {
   size_t count, capacity;
-  Expr *items; // all the 'id' fields in 'Expr' and variants refer to this
-} ExprArena;
+  Rz_Expr *items; // all the 'id' fields in 'Expr' and variants refer to this
+} Rz_ExprArena;
 
 typedef struct
 {
-  Lexer *lexer;
-  Token current;
-  Token next;
-  ExprArena *arena;
+  Rz_Lexer *lexer;
+  Rz_Token current;
+  Rz_Token next;
+  Rz_ExprArena *arena;
   // Do we really need it? I think it's better than 'PANIC()'ing everywhere...
   char error_buffer[RAIZ_COLUMN_LIMIT + RAIZ_COLUMN_LIMIT / 2];
-} Parser;
+} Rz_Parser;
 
 #endif // RAIZ_PARSER_H

@@ -5,70 +5,70 @@
  * to get LEFT: (PAIR >> 8)
  * to get right: (PAIR & 0xFF)
  * 0xFF == 255 == 11111111 */
-#define PAIR_BP(left_bp, right_bp) (((left_bp) << 8) | (right_bp))
-#define GET_RIGHT_BP(bind_powers) ((uint8_t)((bind_powers) & 0xFF))
-#define GET_LEFT_BP(bind_powers) ((uint8_t)((bind_powers) >> 8))
+#define RZ_PAIR_BP(left_bp, right_bp) (((left_bp) << 8) | (right_bp))
+#define RZ_GET_RIGHT_BP(bind_powers) ((uint8_t)((bind_powers) & 0xFF))
+#define RZ_GET_LEFT_BP(bind_powers) ((uint8_t)((bind_powers) >> 8))
 
-#define OP_X_MACRO_TABLE\
-  X(OP_ASSIGN,     PAIR_BP( 2,  1))\
-  X(OP_EQUAL,      PAIR_BP( 3,  4))\
-  X(OP_NOT_EQUAL,  PAIR_BP( 3,  4))\
-  X(OP_BOOL_OR,    PAIR_BP( 6,  7))\
-  X(OP_BOOL_AND,   PAIR_BP( 8,  9))\
-  X(OP_GREATER,    PAIR_BP(10, 11))\
-  X(OP_LESS,       PAIR_BP(10, 11))\
-  X(OP_GREATER_EQ, PAIR_BP(10, 11))\
-  X(OP_LESS_EQ,    PAIR_BP(10, 11))\
-  X(OP_BIT_AND,    PAIR_BP(12, 13))\
-  X(OP_BIT_OR,     PAIR_BP(12, 13))\
-  X(OP_BIT_XOR,    PAIR_BP(12, 13))\
-  X(OP_BIT_RSHIFT, PAIR_BP(12, 13))\
-  X(OP_BIT_LSHIFT, PAIR_BP(12, 13))\
-  X(OP_SUM,        PAIR_BP(14, 15))\
-  X(OP_SUBTRACT,   PAIR_BP(14, 15))\
-  X(OP_MULTIPLY,   PAIR_BP(16, 17))\
-  X(OP_DIVIDE,     PAIR_BP(16, 17))\
-  X(OP_MODULE,     PAIR_BP(16, 17))\
-  X(OP_BANG,       PAIR_BP(18, 19))
+#define RZ_OP_X_MACRO_TABLE\
+  X(RZ_OP_ASSIGN,     RZ_PAIR_BP( 2,  1))\
+  X(RZ_OP_EQUAL,      RZ_PAIR_BP( 3,  4))\
+  X(RZ_OP_NOT_EQUAL,  RZ_PAIR_BP( 3,  4))\
+  X(RZ_OP_BOOL_OR,    RZ_PAIR_BP( 6,  7))\
+  X(RZ_OP_BOOL_AND,   RZ_PAIR_BP( 8,  9))\
+  X(RZ_OP_GREATER,    RZ_PAIR_BP(10, 11))\
+  X(RZ_OP_LESS,       RZ_PAIR_BP(10, 11))\
+  X(RZ_OP_GREATER_EQ, RZ_PAIR_BP(10, 11))\
+  X(RZ_OP_LESS_EQ,    RZ_PAIR_BP(10, 11))\
+  X(RZ_OP_BIT_AND,    RZ_PAIR_BP(12, 13))\
+  X(RZ_OP_BIT_OR,     RZ_PAIR_BP(12, 13))\
+  X(RZ_OP_BIT_XOR,    RZ_PAIR_BP(12, 13))\
+  X(RZ_OP_BIT_RSHIFT, RZ_PAIR_BP(12, 13))\
+  X(RZ_OP_BIT_LSHIFT, RZ_PAIR_BP(12, 13))\
+  X(RZ_OP_SUM,        RZ_PAIR_BP(14, 15))\
+  X(RZ_OP_SUBTRACT,   RZ_PAIR_BP(14, 15))\
+  X(RZ_OP_MULTIPLY,   RZ_PAIR_BP(16, 17))\
+  X(RZ_OP_DIVIDE,     RZ_PAIR_BP(16, 17))\
+  X(RZ_OP_MODULE,     RZ_PAIR_BP(16, 17))\
+  X(RZ_OP_BANG,       RZ_PAIR_BP(18, 19))
 
 typedef enum
 {
   #define X(variant, power) variant,
-  OP_X_MACRO_TABLE
+  RZ_OP_X_MACRO_TABLE
   #undef X
-} Operator;
+} Rz_Operator;
 
 typedef enum
 {
-  TOKEN_ERROR,
-  TOKEN_EOF,
-  TOKEN_LIT_INT,
-  TOKEN_IDENT,
-  TOKEN_OP,
-  TOKEN_LPAREN,
-  TOKEN_RPAREN,
-} TokenKind;
+  RZ_TOKEN_ERROR,
+  RZ_TOKEN_EOF,
+  RZ_TOKEN_LIT_INT,
+  RZ_TOKEN_IDENT,
+  RZ_TOKEN_OP,
+  RZ_TOKEN_LPAREN,
+  RZ_TOKEN_RPAREN,
+} Rz_TokenKind;
 
-union TokenData
+union Rz_TokenData
 {
-  Operator op;
+  Rz_Operator op;
   int literal;
 };
 
 typedef struct
 {
-  TokenKind kind;
-  union TokenData as;
+  Rz_TokenKind kind;
+  union Rz_TokenData as;
   const char *lexeme;
   size_t len;
-} Token;
+} Rz_Token;
 
 typedef struct
 {
   const char *source;
   size_t start, current, source_len;
-} Lexer;
+} Rz_Lexer;
 
-Token lexer_next_token(Lexer *lex);
+Rz_Token lexer_next_token(Rz_Lexer *lex);
 
 #endif // RAIZ_LEXER_H
