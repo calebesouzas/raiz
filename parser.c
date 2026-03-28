@@ -28,9 +28,10 @@ static inline Token parser_next(Parser *par)
 
 static inline Token parser_advance(Parser *par)
 {
+  Token saved = par->current;
   par->current = par->next;
   par->next = lexer_next_token(par->lexer);
-  return par->current;
+  return saved;
 }
 
 static inline bool parser_match(Parser *par, TokenKind expected)
@@ -64,28 +65,41 @@ Expr *parse_expr(Parser *par, uint8_t min_bp);
  * It returns a pointer to the resulting expression */
 Expr *parse_nud(Parser *par)
 {
-  if (match(par, TOKEN_OP) && match_op(par, OP_SUBTRACT))
+  switch (peek(par).kind)
   {
-    uint8_t bind_power = GET_RIGHT_BP(get_binding_power(peek(par).as.op));
-    return expr_unary(par->arena, parse_expr(par, bind_power));
+    // i should take care of 'return NULL' parts... They'll certainly cause
+    // segfaults... When we call 'push_expr()'. Or maybe even before it...
+    // TODO: print the error or put it somewhere
+    case TOKEN_ERROR: advance(par); return parse_nud(par);
+    case TOKEN_EOF: return NULL;
+    case TOKEN_LIT_INT:
+      return expr_literal(par->arena, advance(par).as.literal);
+    case TOKEN_IDENT:
+      TODO("parse_nud(): handle variable expressions\n");
+    case TOKEN_OP:
+      if (!match_op(par, OP_SUBTRACT))
+      {
+        uint8_t bind_power = GET_RIGHT_BP(get_binding_power(peek(par).as.op));
+        return expr_unary(par->arena, parse_expr(par, bind_power));
+      }
+      PANIC("invalid unary operator: '%.*s'\n",
+          peek(par).len, peek(par).lexeme);
+    case TOKEN_LPAREN:
+      advance(par);
+      Expr *result = parse_expr(par, 0);
+      if (!match(par, TOKEN_RPAREN))
+      {
+        PANIC("syntax-error: expected ')' before '%.*s'\n",
+            peek(par).len, peek(par).lexeme);
+      }
+      advance(par);
+      return result;
+    case TOKEN_RPAREN:
+      // TODO: should i really panic on it?
+      PANIC("trailing ')' before '%.*s'\n", next(par).len, next(par).lexeme);
+    default:
+    UNREACHABLE("parse_nud(): token kind");
   }
-  else if (match(par, TOKEN_LPAREN))
-  {
-    advance(par);
-    Expr *result = parse_expr(par, 0);
-    if (!match(par, TOKEN_RPAREN))
-    {
-      // TODO: handle "expected ')'" error
-    }
-    advance(par);
-    return result;
-  }
-
-  // TODO: handle variable expressions
-
-  int lit = peek(par).as.literal;
-  advance(par);
-  return expr_literal(par->arena, lit);
 }
 
 /* parse_expr():

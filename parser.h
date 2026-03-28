@@ -17,11 +17,18 @@ typedef struct
   size_t target_id;
 } Expr_Unary;
 
+typedef struct
+{
+  const char *data;
+  size_t size;
+} Expr_Variable;
+
 typedef enum
 {
   EXPR_LITERAL,
   EXPR_UNARY,
   EXPR_BINARY,
+  EXPR_VARIABLE,
 } ExprKind;
 
 typedef struct
@@ -34,6 +41,7 @@ typedef struct
     int literal;
     Expr_Binary binary;
     Expr_Unary unary;
+    Expr_Variable variable;
   } as;
 } Expr;
 
