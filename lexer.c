@@ -109,11 +109,16 @@ Token lexer_next_token(Lexer *lex)
   // Sorry for the nested ternaries...
   switch (c)
   {
+    case '\0':return make_token(lex, TOKEN_EOF);
+    case '\e':return make_token(lex, TOKEN_EOF); // '\e' is literally EOF
+    case '(': return make_token(lex, TOKEN_LPAREN);
+    case ')': return make_token(lex, TOKEN_RPAREN);
     case '+': return operator(lex, OP_SUM);
     case '-': return operator(lex, OP_SUBTRACT);
     case '*': return operator(lex, OP_MULTIPLY);
     case '/': return operator(lex, OP_DIVIDE);
     case '%': return operator(lex, OP_MODULE);
+    case '^': return operator(lex, OP_BIT_XOR);
     case '=': return match(lex, '=') ? operator(lex, OP_EQUAL)
                                      : operator(lex, OP_ASSIGN);
     case '!': return match(lex, '=') ? operator(lex, OP_NOT_EQUAL)
@@ -131,15 +136,13 @@ Token lexer_next_token(Lexer *lex)
                                        ? operator(lex, OP_LESS_EQ)
                                        : operator(lex, OP_LESS);
     default: // Do i really need to indent after it?
-    if (peek(lex) == '\0') return make_token(lex, TOKEN_EOF);
-    else
     {
       char buffer[1024] = {0};
-      snprintf(
+      int not_ok = snprintf(
           buffer, sizeof(buffer),
-          "unexpected character '%c' (byte %x)", // is 'x' a real format spec?
-          c, c
-      );
+          "unexpected character '%c' (byte 0x%x)",
+          c, c);
+      if (not_ok) PANIC("lexer_next_token(): error buffer was to small\n");
       // need to strdup(), unless, we'd read garbage. If it doesn't segfault
       return error(strdup(buffer));
     }
