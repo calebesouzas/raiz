@@ -71,13 +71,13 @@ Expr *parse_nud(Parser *par)
     // segfaults... When we call 'push_expr()'. Or maybe even before it...
     // TODO: print the error or put it somewhere
     case TOKEN_ERROR: advance(par); return parse_nud(par);
-    case TOKEN_EOF: return NULL;
+    case TOKEN_EOF: PANIC("unexpected end of file\n");
     case TOKEN_LIT_INT:
       return expr_literal(par->arena, advance(par).as.literal);
     case TOKEN_IDENT:
       TODO("parse_nud(): handle variable expressions\n");
     case TOKEN_OP:
-      if (!match_op(par, OP_SUBTRACT))
+      if (match_op(par, OP_SUBTRACT))
       {
         uint8_t bind_power = GET_RIGHT_BP(get_binding_power(peek(par).as.op));
         return expr_unary(par->arena, parse_expr(par, bind_power));
@@ -111,13 +111,12 @@ Expr *parse_expr(Parser *par, uint8_t min_bp)
 {
   Expr *left_side = parse_nud(par);
 
-  while (!match_next(par, TOKEN_EOF) && !match(par, TOKEN_RPAREN))
+  while (!match(par, TOKEN_EOF) && !match(par, TOKEN_RPAREN))
   {
     if (!match(par, TOKEN_OP))
     {
-      // TODO: handle "expected operator" error
-      return NULL; // it will cause segfaults!
-      break;
+      PANIC("syntax-error: expected an operator, found '%.*s'\n",
+          peek(par).len, peek(par).lexeme);
     }
 
     Operator op = peek(par).as.op;
