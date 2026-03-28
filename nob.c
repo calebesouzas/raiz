@@ -14,7 +14,7 @@ bool build_raiz(bool no_logs, bool strict)
 
   if (no_logs)
   {
-    cmd_append(&cmd, "-DDISABLE_LOGS");
+    cmd_append(&cmd, "-DRZ_DISABLE_LOGS");
   }
   if (strict)
   {
