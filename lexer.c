@@ -62,11 +62,11 @@ static inline char lexer_advance(Lexer *lex)
   return lex->source[lex->current++];
 }
 
-/* returns 'true' if the next character is equal to the expected one
+/* returns 'true' if the current character is equal to the expected one
  * and updates the lexer's position if it is, else, returns 'false' */
 static inline bool lexer_match(Lexer *lex, char expected)
 {
-  if (next(lex) != expected) return false;
+  if (peek(lex) != expected) return false;
   lex->current++;
   return true;
 }
