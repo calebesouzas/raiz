@@ -1,34 +1,50 @@
 #ifndef RAIZ_DEBUG_H
 #define RAIZ_DEBUG_H
 
-#ifndef RAIZ_LOG_FILE
-#define RAIZ_LOG_FILE stderr
-#endif
+// NOTE: Adding ANSI escapes (colors and formatting) would be cool
+typedef enum {
+  RZ_LOG_NONE,
+  RZ_LOG_INFO,
+  RZ_LOG_HELP,
+  RZ_LOG_WARNING,
+  RZ_LOG_ERROR,
+} Rz_LogLevel;
 
 #define RAIZ_DEBUG_MODE
 #if defined(RAIZ_DEBUG_MODE) && !defined(RAIZ_DISABLE_LOGS)
-#define RZ_LOG(...)\
+#define RZ_LOG(level, ...)\
   do\
   {\
-    fprintf(RAIZ_LOG_FILE, "raiz(info): ");\
-    fprintf(RAIZ_LOG_FILE, __VA_ARGS__);\
+    char *kind = NULL;\
+    switch (level)\
+    {\
+      case RZ_LOG_NONE:    kind = "";          break;\
+      case RZ_LOG_INFO:    kind = "(info)";    break;\
+      case RZ_LOG_HELP:    kind = "(help)";    break;\
+      case RZ_LOG_WARNING: kind = "(warning)"; break;\
+      case RZ_LOG_ERROR:   kind = "(error)";   break;\
+    }\
+    fprintf(stderr, "raiz%s:\n", kind);\
+    fprintf(stderr, __VA_ARGS__);\
   } while (0)
 #else
 #define RZ_LOG(...)
-#endif // DEBUG_MODE and !DISABLE_LOGS
+#endif // RZ_DEBUG_MODE and !RZ_DISABLE_LOGS
 
 #define RZ_PANIC(...)\
   do\
   {\
-    fprintf(RAIZ_LOG_FILE, "raiz: panicked at %s:%d\n", __FILE__, __LINE__);\
-    fprintf(RAIZ_LOG_FILE, __VA_ARGS__);\
+    fprintf(stderr, "raiz: panicked at %s line %d, function %s()\n",\
+        __FILE__, __LINE__, __FUNCTION__);\
+    fprintf(stderr, __VA_ARGS__);\
     abort();\
   } while (0)
 
-#define RZ_TODO(message) RZ_PANIC("TODO at %s", (message))
+#define RZ_TODO(message)\
+  RZ_PANIC("TODO: %s", (message))
 
 #define RZ_UNREACHABLE(message)\
-  RZ_PANIC("reached unreachable code at %s", (message))
+  RZ_PANIC("reached unreachable code: %s\n", (message))
 
 #define RZ_ASSERT_EQ(left, right)\
   do\

@@ -70,12 +70,15 @@ Rz_Expr *rz_parse_nud(Rz_Parser *par)
     // i should take care of 'return NULL' parts... They'll certainly cause
     // segfaults... When we call 'push_expr()'. Or maybe even before it...
     // TODO: print the error or put it somewhere
-    case RZ_TOKEN_ERROR: advance(par); return rz_parse_nud(par);
-    case RZ_TOKEN_EOF: RZ_PANIC("unexpected end of file\n");
+    case RZ_TOKEN_ERROR: 
+      RZ_LOG(RZ_LOG_ERROR, "%s\n", peek(par).lexeme);
+      advance(par);
+      return rz_parse_nud(par);
+    case RZ_TOKEN_EOF: return rz_expr_void(par->arena);
     case RZ_TOKEN_LIT_INT:
       return rz_expr_literal(par->arena, advance(par).as.literal);
     case RZ_TOKEN_IDENT:
-      RZ_TODO("parse_nud(): handle variable expressions\n");
+      return rz_expr_variable(par->arena, peek(par).lexeme, advance(par).len);
     case RZ_TOKEN_OP:
       if (match_op(par, RZ_OP_SUBTRACT))
       {

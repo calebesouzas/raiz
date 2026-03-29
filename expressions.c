@@ -32,6 +32,13 @@ void rz_push_expr(Rz_ExprArena *arena, Rz_Expr *expr)
   }
 }
 
+Rz_Expr *rz_expr_void(Rz_ExprArena *arena)
+{
+  Rz_Expr result = {.kind = RZ_EXPR_VOID };
+  rz_push_expr(arena, &result);
+  return &arena->items[result.id];
+}
+
 Rz_Expr *rz_expr_binary(
     Rz_ExprArena *arena,
     Rz_Expr *left, Rz_Expr *right,
@@ -47,7 +54,6 @@ Rz_Expr *rz_expr_binary(
     }
   };
   rz_push_expr(arena, &result);
-  assert(result.in_arena);
   return &arena->items[result.id];
 }
 
@@ -61,7 +67,6 @@ Rz_Expr *rz_expr_unary(Rz_ExprArena *arena, Rz_Expr *target)
     }
   };
   rz_push_expr(arena, &result);
-  assert(result.in_arena);
   return &arena->items[result.id];
 }
 
@@ -72,7 +77,19 @@ Rz_Expr *rz_expr_literal(Rz_ExprArena *arena, int value)
     .as.literal = value,
   };
   rz_push_expr(arena, &result);
-  assert(result.in_arena);
+  return &arena->items[result.id];
+}
+
+Rz_Expr *rz_expr_variable(Rz_ExprArena *arena, const char *symbol, size_t size)
+{
+  Rz_Expr result = (Rz_Expr) {
+    .kind = RZ_EXPR_VARIABLE,
+    .as.variable = {
+      .symbol = symbol,
+      .size = size,
+    },
+  };
+  rz_push_expr(arena, &result);
   return &arena->items[result.id];
 }
 

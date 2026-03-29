@@ -138,11 +138,8 @@ Rz_Token rz_lexer_next_token(Rz_Lexer *lex)
     default: // Do i really need to indent after it?
     {
       char buffer[1024] = {0};
-      int not_ok = snprintf(
-          buffer, sizeof(buffer),
-          "unexpected character '%c' (byte 0x%x)",
-          c, c);
-      if (not_ok) RZ_PANIC("lexer_next_token(): error buffer was to small\n");
+      snprintf(buffer, sizeof(buffer),
+          "unexpected character '%c' (byte 0x%x)", c, c);
       // need to strdup(), unless, we'd read garbage. If it doesn't segfault
       return error(strdup(buffer));
     }

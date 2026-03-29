@@ -19,7 +19,7 @@ typedef struct
 
 typedef struct
 {
-  const char *data;
+  const char *symbol;
   size_t size;
 } Rz_Expr_Variable;
 
@@ -29,6 +29,7 @@ typedef enum
   RZ_EXPR_UNARY,
   RZ_EXPR_BINARY,
   RZ_EXPR_VARIABLE,
+  RZ_EXPR_VOID,
 } Rz_ExprKind;
 
 typedef struct
@@ -59,7 +60,7 @@ typedef struct
   Rz_Token next;
   Rz_ExprArena *arena;
   // Do we really need it? I think it's better than 'PANIC()'ing everywhere...
-  char error_buffer[RAIZ_COLUMN_LIMIT + RAIZ_COLUMN_LIMIT / 2];
+  char *error_buffer;
 } Rz_Parser;
 
 #endif // RAIZ_PARSER_H
