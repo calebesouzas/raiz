@@ -1,34 +1,89 @@
 #ifndef RAIZ_RUNTIME_SOURCE
 #define RAIZ_RUNTIME_SOURCE
 
+#include "common.h"
 #include "runtime.h"
 #include "parser.h"
+#include "maps.c"
 
-static inline Rz_VM rz_vm_new(Rz_ExprArena *arena)
+static inline Rz_VM rz_vm_new(Rz_ExprArena *arena, Rz_StringIntMap *scope)
 {
-  return (Rz_VM) {.arena = arena };
+  return (Rz_VM) {.arena = arena, .scope = scope };
 }
 
-int rz_eval(Rz_VM *vm, size_t current)
+static inline Rz_Expr vm_current(Rz_VM *vm)
 {
-#define current() vm->arena->items[current]
-  switch (current().kind)
+  return vm->arena->items[vm->arena->current];
+}
+
+static inline Rz_Expr_Unary vm_unary(Rz_VM *vm)
+{
+  return vm_current(vm).as.unary;
+}
+
+static inline Rz_Expr_Binary vm_binary(Rz_VM *vm)
+{
+  return vm_current(vm).as.binary;
+}
+
+static inline Rz_String vm_variable(Rz_VM *vm)
+{
+  return vm_current(vm).as.variable;
+}
+
+static inline int vm_literal(Rz_VM *vm)
+{
+  return vm_current(vm).as.literal;
+}
+
+static inline void vm_save(Rz_VM *vm, size_t new_current)
+{
+  vm->arena->current = new_current;
+}
+
+#define current(v) vm_current(v)
+#define unary(v) vm_unary(v)
+#define binary(v) vm_binary(v)
+#define variable(v) vm_variable(v)
+#define literal(v) vm_literal(v)
+#define save(v, nc) vm_save(v, (nc))
+
+int rz_eval(Rz_VM *vm)
+{
+  switch (current(vm).kind)
   {
-    case RZ_EXPR_LITERAL: return current().as.literal;
+    case RZ_EXPR_LITERAL: return literal(vm);
     case RZ_EXPR_UNARY:
-      if (current().as.unary.op != RZ_OP_SUBTRACT)
+      if (unary(vm).op != RZ_OP_SUBTRACT)
         RZ_PANIC("use unary with '-' operator\n");
 
-      current = current().as.unary.target_id;
-      return -rz_eval(vm, current);
+      save(vm, unary(vm).target_id);
+      return -rz_eval(vm);
     case RZ_EXPR_BINARY:
       ; // HACK this thing literally made "declaration after label is a C23
         // extension" compiler warning disappear!
-      rz_scope_insert(vm->scope, strndup(current().as.variable.symbol, current().as.variable.size), 
-      int left = rz_eval(vm, current().as.binary.left_id);
-      int right = rz_eval(vm, current().as.binary.right_id);
+      size_t saved = vm->arena->current;
+      if (binary(vm).op == RZ_OP_ASSIGN)
+      {
+        save(vm, binary(vm).right_id);
+        int value = rz_eval(vm);
 
-      switch (current().as.binary.op)
+        save(vm, saved); // restore current binary
+        save(vm, binary(vm).left_id); // variable
+        rz_scope_insert(vm->scope, variable(vm), value);
+        save(vm, saved);
+        return value;
+      }
+
+      save(vm, binary(vm).left_id);
+      int left = rz_eval(vm);
+      save(vm, saved);
+
+      save(vm, binary(vm).right_id);
+      int right = rz_eval(vm);
+      save(vm, saved);
+
+      switch (binary(vm).op)
       {
         case RZ_OP_SUM:        return left + right;
         case RZ_OP_SUBTRACT:   return left - right;
@@ -52,22 +107,26 @@ int rz_eval(Rz_VM *vm, size_t current)
       }
     case RZ_EXPR_VARIABLE:
     {
-      int *value = rz_scope_get(&vm->scope,
-          strndup(current().as.variable.symbol, current().as.variable.size));
-      if (!value) RZ_PANIC("undefined variable: '%.*s\n'",
-          current().as.variable.symbol, current().as.variable.size);
+      int *value = rz_scope_get(vm->scope, variable(vm));
+      if (!value) RZ_PANIC("undefined variable: '%.*s\n'", RZ_SV(variable(vm)));
       return *value;
     }
     case RZ_EXPR_VOID: return 0;
     default: // switch (arena->items[current].kind)
     RZ_UNREACHABLE("expression kind\n");
   }
-#undef current
 }
+
+#undef current
+#undef unary
+#undef binary
+#undef variable
+#undef literal
+#undef save
 
 int rz_eval_arena(Rz_VM *vm)
 {
-  return rz_eval(vm, vm->arena->count - 1);
+  return rz_eval(vm);
 }
 
 #endif // RAIZ_RUNTIME_SOURCE
