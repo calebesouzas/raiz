@@ -1,6 +1,8 @@
 #ifndef RAIZ_EXPRESSIONS_SOURCE
 #define RAIZ_EXPRESSIONS_SOURCE
 
+#include "common.c"
+
 uint16_t rz_get_binding_power(Rz_Operator op)
 {
   uint16_t powers[] = {
@@ -27,6 +29,7 @@ void rz_push_expr(Rz_ExprArena *arena, Rz_Expr *expr)
   if (!expr->in_arena && arena->items != NULL)
   {
     expr->id = arena->count;
+    arena->current = arena->count;
     arena->items[arena->count++] = *expr;
     expr->in_arena = true;
   }
@@ -84,10 +87,7 @@ Rz_Expr *rz_expr_variable(Rz_ExprArena *arena, const char *symbol, size_t size)
 {
   Rz_Expr result = (Rz_Expr) {
     .kind = RZ_EXPR_VARIABLE,
-    .as.variable = {
-      .symbol = symbol,
-      .size = size,
-    },
+    .as.variable = rz_string_slice(symbol, size)
   };
   rz_push_expr(arena, &result);
   return &arena->items[result.id];

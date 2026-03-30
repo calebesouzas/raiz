@@ -5,24 +5,24 @@
 #include "maps.h"
 // #include "values.h"
 
-unsigned int rz_hash_get(const char *key)
+unsigned int rz_hash_get(Rz_String key)
 {
   unsigned long hash = 5381;
   char c;
-  while ((c = *key++))
+  for (size_t i = 0; (c = *key.data++) && i < key.size; ++i)
     // same as 'hash * 33 + c'
     hash = ((hash << 5) + hash) + c;
 
   return hash % RAIZ_MAP_SIZE;
 }
 
-Rz_StringIntPair *rz_string_int_pair_new(const char *key, int *value)
+Rz_StringIntPair *rz_string_int_pair_new(Rz_String key, int value)
 {
   Rz_StringIntPair *node = malloc(sizeof(*node));
 
   if (node)
   {
-    node->key = strdup(key);
+    node->key = rz_string_clone(key);
     node->value = value;
     node->next = NULL;
   }
@@ -30,7 +30,7 @@ Rz_StringIntPair *rz_string_int_pair_new(const char *key, int *value)
   return node;
 }
 
-void rz_scope_insert(Rz_StringIntMap *map, const char *key, int *value)
+void rz_scope_insert(Rz_StringIntMap *map, Rz_String key, int value)
 {
   unsigned int index = rz_hash_get(key);
 
@@ -43,8 +43,8 @@ void rz_scope_insert(Rz_StringIntMap *map, const char *key, int *value)
   else
   {
     Rz_StringIntPair *temp = map->buckets[index];
-    size_t len = strlen(key);
-    while (temp->next != NULL && strncmp(temp->key, key, len) != 0)
+    while (temp->next != NULL
+        && strncmp(temp->key.data, key.data, temp->key.size)) // != 0
     {
       temp = temp->next;
     }
@@ -53,20 +53,18 @@ void rz_scope_insert(Rz_StringIntMap *map, const char *key, int *value)
   }
 }
 
-int *rz_scope_get(Rz_StringIntMap *map, const char *key)
+int *rz_scope_get(Rz_StringIntMap *map, Rz_String key)
 {
   unsigned int index = rz_hash_get(key);
 
   Rz_StringIntPair *cursor = map->buckets[index];
   if (!cursor) return NULL;
 
-  size_t len = strlen(key);
-
   while (cursor != NULL)
   {
-    if (strncmp(cursor->key, key, len) == 0)
+    if (strncmp(cursor->key.data, key.data, key.size) == 0)
     {
-      return cursor->value;
+      return &cursor->value;
     }
     else cursor = cursor->next;
   }

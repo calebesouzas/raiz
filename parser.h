@@ -1,7 +1,7 @@
 #ifndef RAIZ_PARSER_H
 #define RAIZ_PARSER_H
 
-#include "raiz.h"
+#include "common.h"
 
 // It is good to have a type for some kinds of stuff.
 // If we're going to have code which expects a specific kind.
@@ -16,12 +16,6 @@ typedef struct
   Rz_Operator op;
   size_t target_id;
 } Rz_Expr_Unary;
-
-typedef struct
-{
-  const char *symbol;
-  size_t size;
-} Rz_Expr_Variable;
 
 typedef enum
 {
@@ -42,7 +36,7 @@ typedef struct
     int literal;
     Rz_Expr_Binary binary;
     Rz_Expr_Unary unary;
-    Rz_Expr_Variable variable;
+    Rz_String variable;
   } as;
 } Rz_Expr;
 
@@ -50,6 +44,7 @@ typedef struct
 typedef struct
 {
   size_t count, capacity;
+  size_t current; // for consuming nodes
   Rz_Expr *items; // all the 'id' fields in 'Expr' and variants refer to this
 } Rz_ExprArena;
 
