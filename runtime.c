@@ -6,7 +6,7 @@
 #include "parser.h"
 #include "maps.c"
 
-static inline Rz_VM rz_vm_new(Rz_ExprArena *arena, Rz_StringIntMap *scope)
+static inline Rz_VM rz_vm_new(Rz_ExprArena *arena, Rz_StringDoubleMap *scope)
 {
   return (Rz_VM) {.arena = arena, .scope = scope };
 }
@@ -48,7 +48,7 @@ static inline void vm_save(Rz_VM *vm, size_t new_current)
 #define literal(v) vm_literal(v)
 #define save(v, nc) vm_save(v, (nc))
 
-int rz_eval(Rz_VM *vm)
+double rz_eval(Rz_VM *vm)
 {
   switch (current(vm).kind)
   {
@@ -66,7 +66,7 @@ int rz_eval(Rz_VM *vm)
       if (binary(vm).op == RZ_OP_ASSIGN)
       {
         save(vm, binary(vm).right_id);
-        int value = rz_eval(vm);
+        double value = rz_eval(vm);
 
         save(vm, saved); // restore current binary
         save(vm, binary(vm).left_id); // variable
@@ -76,11 +76,11 @@ int rz_eval(Rz_VM *vm)
       }
 
       save(vm, binary(vm).left_id);
-      int left = rz_eval(vm);
+      double left = rz_eval(vm);
       save(vm, saved);
 
       save(vm, binary(vm).right_id);
-      int right = rz_eval(vm);
+      double right = rz_eval(vm);
       save(vm, saved);
 
       switch (binary(vm).op)
@@ -89,14 +89,14 @@ int rz_eval(Rz_VM *vm)
         case RZ_OP_SUBTRACT:   return left - right;
         case RZ_OP_MULTIPLY:   return left * right;
         case RZ_OP_DIVIDE:     return left / right;
-        case RZ_OP_MODULE:     return left % right;
+        // case RZ_OP_MODULE:     return left % right;
         case RZ_OP_GREATER:    return left > right;
         case RZ_OP_LESS:       return left < right;
-        case RZ_OP_BIT_OR:     return left | right;
-        case RZ_OP_BIT_XOR:    return left ^ right;
-        case RZ_OP_BIT_AND:    return left & right;
-        case RZ_OP_BIT_RSHIFT: return left >> right;
-        case RZ_OP_BIT_LSHIFT: return left << right;
+        // case RZ_OP_BIT_OR:     return left | right;
+        // case RZ_OP_BIT_XOR:    return left ^ right;
+        // case RZ_OP_BIT_AND:    return left & right;
+        // case RZ_OP_BIT_RSHIFT: return left >> right;
+        // case RZ_OP_BIT_LSHIFT: return left << right;
         case RZ_OP_EQUAL:      return left == right;
         case RZ_OP_NOT_EQUAL:  return left != right;
         case RZ_OP_GREATER_EQ: return left >= right;
@@ -107,7 +107,7 @@ int rz_eval(Rz_VM *vm)
       }
     case RZ_EXPR_VARIABLE:
     {
-      int *value = rz_scope_get(vm->scope, variable(vm));
+      double *value = rz_scope_get(vm->scope, variable(vm));
       if (!value) RZ_PANIC("undefined variable: '%.*s\n'", RZ_SV(variable(vm)));
       return *value;
     }
@@ -124,7 +124,7 @@ int rz_eval(Rz_VM *vm)
 #undef literal
 #undef save
 
-int rz_eval_arena(Rz_VM *vm)
+double rz_eval_arena(Rz_VM *vm)
 {
   return rz_eval(vm);
 }

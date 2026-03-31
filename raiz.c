@@ -8,7 +8,7 @@ int main(void)
   char buffer[1024] = {0};
 
   printf("$> ");
-  Rz_StringIntMap scope = {0};
+  Rz_StringDoubleMap scope = {0};
   while (fgets(buffer, sizeof(buffer), stdin))
   {
     if (strncmp(buffer, "exit", 4) == 0) break;
@@ -18,7 +18,7 @@ int main(void)
 
     Rz_VM vm = rz_vm_new(&arena, &scope);
 
-    printf("Result %d\n", rz_eval_arena(&vm));
+    printf("Result %f\n", rz_eval_arena(&vm));
 
     free(arena.items);
     printf("$> ");

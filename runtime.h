@@ -13,7 +13,7 @@ typedef enum {
 typedef struct {
   Rz_Result result;
   Rz_ExprArena *arena;
-  Rz_StringIntMap *scope; // only global at the moment.
+  Rz_StringDoubleMap *scope; // only global at the moment.
 } Rz_VM; // calm down, it is not done yet
 
 #endif // RAIZ_RUNTIME_H
