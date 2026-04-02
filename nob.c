@@ -3,8 +3,12 @@
 #include "nob.h"
 
 #define BUILD_FOLDER "build/"
+#define OBJECTS_FOLDER BUILD_FOLDER"/obj/"
+
 #define RAIZ_SOURCE "raiz.c"
-#define OUTPUT_PATH BUILD_FOLDER"raiz"
+#define BINARIES_FOLDER BUILD_FOLDER"/bin/"
+#define OUTPUT_PATH BINARIES_FOLDER"raiz"
+
 #define CC_ARGS "-Wall", "-Wextra", "-ggdb"
 
 bool build_raiz(bool no_logs, bool strict)
