@@ -5,8 +5,9 @@
 #include "runtime.h"
 #include "parser.h"
 #include "maps.c"
+#include "values.h"
 
-static inline Rz_VM rz_vm_new(Rz_ExprArena *arena, Rz_StringIntMap *scope)
+static inline Rz_VM rz_vm_new(Rz_ExprArena *arena, Rz_Map_String2Value *scope)
 {
   return (Rz_VM) {.arena = arena, .scope = scope };
 }
@@ -14,6 +15,11 @@ static inline Rz_VM rz_vm_new(Rz_ExprArena *arena, Rz_StringIntMap *scope)
 static inline Rz_Expr vm_current(Rz_VM *vm)
 {
   return vm->arena->items[vm->arena->current];
+}
+
+static inline bool vm_match(Rz_VM *vm, Rz_ExprKind kind)
+{
+  return (bool) vm_current(vm).kind == kind;
 }
 
 static inline Rz_Expr_Unary vm_unary(Rz_VM *vm)
@@ -31,9 +37,14 @@ static inline Rz_String vm_variable(Rz_VM *vm)
   return vm_current(vm).as.variable;
 }
 
-static inline int vm_literal(Rz_VM *vm)
+static inline Rz_Value vm_literal(Rz_VM *vm)
 {
   return vm_current(vm).as.literal;
+}
+
+static inline bool vm_match_literal(Rz_VM *vm, Rz_ValueKind kind)
+{
+  return (bool) vm_literal(vm).kind == kind;
 }
 
 static inline void vm_save(Rz_VM *vm, size_t new_current)
@@ -47,8 +58,10 @@ static inline void vm_save(Rz_VM *vm, size_t new_current)
 #define variable(v) vm_variable(v)
 #define literal(v) vm_literal(v)
 #define save(v, nc) vm_save(v, (nc))
+#define match(v, k) vm_match(v, k)
+#define match_literal(v, k) vm_match_literal(v, k)
 
-int rz_eval(Rz_VM *vm)
+Rz_Value rz_eval(Rz_VM *vm)
 {
   switch (current(vm).kind)
   {
@@ -58,7 +71,13 @@ int rz_eval(Rz_VM *vm)
         RZ_PANIC("use unary with '-' operator\n");
 
       save(vm, unary(vm).target_id);
-      return -rz_eval(vm);
+      Rz_Value result = rz_eval(vm);
+      if (result.kind == RZ_VALUE_INT)
+        return rz_value_with(-result.as.integer);
+      else if (result.kind == RZ_VALUE_FLOAT)
+        return rz_value_with(-result.as.floating);
+
+      RZ_PANIC("cannot use negative expression with non-numeric values\n");
     case RZ_EXPR_BINARY:
       ; // HACK this thing literally made "declaration after label is a C23
         // extension" compiler warning disappear!
@@ -66,7 +85,7 @@ int rz_eval(Rz_VM *vm)
       if (binary(vm).op == RZ_OP_ASSIGN)
       {
         save(vm, binary(vm).right_id);
-        int value = rz_eval(vm);
+        Rz_Value value = rz_eval(vm);
 
         save(vm, saved); // restore current binary
         save(vm, binary(vm).left_id); // variable
@@ -76,11 +95,11 @@ int rz_eval(Rz_VM *vm)
       }
 
       save(vm, binary(vm).left_id);
-      int left = rz_eval(vm);
+      Rz_Value left = rz_eval(vm);
       save(vm, saved);
 
       save(vm, binary(vm).right_id);
-      int right = rz_eval(vm);
+      Rz_Value right = rz_eval(vm);
       save(vm, saved);
 
       switch (binary(vm).op)
@@ -107,7 +126,7 @@ int rz_eval(Rz_VM *vm)
       }
     case RZ_EXPR_VARIABLE:
     {
-      int *value = rz_scope_get(vm->scope, variable(vm));
+      Rz_Value *value = rz_scope_get(vm->scope, variable(vm));
       if (!value) RZ_PANIC("undefined variable: '%.*s\n'", RZ_SV(variable(vm)));
       return *value;
     }
@@ -123,6 +142,8 @@ int rz_eval(Rz_VM *vm)
 #undef variable
 #undef literal
 #undef save
+#undef match
+#undef match_literal
 
 int rz_eval_arena(Rz_VM *vm)
 {

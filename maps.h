@@ -8,14 +8,14 @@
 #define RAIZ_MAP_SIZE 97
 
 // I really didn't know about this syntax
-typedef struct Rz_StringIntPair {
+typedef struct Rz_Pair_String2Value {
   Rz_String key;
-  int value;
-  struct Rz_StringIntPair *next;
-} Rz_StringIntPair;
+  Rz_Value value;
+  struct Rz_Pair_String2Value *next;
+} Rz_Pair_String2Value;
 
 typedef struct {
-  Rz_StringIntPair *buckets[RAIZ_MAP_SIZE];
-} Rz_StringIntMap;
+  Rz_Pair_String2Value *buckets[RAIZ_MAP_SIZE];
+} Rz_Map_String2Value;
 
 #endif // RAIZ_MAPS_H

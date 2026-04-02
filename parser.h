@@ -2,6 +2,7 @@
 #define RAIZ_PARSER_H
 
 #include "common.h"
+#include "values.h"
 
 // It is good to have a type for some kinds of stuff.
 // If we're going to have code which expects a specific kind.
@@ -33,7 +34,7 @@ typedef struct
   bool in_arena;
   union
   {
-    int literal;
+    Rz_Value literal;
     Rz_Expr_Binary binary;
     Rz_Expr_Unary unary;
     Rz_String variable;

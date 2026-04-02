@@ -5,6 +5,7 @@
 // But why not? We're using an Unity Build system so the most we can avoid
 // cycling dependencies (in this case, '#includes') the better...
 
+#include <math.h>
 #include "common.h"
 #include "lexer.h"
 
@@ -103,9 +104,6 @@ Rz_Token rz_lexer_next_token(Rz_Lexer *lex)
 
   char c = advance(lex);
 
-  if (isdigit(c)) return number_literal(lex);
-  else if (isalpha(c)) return identifier(lex);
-
   // Sorry for the nested ternaries...
   switch (c)
   {
@@ -136,6 +134,9 @@ Rz_Token rz_lexer_next_token(Rz_Lexer *lex)
                                        ? operator(lex, RZ_OP_LESS_EQ)
                                        : operator(lex, RZ_OP_LESS);
     default: // Do i really need to indent after it?
+    if (isdigit(c)) return number_literal(lex);
+    else if (isalpha(c)) return identifier(lex);
+    else
     {
       char buffer[1024] = {0};
       snprintf(buffer, sizeof(buffer),
@@ -148,14 +149,25 @@ Rz_Token rz_lexer_next_token(Rz_Lexer *lex)
 
 static inline Rz_Token number_literal(Rz_Lexer *lex)
 {
-  int number = 0;
+  int inumber = 0;
   lex->current--; // this will prevent us from skipping the first digit
 
   // TODO: learn how to do the reverse operation (extract string from a number)
-  while (isdigit(peek(lex))) number = (number * 10) + (advance(lex) - '0');
+  while (isdigit(peek(lex))) inumber = (inumber * 10) + (advance(lex) - '0');
 
-  Rz_Token token = make_token(lex, RZ_TOKEN_LIT_INT);
-  token.as.literal = number;
+  if (match(lex, '.'))
+  {
+    double dnumber = (double)inumber;
+    for (double i = 0; isdigit(peek(lex)); ++i)
+      dnumber += (double)(advance(lex) - '0') * pow(10, -i);
+
+    Rz_Token token = make_token(lex, RZ_TOKEN_LITERAL);
+    token.as.literal = rz_value_with(dnumber);
+    return token;
+  }
+
+  Rz_Token token = make_token(lex, RZ_TOKEN_LITERAL);
+  token.as.literal = rz_value_with(inumber);
   return token;
 }
 

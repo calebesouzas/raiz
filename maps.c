@@ -3,7 +3,7 @@
 
 #include "common.h"
 #include "maps.h"
-// #include "values.h"
+#include "values.h"
 
 unsigned int rz_hash_get(Rz_String key)
 {
@@ -16,9 +16,9 @@ unsigned int rz_hash_get(Rz_String key)
   return hash % RAIZ_MAP_SIZE;
 }
 
-Rz_StringIntPair *rz_string_int_pair_new(Rz_String key, int value)
+Rz_Pair_String2Value *rz_string_int_pair_new(Rz_String key, Rz_Value value)
 {
-  Rz_StringIntPair *node = malloc(sizeof(*node));
+  Rz_Pair_String2Value *node = malloc(sizeof(*node));
 
   if (node)
   {
@@ -30,11 +30,11 @@ Rz_StringIntPair *rz_string_int_pair_new(Rz_String key, int value)
   return node;
 }
 
-void rz_scope_insert(Rz_StringIntMap *map, Rz_String key, int value)
+void rz_scope_insert(Rz_Map_String2Value *map, Rz_String key, Rz_Value value)
 {
   unsigned int index = rz_hash_get(key);
 
-  Rz_StringIntPair *node = rz_string_int_pair_new(key, value);
+  Rz_Pair_String2Value *node = rz_string_int_pair_new(key, value);
 
   if (map->buckets[index] == NULL)
   {
@@ -42,7 +42,7 @@ void rz_scope_insert(Rz_StringIntMap *map, Rz_String key, int value)
   }
   else
   {
-    Rz_StringIntPair *temp = map->buckets[index];
+    Rz_Pair_String2Value *temp = map->buckets[index];
     while (temp->next != NULL
         && strncmp(temp->key.data, key.data, temp->key.size)) // != 0
     {
@@ -53,11 +53,11 @@ void rz_scope_insert(Rz_StringIntMap *map, Rz_String key, int value)
   }
 }
 
-int *rz_scope_get(Rz_StringIntMap *map, Rz_String key)
+Rz_Value *rz_scope_get(Rz_Map_String2Value *map, Rz_String key)
 {
   unsigned int index = rz_hash_get(key);
 
-  Rz_StringIntPair *cursor = map->buckets[index];
+  Rz_Pair_String2Value *cursor = map->buckets[index];
   if (!cursor) return NULL;
 
   while (cursor != NULL)
