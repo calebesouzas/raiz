@@ -1,4 +1,4 @@
-use std::io;
+use std::io::{self, Write};
 
 mod lexer;
 mod parser;
@@ -7,15 +7,18 @@ use parser::Parser;
 
 fn main() {
     loop {
-    let mut source = String::new();
+        print!("&> ");
 
-    io::stdin()
-        .read_line(&mut source)
-        .expect("failed to read line");
+        io::stdout().flush().expect("failed to flush stdout");
 
-    let mut parser = Parser::new(&source);
-    let ast = parser.parse();
+        let mut source = String::new();
+        io::stdin()
+            .read_line(&mut source)
+            .expect("failed to read line");
 
-    println!("Result: {}", ast.eval());
+        let mut parser = Parser::new(&source);
+        let ast = parser.parse();
+
+        println!("Result: {}", ast.eval());
     }
 }
