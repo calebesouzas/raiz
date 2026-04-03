@@ -78,7 +78,7 @@ impl Parser {
     fn parse_expr(&mut self, minimum_power: usize) -> Result<Expr, String> {
         let mut left_side = self.parse_nud().expect("failed to parse null-denotation expression");
 
-        while !self.expect(Token::EndOfFile) && !self.expect_next(Token::CloseParen) {
+        while !self.expect(Token::EndOfFile) && !self.expect(Token::CloseParen) {
             let op = {
                 if !self.operator_token(&self.current()) {
                     let message: String = format!("expected operator, found {:?}", self.current());
