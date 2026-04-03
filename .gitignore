@@ -1,5 +1,6 @@
-build/*
-temp/*
+/target
+/build
+/temp
 *~
 nob
 nob.old
