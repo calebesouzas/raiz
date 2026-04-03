@@ -1,13 +1,21 @@
+use std::io;
+
 mod lexer;
 mod parser;
 mod ast;
 use parser::Parser;
 
 fn main() {
-    let source = String::from("1 + 2 * 3\n");
+    loop {
+    let mut source = String::new();
+
+    io::stdin()
+        .read_line(&mut source)
+        .expect("failed to read line");
 
     let mut parser = Parser::new(&source);
     let ast = parser.parse();
 
     println!("Result: {}", ast.eval());
+    }
 }
