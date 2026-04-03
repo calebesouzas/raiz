@@ -47,8 +47,9 @@ int
 main (int argc, char **argv) {
   GO_REBUILD_URSELF(argc, argv);
 
-  for (char *arg = NULL; (arg = *argv) != NULL; argv++)
+  for (int i = 1; i < argc; i++)
   { // can we omit these curly braces?
+    char *arg = argv[i];
     if (strncmp(arg, "run", 3) == 0) build_flags.run = true;
     else if (strncmp(arg, "--strict", 8) == 0) build_flags.strict = true;
     else fprintf(stderr, "nob.c: unknown argument: %s\n", arg);
