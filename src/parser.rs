@@ -88,13 +88,12 @@ impl Parser {
                 self.current()
             };
 
-            self.advance();
-
             let (left_power, right_power) = get_bind_power(&op);
-
             if left_power < minimum_power {
                 break;
             }
+
+            self.advance(); // consume operator here
 
             let right_side = self.parse_expr(right_power)
                 .expect("failed to parse binary right side");
@@ -103,7 +102,7 @@ impl Parser {
                 left: Box::new(left_side),
                 right: Box::new(right_side),
                 op,
-            }
+            } // ';' is optional here, since we'll return `left_side` anyways
         }
 
         Ok(left_side)
