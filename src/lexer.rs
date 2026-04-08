@@ -1,4 +1,4 @@
-#[derive(Debug, PartialEq, Clone, Copy)]
+#[derive(Debug, PartialEq, Clone)]
 pub enum Token {
     Plus,
     Minus,
@@ -8,6 +8,8 @@ pub enum Token {
     CloseParen,
     Number { value: i32 },
     EndOfFile,
+
+    Error { message: String },
 }
 
 pub struct Lexer {
@@ -34,7 +36,7 @@ impl Lexer {
         }
     }
 
-    pub fn next_token(&mut self) -> Result<Token, ()> {
+    pub fn next_token(&mut self) -> Result<Token, String> {
         self.skip_whitespace();
 
         self.start = self.current;
@@ -50,7 +52,7 @@ impl Lexer {
             ')' => Token::CloseParen,
             '\0' => Token::EndOfFile,
             '0'..='9' => self.number(),
-            _ => return Err(()),
+            other => return Err(format!("unexpected character: {}", other)),
         };
 
         dbg!(&token);
@@ -58,7 +60,7 @@ impl Lexer {
     }
 
     fn number(&mut self) -> Token {
-        let mut number: i32 = self.prev() as i32 - 48;
+        let mut number: i32 = self.prev() as i32 - 48; // don't skip the first digit!
 
         while self.peek().is_ascii_digit() {
             number = (number * 10) + ((self.advance() as i32) - 48);

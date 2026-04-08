@@ -16,8 +16,7 @@ fn main() {
             .read_line(&mut source)
             .expect("failed to read line");
 
-        let mut parser = Parser::new(&source);
-        let ast = parser.parse();
+        let ast = Parser::new(&source).parse();
 
         println!("Result: {}", ast.eval());
     }

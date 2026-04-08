@@ -18,44 +18,47 @@ pub struct Parser {
 }
 
 impl Parser {
-    pub fn new(source: &String) -> Self {
+    pub fn new(source: &String) -> Result<Self, String> {
         let chars = source.chars().collect::<Vec<char>>();
         let mut lexer = Lexer::new(chars);
 
-        let mut next_token = lexer.next_token().expect("failed to generate token");
-        let current_token = next_token;
-        next_token = lexer.next_token().expect("failed to generate token");
+        let mut next_token = lexer.next_token()?;
+        let current_token = next_token.clone();
+        next_token = lexer.next_token()?;
 
-        Self {
+        Ok(Self {
             lexer,
             current_token,
             next_token,
             ast: Expr::Void,
-        }
+        })
     }
 
-    pub fn parse(&mut self) -> Expr {
-        self.parse_expr(0).expect("failed to parse expression")
+    pub fn parse(mut self) -> Result<Expr, String> {
+        self.ast = self.parse_expr(0)?;
+        Ok(self.ast)
     }
 
     fn parse_nud(&mut self) -> Result<Expr, String> {
         match self.current() {
+            Token::Error{message} => Err(message.to_owned()),
             Token::Number{value} => {
+                let result = Expr::Literal{value: *value};
                 self.advance();
-                Ok(Expr::Literal{value})
+                Ok(result)
             }
             Token::Minus => {
                 self.advance();
 
                 let (_, right_power) = get_bind_power(&Token::Minus);
 
-                let expr = self.parse_expr(right_power).expect("failed to parse unary expression");
+                let expr = self.parse_expr(right_power)?;
                 Ok(Expr::Unary { target: Box::new(expr) })
             }
             Token::OpenParen => {
                 self.advance();
 
-                let inner = self.parse_expr(0).expect("failed to parse inner expression");
+                let inner = self.parse_expr(0)?;
 
                 if !self.expect(Token::CloseParen) {
                     return Err(format!("expected ')' before {:?}", self.peek()));
@@ -76,16 +79,17 @@ impl Parser {
     }
 
     fn parse_expr(&mut self, minimum_power: usize) -> Result<Expr, String> {
-        let mut left_side = self.parse_nud().expect("failed to parse null-denotation expression");
+        let mut left_side = self.parse_nud()?;
 
         while !self.expect(Token::EndOfFile) && !self.expect(Token::CloseParen) {
             let op = {
                 if !self.operator_token(&self.current()) {
-                    let message: String = format!("expected operator, found {:?}", self.current());
+                    let message: String = 
+                        format!("expected operator, found {:?}", self.current());
                     return Err(message);
                 }
 
-                self.current()
+                self.current().clone()
             };
 
             let (left_power, right_power) = get_bind_power(&op);
@@ -95,8 +99,7 @@ impl Parser {
 
             self.advance(); // consume operator here
 
-            let right_side = self.parse_expr(right_power)
-                .expect("failed to parse binary right side");
+            let right_side = self.parse_expr(right_power)?;
 
             left_side = Expr::Binary {
                 left: Box::new(left_side),
@@ -111,22 +114,28 @@ impl Parser {
     //////// Helpers ////////
     // Looks like the borrow checker doesn't like helper functions.
     // With so many mutable and also immutable borrows at the same time, it is getting crazy...
-    fn current(&self) -> Token {
-        self.current_token
+    fn current(&self) -> &Token {
+        &self.current_token
     }
 
-    fn peek(&self) -> Token {
-        self.next_token
+    fn peek(&self) -> &Token {
+        &self.next_token
     }
 
-    fn next(&mut self) -> Token {
+    fn next(&mut self) -> &Token {
         self.advance();
-        self.current()
+        &self.current()
     }
 
     fn advance(&mut self) {
-        self.current_token = self.next_token;
-        self.next_token = self.lexer.next_token().expect("failed to generate token");
+        self.current_token = self.next_token.clone();
+        self.next_token = {
+            let result = self.lexer.next_token();
+            match result {
+                Ok(token) => token,
+                Err(message) => Token::Error{message},
+            }
+        };
     }
 
     fn expect(&self, expected: Token) -> bool {
