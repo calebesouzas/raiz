@@ -10,7 +10,22 @@
 bool build_raiz(bool no_logs, bool strict)
 {
   Cmd cmd = {0};
-  cmd_append(&cmd, "clang", "-o", OUTPUT_PATH, RAIZ_SOURCE, CC_ARGS);
+  cmd_append(&cmd, "clang", "-o", OUTPUT_PATH, CC_ARGS);
+
+  const char *sources[] = {
+    "common.c",
+    "expressions.c",
+    "lexer.c",
+    "maps.c",
+    "parser.c",
+    "raiz.c",
+    "runtime.c",
+  };
+
+  for (int i = 0; i < ARRAY_LEN(sources); ++i)
+  {
+    cmd_append(&cmd, sources[i]);
+  }
 
   if (no_logs)
   {
