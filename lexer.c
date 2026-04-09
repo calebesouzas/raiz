@@ -27,44 +27,34 @@ static inline Rz_Token identifier(Rz_Lexer *lex);
 
 /*** Some helpers, because i don't want to get crazy of so much typing ***/
 
-// It's really annoying that using Unity Build style - when we organize
-// '#include's in a way that every header and source ends in one single compile
-// unit - 'static' doesn't make functions private...
-#define peek(l)     lexer_peek(l)
-#define next(l)     lexer_next(l)
-#define prev(l)     lexer_prev(l)
-#define match(l, e) lexer_match(l, e)
-#define advance(l)  lexer_advance(l)
-#define error(m)    lexer_error(m)
-
 /* just returns the current character */
-static inline char lexer_peek(Rz_Lexer *lex)
+static inline char peek(Rz_Lexer *lex)
 {
   return lex->source[lex->current];
 }
 
 /* returns the next character if there is one */
-static inline char lexer_next(Rz_Lexer *lex)
+static inline char next(Rz_Lexer *lex)
 {
   if (lex->current + 1 >= lex->source_len) return '\0';
   return lex->source[lex->current + 1];
 }
 
-static inline char lexer_prev(Rz_Lexer *lex)
+static inline char prev(Rz_Lexer *lex)
 {
   if (lex->current - 1 >= lex->source_len) return '\0';
   return lex->source[lex->current - 1];
 }
 
 /* returns the current character after advancing the position */
-static inline char lexer_advance(Rz_Lexer *lex)
+static inline char advance(Rz_Lexer *lex)
 {
   return lex->source[lex->current++];
 }
 
 /* returns 'true' if the current character is equal to the expected one
  * and updates the lexer's position if it is, else, returns 'false' */
-static inline bool lexer_match(Rz_Lexer *lex, char expected)
+static inline bool match(Rz_Lexer *lex, char expected)
 {
   if (peek(lex) != expected) return false;
   lex->current++;
