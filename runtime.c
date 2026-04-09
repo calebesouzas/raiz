@@ -4,9 +4,8 @@
 #include "common.h"
 #include "runtime.h"
 #include "parser.h"
-#include "maps.c"
 
-static inline Rz_VM rz_vm_new(Rz_ExprArena *arena, Rz_StringDoubleMap *scope)
+Rz_VM rz_vm_new(Rz_ExprArena *arena, Rz_StringDoubleMap *scope)
 {
   return (Rz_VM) {.arena = arena, .scope = scope };
 }

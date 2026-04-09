@@ -1,7 +1,9 @@
 #include "common.h"
-#include "lexer.c"
-#include "parser.c"
-#include "runtime.c"
+#include "maps.h"
+#include "ast.h"
+#include "lexer.h"
+#include "parser.h"
+#include "runtime.h"
 
 int main(void)
 {

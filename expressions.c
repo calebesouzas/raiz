@@ -1,8 +1,6 @@
 #ifndef RAIZ_EXPRESSIONS_SOURCE
 #define RAIZ_EXPRESSIONS_SOURCE
 
-#include "common.c"
-
 uint16_t rz_get_binding_power(Rz_Operator op)
 {
   uint16_t powers[] = {

@@ -4,7 +4,6 @@
 #include "lexer.h"
 #include "common.h"
 #include "parser.h"
-#include "expressions.c"
 
 /*** Helpers definitions (declarations and info are in the top part) ***/
 

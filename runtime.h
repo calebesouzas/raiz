@@ -16,4 +16,7 @@ typedef struct {
   Rz_StringDoubleMap *scope; // only global at the moment.
 } Rz_VM; // calm down, it is not done yet
 
+Rz_VM rz_vm_new(Rz_ExprArena *arena, Rz_StringDoubleMap *scope);
+double rz_eval_arena(Rz_VM *vm);
+
 #endif // RAIZ_RUNTIME_H
