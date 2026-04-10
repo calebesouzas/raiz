@@ -74,6 +74,7 @@ Rz_Expr *rz_parse_nud(Rz_Parser *par)
     case RZ_TOKEN_OP:
       if (match_op(par, RZ_OP_SUBTRACT))
       {
+        advance(par);
         uint8_t bind_power = RZ_GET_RIGHT_BP(rz_get_binding_power(peek(par).as.op));
         return rz_expr_unary(par->arena, rz_parse_expr(par, bind_power));
       }
