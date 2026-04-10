@@ -2,6 +2,7 @@
 #define RAIZ_RUNTIME_SOURCE
 
 #include "common.h"
+#include "ast.h" // Rz_Operator
 #include "runtime.h"
 #include "parser.h"
 

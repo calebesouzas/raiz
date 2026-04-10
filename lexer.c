@@ -6,6 +6,7 @@
 // cycling dependencies (in this case, '#includes') the better...
 
 #include "common.h"
+#include "ast.h"
 #include "lexer.h"
 
 /* Creates a lexer from nul-terminated string */
@@ -22,7 +23,7 @@ Rz_Lexer rz_lexer_new(const char *source)
 
 static inline Rz_Token number_literal(Rz_Lexer *lex);
 static inline Rz_Token operator(Rz_Lexer *lex, Rz_Operator op);
-static inline Rz_Token lexer_error(const char *message);
+static inline Rz_Token error(const char *message);
 static inline Rz_Token identifier(Rz_Lexer *lex);
 
 /*** Some helpers, because i don't want to get crazy of so much typing ***/

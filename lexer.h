@@ -33,6 +33,7 @@ typedef struct
   size_t start, current, source_len;
 } Rz_Lexer;
 
-Rz_Token lexer_next_token(Rz_Lexer *lex);
+Rz_Lexer rz_lexer_new(const char *source);
+Rz_Token rz_lexer_next_token(Rz_Lexer *lex);
 
 #endif // RAIZ_LEXER_H

@@ -14,7 +14,7 @@ bool build_raiz(bool no_logs, bool strict)
 
   const char *sources[] = {
     "common.c",
-    "expressions.c",
+    "ast.c",
     "lexer.c",
     "maps.c",
     "parser.c",

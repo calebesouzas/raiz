@@ -22,7 +22,7 @@ Rz_StringDoublePair *rz_string_int_pair_new(Rz_String key, double value)
 
   if (node)
   {
-    node->key = rz_string_clone(key);
+    node->key = rz_string_clone(&key);
     node->value = value;
     node->next = NULL;
   }

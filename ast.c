@@ -1,5 +1,5 @@
-#ifndef RAIZ_EXPRESSIONS_SOURCE
-#define RAIZ_EXPRESSIONS_SOURCE
+#include "common.h"
+#include "ast.h"
 
 uint16_t rz_get_binding_power(Rz_Operator op)
 {
@@ -40,11 +40,7 @@ Rz_Expr *rz_expr_void(Rz_ExprArena *arena)
   return &arena->items[result.id];
 }
 
-Rz_Expr *rz_expr_binary(
-    Rz_ExprArena *arena,
-    Rz_Expr *left, Rz_Expr *right,
-    Rz_Operator op
-)
+Rz_Expr *rz_expr_binary(Rz_ExprArena *arena, Rz_Expr *left, Rz_Expr *right, Rz_Operator op)
 {
   Rz_Expr result = (Rz_Expr) {
     .kind = RZ_EXPR_BINARY,
@@ -85,10 +81,8 @@ Rz_Expr *rz_expr_variable(Rz_ExprArena *arena, const char *symbol, size_t size)
 {
   Rz_Expr result = (Rz_Expr) {
     .kind = RZ_EXPR_VARIABLE,
-    .as.variable = rz_string_slice(symbol, size)
+    .as.variable = rz_string_cstr_slice(symbol, size)
   };
   rz_push_expr(arena, &result);
   return &arena->items[result.id];
 }
-
-#endif // RAIZ_EXPRESSIONS_SOURCE

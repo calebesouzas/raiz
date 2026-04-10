@@ -2,6 +2,7 @@
 #define RAIZ_PARSER_H
 
 #include "common.h"
+#include "lexer.h"
 
 typedef struct
 {

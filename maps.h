@@ -18,4 +18,7 @@ typedef struct {
   Rz_StringDoublePair *buckets[RAIZ_MAP_SIZE];
 } Rz_StringDoubleMap;
 
+void rz_scope_insert(Rz_StringDoubleMap *map, Rz_String key, double value);
+double *rz_scope_get(Rz_StringDoubleMap *map, Rz_String key);
+
 #endif // RAIZ_MAPS_H

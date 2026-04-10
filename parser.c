@@ -1,31 +1,24 @@
 #ifndef RAIZ_PARSER_SOURCE
 #define RAIZ_PARSER_SOURCE
 
-#include "lexer.h"
 #include "common.h"
+#include "ast.h"
+#include "lexer.h"
 #include "parser.h"
 
 /*** Helpers definitions (declarations and info are in the top part) ***/
 
-#define peek(p)             parser_peek(p)
-#define next(p)             parser_next(p)
-#define advance(p)          parser_advance(p)
-#define match(p, e)         parser_match(p, e)
-#define match_op(p, o)      parser_match_op(p, o)
-#define match_next(p, e)    parser_match_next(p, e)
-#define match_next_op(p, o) parser_match_next_op(p, o)
-
-static inline Rz_Token parser_peek(Rz_Parser *par)
+static inline Rz_Token peek(Rz_Parser *par)
 {
   return par->current;
 }
 
-static inline Rz_Token parser_next(Rz_Parser *par)
+static inline Rz_Token next(Rz_Parser *par)
 {
   return par->next;
 }
 
-static inline Rz_Token parser_advance(Rz_Parser *par)
+static inline Rz_Token advance(Rz_Parser *par)
 {
   Rz_Token saved = par->current;
   par->current = par->next;
@@ -33,24 +26,24 @@ static inline Rz_Token parser_advance(Rz_Parser *par)
   return saved;
 }
 
-static inline bool parser_match(Rz_Parser *par, Rz_TokenKind expected)
+static inline bool match(Rz_Parser *par, Rz_TokenKind expected)
 {
   if (peek(par).kind != expected) return false;
   return true;
 }
 
-static inline bool parser_match_op(Rz_Parser *par, Rz_Operator expected)
+static inline bool match_op(Rz_Parser *par, Rz_Operator expected)
 {
   if (peek(par).kind != RZ_TOKEN_OP || par->next.as.op != expected) return false;
   return true;
 }
 
-static inline bool parser_match_next(Rz_Parser *par, Rz_TokenKind expected)
+static inline bool match_next(Rz_Parser *par, Rz_TokenKind expected)
 {
   return (next(par).kind == expected);
 }
 
-static inline bool parser_match_next_op(Rz_Parser *par, Rz_Operator expected)
+static inline bool match_next_op(Rz_Parser *par, Rz_Operator expected)
 {
   return (match_next(par, RZ_TOKEN_OP) && next(par).as.op == expected);
 }
@@ -154,13 +147,5 @@ Rz_Expr *rz_parser_build_ast(Rz_ExprArena *arena, const char *source)
   Rz_Parser parser = rz_parser_new(&lexer, arena);
   return rz_parse_expr(&parser, 0);
 }
-
-#undef match_next_op
-#undef match_next
-#undef match_op
-#undef match
-#undef advance
-#undef next
-#undef peek
 
 #endif // RAIZ_PARSER_SOURCE
