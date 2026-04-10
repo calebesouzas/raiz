@@ -51,7 +51,7 @@ typedef enum {
   {\
     if ((left) != (right))\
     {\
-      RZ_PANIC("assertion failed\n%s != %s\n", #left, #right);\
+      RZ_PANIC("assertion failed (%s != %s)\n", #left, #right);\
     }\
   } while (0)
 

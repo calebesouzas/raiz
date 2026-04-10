@@ -34,7 +34,7 @@ static inline bool match(Rz_Parser *par, Rz_TokenKind expected)
 
 static inline bool match_op(Rz_Parser *par, Rz_Operator expected)
 {
-  if (peek(par).kind != RZ_TOKEN_OP || par->next.as.op != expected) return false;
+  if (peek(par).kind != RZ_TOKEN_OP || peek(par).as.op != expected) return false;
   return true;
 }
 
@@ -74,12 +74,10 @@ Rz_Expr *rz_parse_nud(Rz_Parser *par)
     case RZ_TOKEN_OP:
       if (match_op(par, RZ_OP_SUBTRACT))
       {
-        uint8_t bind_power = RZ_GET_RIGHT_BP(
-            rz_get_binding_power(peek(par).as.op));
+        uint8_t bind_power = RZ_GET_RIGHT_BP(rz_get_binding_power(peek(par).as.op));
         return rz_expr_unary(par->arena, rz_parse_expr(par, bind_power));
       }
-      RZ_PANIC("invalid unary operator: '%.*s'\n",
-          peek(par).len, peek(par).lexeme);
+      RZ_PANIC("invalid unary operator: '%.*s'\n", peek(par).len, peek(par).lexeme);
     case RZ_TOKEN_LPAREN:
       advance(par);
       Rz_Expr *result = rz_parse_expr(par, 0);
@@ -94,7 +92,7 @@ Rz_Expr *rz_parse_nud(Rz_Parser *par)
       // TODO: should i really panic on it?
       RZ_PANIC("trailing ')' before '%.*s'\n", next(par).len, next(par).lexeme);
     default:
-    RZ_UNREACHABLE("parse_nud(): token kind");
+    RZ_UNREACHABLE("token kind");
   }
 }
 

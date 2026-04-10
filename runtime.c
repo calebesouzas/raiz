@@ -103,17 +103,17 @@ double rz_eval(Rz_VM *vm)
         case RZ_OP_LESS_EQ:    return left <= right;
         case RZ_OP_BOOL_AND:   return left && right;
         case RZ_OP_BOOL_OR:    return left || right;
-        default: RZ_UNREACHABLE("operator\n");
+        default: RZ_UNREACHABLE("operator");
       }
     case RZ_EXPR_VARIABLE:
     {
       double *value = rz_scope_get(vm->scope, variable(vm));
-      if (!value) RZ_PANIC("undefined variable: '%.*s\n'", RZ_SV(variable(vm)));
+      if (!value) RZ_PANIC("undefined variable: '%.*s'", RZ_SV(variable(vm)));
       return *value;
     }
     case RZ_EXPR_VOID: return 0;
     default: // switch (arena->items[current].kind)
-    RZ_UNREACHABLE("expression kind\n");
+    RZ_UNREACHABLE("expression kind");
   }
 }
 
