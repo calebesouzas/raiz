@@ -11,42 +11,40 @@ Rz_VM rz_vm_new(Rz_ExprArena *arena, Rz_StringDoubleMap *scope)
   return (Rz_VM) {.arena = arena, .scope = scope };
 }
 
-static inline Rz_Expr vm_current(Rz_VM *vm)
+static inline Rz_Expr current(Rz_VM *vm)
 {
   return vm->arena->items[vm->arena->current];
 }
 
-static inline Rz_Expr_Unary vm_unary(Rz_VM *vm)
+static inline Rz_Expr_Unary unary(Rz_VM *vm)
 {
-  return vm_current(vm).as.unary;
+  return current(vm).as.unary;
 }
 
-static inline Rz_Expr_Binary vm_binary(Rz_VM *vm)
+static inline Rz_Expr_Binary binary(Rz_VM *vm)
 {
-  return vm_current(vm).as.binary;
+  return current(vm).as.binary;
 }
 
-static inline Rz_String vm_variable(Rz_VM *vm)
+static inline Rz_String variable(Rz_VM *vm)
 {
-  return vm_current(vm).as.variable;
+  return current(vm).as.variable;
 }
 
-static inline int vm_literal(Rz_VM *vm)
+static inline int literal(Rz_VM *vm)
 {
-  return vm_current(vm).as.literal;
+  return current(vm).as.literal;
 }
 
-static inline void vm_save(Rz_VM *vm, size_t new_current)
+static inline void save(Rz_VM *vm, size_t new_current)
 {
   vm->arena->current = new_current;
 }
 
-#define current(v) vm_current(v)
-#define unary(v) vm_unary(v)
-#define binary(v) vm_binary(v)
-#define variable(v) vm_variable(v)
-#define literal(v) vm_literal(v)
-#define save(v, nc) vm_save(v, (nc))
+static inline bool match(Rz_VM *vm, Rz_ExprKind expected)
+{
+  return current(vm).kind == expected;
+}
 
 double rz_eval(Rz_VM *vm)
 {
@@ -70,6 +68,10 @@ double rz_eval(Rz_VM *vm)
 
         save(vm, saved); // restore current binary
         save(vm, binary(vm).left_id); // variable
+        if (!match(vm, RZ_EXPR_VARIABLE))
+        {
+          RZ_PANIC("cannot assign value to non-variable left side\n");
+        }
         rz_scope_insert(vm->scope, variable(vm), value);
         save(vm, saved);
         return value;
