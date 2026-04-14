@@ -3,10 +3,10 @@
 
 typedef enum {
   RZ_VALUE_INT,
-  RZ_VALUE_FLOAT,
-  RZ_VALUE_VIEW,
-  RZ_VALUE_STRING,
+  RZ_VALUE_CHAR,
   RZ_VALUE_BOOL,
+  RZ_VALUE_FLOAT,
+  RZ_VALUE_STRING,
 } Rz_ValueKind;
 
 typedef struct {
@@ -16,9 +16,14 @@ typedef struct {
     char character;
     double floating;
     bool boolean;
-    // RzView view;
-    // RzString string;
+    Rz_String string;
   } as;
 } Rz_Value;
+
+Rz_Value rz_value_int(int value);
+Rz_Value rz_value_char(char value);
+Rz_Value rz_value_bool(bool value);
+Rz_Value rz_value_float(double value);
+Rz_Value rz_value_string(Rz_String value);
 
 #endif // RAIZ_VALUES_H
