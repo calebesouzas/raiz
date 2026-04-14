@@ -79,7 +79,6 @@ typedef struct
 typedef struct
 {
   size_t count, capacity;
-  size_t current; // for consuming nodes
   Rz_Expr *items; // all the 'id' fields in 'Expr' and variants refer to this
 } Rz_ExprArena;
 
