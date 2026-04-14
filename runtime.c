@@ -140,7 +140,7 @@ double rz_eval(Rz_VM *vm, size_t index)
 
 double rz_eval_arena(Rz_VM *vm)
 {
-  return rz_eval(vm);
+  return rz_eval(vm, vm->arena->count - 1);
 }
 
 static inline Rz_Expr get(Rz_VM *vm, size_t index) { return vm->arena->items[index]; }
