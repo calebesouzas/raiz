@@ -1,0 +1,49 @@
+fun command_help _ ->
+{
+  println! "Detailed usage: ..."
+}
+
+fun command_todo args [string] ->
+; Can put 'type' after '->' and before '{'.
+; If no type is provided, it is automayically set to 'void'.
+{
+  for arg in args
+  {
+    println! "Got argument: \(arg)"
+  }
+}
+
+fun main args [string] ->
+{
+  ; len is a "method" because it accesses private "fields"
+  ; args.len! is always greater or equal to 1 where index 0 is the command ran
+  ; in the shell. Like './program' for './program --help'
+  if get Length args == 1
+  {
+    println! "Usage: program(.exe) <command> [--|-options]"
+    exit! 0
+  }
+  ; some commands may ignore 'args' array (witch means it won't be evaluated)
+  `command_\(args[1])`! args[2..get Length args - 1]
+
+  ; 'and' keyword is a syntax sugar! It works just like 'else if' from other
+  ; languages but with any kind of control flow changers.
+  ; It puts right side operand inside a block inside left side operand!
+  ; So this:
+  on error and if error has UndefinedFunction(_) ; ignore function name
+  {
+    print! "Command \"\(args[1])\" not found"
+    exit! 1
+  }
+  ; Will expand to this:
+  ``` ; multi line comments with syntax highlight!
+  on error
+  {
+    if error has UndefinedFunction(_)
+    {
+      ; ... same body as the 'on error and if ...'
+    }
+  }
+  ```
+}
+
