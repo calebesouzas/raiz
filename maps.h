@@ -8,17 +8,17 @@
 #define RAIZ_MAP_SIZE 97
 
 // I really didn't know about this syntax
-typedef struct Rz_StringDoublePair {
+typedef struct Rz_StringValuePair {
   Rz_String key;
-  double value;
-  struct Rz_StringDoublePair *next;
-} Rz_StringDoublePair;
+  Rz_Value value;
+  struct Rz_StringValuePair *next;
+} Rz_StringValuePair;
 
 typedef struct {
-  Rz_StringDoublePair *buckets[RAIZ_MAP_SIZE];
-} Rz_StringDoubleMap;
+  Rz_StringValuePair *buckets[RAIZ_MAP_SIZE];
+} Rz_StringValueMap;
 
-void rz_scope_insert(Rz_StringDoubleMap *map, Rz_String key, double value);
-double *rz_scope_get(Rz_StringDoubleMap *map, Rz_String key);
+void rz_scope_insert(Rz_StringValueMap *map, Rz_String key, Rz_Value value);
+Rz_Value *rz_scope_get(Rz_StringValueMap *map, Rz_String key);
 
 #endif // RAIZ_MAPS_H

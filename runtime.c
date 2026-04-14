@@ -6,7 +6,7 @@
 #include "runtime.h"
 #include "parser.h"
 
-Rz_VM rz_vm_new(Rz_ExprArena *arena, Rz_StringDoubleMap *scope)
+Rz_VM rz_vm_new(Rz_ExprArena *arena, Rz_StringValueMap *scope)
 {
   return (Rz_VM) {.arena = arena, .scope = scope };
 }
@@ -58,7 +58,7 @@ static inline const char *extract_operator_kind(Rz_Operator op)
   }
 }
 
-double rz_eval(Rz_VM *vm, size_t index)
+Rz_Value rz_eval(Rz_VM *vm, size_t index)
 {
 #define return_defer(value)\
   do\
@@ -83,7 +83,7 @@ double rz_eval(Rz_VM *vm, size_t index)
         // extension" compiler warning disappear!
       if (binary(vm).op == RZ_OP_ASSIGN)
       {
-        double value = rz_eval(vm, binary(vm).right_id);
+        Rz_Value value = rz_eval(vm, binary(vm).right_id);
 
         if (!match(vm, RZ_EXPR_VARIABLE))
         {
@@ -128,7 +128,7 @@ double rz_eval(Rz_VM *vm, size_t index)
       }
     case RZ_EXPR_VARIABLE:
     {
-      double *value = rz_scope_get(vm->scope, variable(vm));
+      Rz_Value *value = rz_scope_get(vm->scope, variable(vm));
       if (!value) RZ_PANIC("undefined variable: '%.*s'\n", RZ_SV(variable(vm)));
       return_defer(*value);
     }
@@ -138,7 +138,7 @@ double rz_eval(Rz_VM *vm, size_t index)
   }
 }
 
-double rz_eval_arena(Rz_VM *vm)
+Rz_Value rz_eval_arena(Rz_VM *vm)
 {
   return rz_eval(vm, vm->arena->count - 1);
 }

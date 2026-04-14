@@ -68,7 +68,7 @@ typedef struct
   bool in_arena;
   union
   {
-    int literal;
+    Rz_Value literal;
     Rz_Expr_Binary binary;
     Rz_Expr_Unary unary;
     Rz_String variable;

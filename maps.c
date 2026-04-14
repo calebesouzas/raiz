@@ -16,9 +16,9 @@ unsigned int rz_hash_get(Rz_String key)
   return hash % RAIZ_MAP_SIZE;
 }
 
-Rz_StringDoublePair *rz_string_int_pair_new(Rz_String key, double value)
+Rz_StringValuePair *rz_string_value_pair_new(Rz_String key, Rz_Value value)
 {
-  Rz_StringDoublePair *node = malloc(sizeof(*node));
+  Rz_StringValuePair *node = malloc(sizeof(*node));
 
   if (node)
   {
@@ -30,11 +30,11 @@ Rz_StringDoublePair *rz_string_int_pair_new(Rz_String key, double value)
   return node;
 }
 
-void rz_scope_insert(Rz_StringDoubleMap *map, Rz_String key, double value)
+void rz_scope_insert(Rz_StringValueMap *map, Rz_String key, Rz_Value value)
 {
   unsigned int index = rz_hash_get(key);
 
-  Rz_StringDoublePair *node = rz_string_int_pair_new(key, value);
+  Rz_StringValuePair *node = rz_string_value_pair_new(key, value);
 
   if (map->buckets[index] == NULL)
   {
@@ -42,7 +42,7 @@ void rz_scope_insert(Rz_StringDoubleMap *map, Rz_String key, double value)
   }
   else
   {
-    Rz_StringDoublePair *temp = map->buckets[index];
+    Rz_StringValuePair *temp = map->buckets[index];
     while (temp->next != NULL
         && strncmp(temp->key.data, key.data, temp->key.size)) // != 0
     {
@@ -53,11 +53,11 @@ void rz_scope_insert(Rz_StringDoubleMap *map, Rz_String key, double value)
   }
 }
 
-double *rz_scope_get(Rz_StringDoubleMap *map, Rz_String key)
+Rz_Value *rz_scope_get(Rz_StringValueMap *map, Rz_String key)
 {
   unsigned int index = rz_hash_get(key);
 
-  Rz_StringDoublePair *cursor = map->buckets[index];
+  Rz_StringValuePair *cursor = map->buckets[index];
   if (!cursor) return NULL;
 
   while (cursor != NULL)
