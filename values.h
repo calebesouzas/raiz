@@ -5,6 +5,7 @@ typedef enum {
   RZ_VALUE_INT,
   RZ_VALUE_CHAR,
   RZ_VALUE_BOOL,
+  RZ_VALUE_VOID,
   RZ_VALUE_FLOAT,
   RZ_VALUE_STRING,
 } Rz_ValueKind;
@@ -23,6 +24,7 @@ typedef struct {
 Rz_Value rz_value_int(int value);
 Rz_Value rz_value_char(char value);
 Rz_Value rz_value_bool(bool value);
+Rz_Value rz_value_void(void);
 Rz_Value rz_value_float(double value);
 Rz_Value rz_value_string(Rz_String value);
 
