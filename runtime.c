@@ -110,7 +110,7 @@ double rz_eval(Rz_VM *vm)
     case RZ_EXPR_VARIABLE:
     {
       double *value = rz_scope_get(vm->scope, variable(vm));
-      if (!value) RZ_PANIC("undefined variable: '%.*s'", RZ_SV(variable(vm)));
+      if (!value) RZ_PANIC("undefined variable: '%.*s'\n", RZ_SV(variable(vm)));
       return *value;
     }
     case RZ_EXPR_VOID: return 0;
