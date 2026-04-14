@@ -26,4 +26,6 @@ Rz_Value rz_value_bool(bool value);
 Rz_Value rz_value_float(double value);
 Rz_Value rz_value_string(Rz_String value);
 
+const char *rz_value_extract_kind(Rz_Value value);
+
 #endif // RAIZ_VALUES_H
