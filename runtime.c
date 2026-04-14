@@ -104,20 +104,21 @@ Rz_Value rz_eval(Rz_VM *vm, size_t index)
             rz_value_extract_kind(left),
             rz_value_extract_kind(right));
 
+      // TODO: implement binary operations with `Rz_Value`s
       switch (binary(vm).op)
       {
         case RZ_OP_SUM:        return_defer(left + right);
         case RZ_OP_SUBTRACT:   return_defer(left - right);
         case RZ_OP_MULTIPLY:   return_defer(left * right);
         case RZ_OP_DIVIDE:     return_defer(left / right);
-        // case RZ_OP_MODULE:     return_defer(left % right);
+        case RZ_OP_MODULE:     return_defer(left % right);
         case RZ_OP_GREATER:    return_defer(left > right);
         case RZ_OP_LESS:       return_defer(left < right);
-        // case RZ_OP_BIT_OR:     return_defer(left | right);
-        // case RZ_OP_BIT_XOR:    return_defer(left ^ right);
-        // case RZ_OP_BIT_AND:    return_defer(left & right);
-        // case RZ_OP_BIT_RSHIFT: return_defer(left >> right);
-        // case RZ_OP_BIT_LSHIFT: return_defer(left << right);
+        case RZ_OP_BIT_OR:     return_defer(left | right);
+        case RZ_OP_BIT_XOR:    return_defer(left ^ right);
+        case RZ_OP_BIT_AND:    return_defer(left & right);
+        case RZ_OP_BIT_RSHIFT: return_defer(left >> right);
+        case RZ_OP_BIT_LSHIFT: return_defer(left << right);
         case RZ_OP_EQUAL:      return_defer(left == right);
         case RZ_OP_NOT_EQUAL:  return_defer(left != right);
         case RZ_OP_GREATER_EQ: return_defer(left >= right);
@@ -132,7 +133,7 @@ Rz_Value rz_eval(Rz_VM *vm, size_t index)
       if (!value) RZ_PANIC("undefined variable: '%.*s'\n", RZ_SV(variable(vm)));
       return_defer(*value);
     }
-    case RZ_EXPR_VOID: return_defer(0);
+    case RZ_EXPR_VOID: return_defer(rz_value_void());
     default: // switch (arena->items[current].kind)
     RZ_UNREACHABLE("expression kind");
   }
