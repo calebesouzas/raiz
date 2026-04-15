@@ -58,6 +58,27 @@ static inline const char *extract_operator_kind(Rz_Operator op)
   }
 }
 
+// bro, look at the work that tagged unions cause!
+static Rz_Value negative(Rz_Value value);
+static Rz_Value sum(Rz_Value left, Rz_Value right);
+static Rz_Value subtract(Rz_Value left, Rz_Value right);
+static Rz_Value multiply(Rz_Value left, Rz_Value right);
+static Rz_Value divide(Rz_Value left, Rz_Value right);
+static Rz_Value module(Rz_Value left, Rz_Value right);
+static Rz_Value greater(Rz_Value left, Rz_Value right);
+static Rz_Value less(Rz_Value left, Rz_Value right);
+static Rz_Value bit_or(Rz_Value left, Rz_Value right);
+static Rz_Value bit_xor(Rz_Value left, Rz_Value right);
+static Rz_Value bit_and(Rz_Value left, Rz_Value right);
+static Rz_Value bit_rshift(Rz_Value left, Rz_Value right);
+static Rz_Value bit_lshift(Rz_Value left, Rz_Value right);
+static Rz_Value equal(Rz_Value left, Rz_Value right);
+static Rz_Value not_equal(Rz_Value left, Rz_Value right);
+static Rz_Value greater_eq(Rz_Value left, Rz_Value right);
+static Rz_Value less_eq(Rz_Value left, Rz_Value right);
+static Rz_Value bool_and(Rz_Value left, Rz_Value right);
+static Rz_Value bool_or(Rz_Value left, Rz_Value right);
+
 Rz_Value rz_eval(Rz_VM *vm, size_t index)
 {
 #define return_defer(value)\
@@ -77,7 +98,7 @@ Rz_Value rz_eval(Rz_VM *vm, size_t index)
       if (unary(vm).op != RZ_OP_SUBTRACT)
         RZ_PANIC("use unary with '-' operator\n");
 
-      return_defer(-rz_eval(vm, unary(vm).target_id));
+      return_defer(negative(rz_eval(vm, unary(vm).target_id)));
     case RZ_EXPR_BINARY:
       ; // HACK this thing literally made "declaration after label is a C23
         // extension" compiler warning disappear!
@@ -94,9 +115,9 @@ Rz_Value rz_eval(Rz_VM *vm, size_t index)
         return_defer(value);
       }
 
-      Rz_Value left = rz_eval(vm, current(vm).left_id);
+      Rz_Value left = rz_eval(vm, binary(vm).left_id);
 
-      Rz_Value right = rz_eval(vm, current(vm).right_id);
+      Rz_Value right = rz_eval(vm, binary(vm).right_id);
 
       if (!values_compatible(left, right))
         RZ_PANIC("cannot use %s operation with %s and %s\nExpressions should be of the same type\n",
@@ -107,24 +128,24 @@ Rz_Value rz_eval(Rz_VM *vm, size_t index)
       // TODO: implement binary operations with `Rz_Value`s
       switch (binary(vm).op)
       {
-        case RZ_OP_SUM:        return_defer(left + right);
-        case RZ_OP_SUBTRACT:   return_defer(left - right);
-        case RZ_OP_MULTIPLY:   return_defer(left * right);
-        case RZ_OP_DIVIDE:     return_defer(left / right);
-        case RZ_OP_MODULE:     return_defer(left % right);
-        case RZ_OP_GREATER:    return_defer(left > right);
-        case RZ_OP_LESS:       return_defer(left < right);
-        case RZ_OP_BIT_OR:     return_defer(left | right);
-        case RZ_OP_BIT_XOR:    return_defer(left ^ right);
-        case RZ_OP_BIT_AND:    return_defer(left & right);
-        case RZ_OP_BIT_RSHIFT: return_defer(left >> right);
-        case RZ_OP_BIT_LSHIFT: return_defer(left << right);
-        case RZ_OP_EQUAL:      return_defer(left == right);
-        case RZ_OP_NOT_EQUAL:  return_defer(left != right);
-        case RZ_OP_GREATER_EQ: return_defer(left >= right);
-        case RZ_OP_LESS_EQ:    return_defer(left <= right);
-        case RZ_OP_BOOL_AND:   return_defer(left && right);
-        case RZ_OP_BOOL_OR:    return_defer(left || right);
+        case RZ_OP_SUM:        return_defer(sum(left, right));
+        case RZ_OP_SUBTRACT:   return_defer(subtract(left, right));
+        case RZ_OP_MULTIPLY:   return_defer(multiply(left, right));
+        case RZ_OP_DIVIDE:     return_defer(divide(left, right));
+        case RZ_OP_MODULE:     return_defer(module(left, right));
+        case RZ_OP_GREATER:    return_defer(greater(left, right));
+        case RZ_OP_LESS:       return_defer(less(left, right));
+        case RZ_OP_BIT_OR:     return_defer(bit_or(left, right));
+        case RZ_OP_BIT_XOR:    return_defer(bit_xor(left, right));
+        case RZ_OP_BIT_AND:    return_defer(bit_and(left, right));
+        case RZ_OP_BIT_RSHIFT: return_defer(bit_rshift(left, right));
+        case RZ_OP_BIT_LSHIFT: return_defer(bit_lshift(left, right));
+        case RZ_OP_EQUAL:      return_defer(equal(left, right));
+        case RZ_OP_NOT_EQUAL:  return_defer(not_equal(left, right));
+        case RZ_OP_GREATER_EQ: return_defer(greater_eq(left, right));
+        case RZ_OP_LESS_EQ:    return_defer(less_eq(left, right));
+        case RZ_OP_BOOL_AND:   return_defer(bool_and(left, right));
+        case RZ_OP_BOOL_OR:    return_defer(bool_or(left, right));
         default: RZ_UNREACHABLE("operator");
       }
     case RZ_EXPR_VARIABLE:
@@ -137,6 +158,129 @@ Rz_Value rz_eval(Rz_VM *vm, size_t index)
     default: // switch (arena->items[current].kind)
     RZ_UNREACHABLE("expression kind");
   }
+}
+
+Rz_Value sum(Rz_Value left, Rz_Value right)
+{
+  switch (left.kind)
+  {
+    case RZ_VALUE_INT: return rz_value_int(left.as.integer + right.as.integer);
+    case RZ_VALUE_FLOAT: return rz_value_float(left.as.floating + right.as.floating);
+    case RZ_VALUE_STRING:
+      Rz_String result = {0};
+      result.data = malloc(left.as.string.size + right.as.string.size);
+      // concat 'left' and 'right' into 'result'
+      if (result.data != NULL)
+      {
+        strncpy(result.data, left.as.string.data, left.as.string.size);
+        strncpy(result.data + left.as.string.size, right.as.string.data, right.as.string.size);
+        result.size = left.as.string.size + right.as.string.size;
+      }
+      return rz_value_string(result);
+    case RZ_VALUE_BOOL:
+    case RZ_VALUE_VOID:
+      RZ_PANIC("cannot sum '%s' values\n", rz_value_extract_kind(left));
+    default: RZ_UNREACHABLE("value kind");
+  }
+}
+
+static Rz_Value negative(Rz_Value value)
+{
+  switch (value.kind)
+  {
+    case RZ_VALUE_INT: return rz_value_int(-value.as.integer);
+    case RZ_VALUE_FLOAT: return rz_value_float(-value.as.floating);
+    case RZ_VALUE_STRING:
+    case RZ_VALUE_BOOL:
+    case RZ_VALUE_VOID:
+      RZ_PANIC("type '%s' cannot negative\n", rz_value_extract_kind(value));
+    default: RZ_UNREACHABLE("value kind");
+  }
+}
+
+static Rz_Value subtract(Rz_Value left, Rz_Value right)
+{
+  RZ_TODO("Rz_Value subtract()");
+}
+
+static Rz_Value multiply(Rz_Value left, Rz_Value right)
+{
+  RZ_TODO("Rz_Value multiply()");
+}
+
+static Rz_Value divide(Rz_Value left, Rz_Value right)
+{
+  RZ_TODO("Rz_Value divide()");
+}
+
+static Rz_Value module(Rz_Value left, Rz_Value right)
+{
+  RZ_TODO("Rz_Value module()");
+}
+
+static Rz_Value greater(Rz_Value left, Rz_Value right)
+{
+  RZ_TODO("Rz_Value greater()");
+}
+
+static Rz_Value less(Rz_Value left, Rz_Value right)
+{
+  RZ_TODO("Rz_Value less()");
+}
+
+static Rz_Value bit_or(Rz_Value left, Rz_Value right)
+{
+  RZ_TODO("Rz_Value bit_or()");
+}
+
+static Rz_Value bit_xor(Rz_Value left, Rz_Value right)
+{
+  RZ_TODO("Rz_Value bit_xor()");
+}
+
+static Rz_Value bit_and(Rz_Value left, Rz_Value right)
+{
+  RZ_TODO("Rz_Value bit_and()");
+}
+
+static Rz_Value bit_rshift(Rz_Value left, Rz_Value right)
+{
+  RZ_TODO("Rz_Value bit_rshift()");
+}
+
+static Rz_Value bit_lshift(Rz_Value left, Rz_Value right)
+{
+  RZ_TODO("Rz_Value bit_lshift()");
+}
+
+static Rz_Value equal(Rz_Value left, Rz_Value right)
+{
+  RZ_TODO("Rz_Value equal()");
+}
+
+static Rz_Value not_equal(Rz_Value left, Rz_Value right)
+{
+  RZ_TODO("Rz_Value not_equal()");
+}
+
+static Rz_Value greater_eq(Rz_Value left, Rz_Value right)
+{
+  RZ_TODO("Rz_Value greater_eq()");
+}
+
+static Rz_Value less_eq(Rz_Value left, Rz_Value right)
+{
+  RZ_TODO("Rz_Value less_eq()");
+}
+
+static Rz_Value bool_and(Rz_Value left, Rz_Value right)
+{
+  RZ_TODO("Rz_Value bool_and()");
+}
+
+static Rz_Value bool_or(Rz_Value left, Rz_Value right)
+{
+  RZ_TODO("Rz_Value bool_or()");
 }
 
 Rz_Value rz_eval_arena(Rz_VM *vm)
