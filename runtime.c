@@ -195,18 +195,19 @@ static Rz_Value negative(Rz_Value value)
 
 static Rz_Value subtract(Rz_Value left, Rz_Value right)
 {
-  RZ_TODO("Rz_Value subtract()");
+  RZ_TODO("Rz_Value subtract()\n");
 }
 
 static Rz_Value multiply(Rz_Value left, Rz_Value right)
 {
-  RZ_TODO("Rz_Value multiply()");
+  RZ_TODO("Rz_Value multiply()\n");
 }
 
 static Rz_Value divide(Rz_Value left, Rz_Value right)
 {
-  RZ_TODO("Rz_Value divide()");
+  RZ_TODO("Rz_Value divide()\n\n");
 }
+
 static Rz_Value module(Rz_Value left, Rz_Value right)
 {
   RZ_TODO("Rz_Value module()");
@@ -214,67 +215,67 @@ static Rz_Value module(Rz_Value left, Rz_Value right)
 
 static Rz_Value greater(Rz_Value left, Rz_Value right)
 {
-  RZ_TODO("Rz_Value greater()");
+  RZ_TODO("Rz_Value greater()\n");
 }
 
 static Rz_Value less(Rz_Value left, Rz_Value right)
 {
-  RZ_TODO("Rz_Value less()");
+  RZ_TODO("Rz_Value less()\n");
 }
 
 static Rz_Value bit_or(Rz_Value left, Rz_Value right)
 {
-  RZ_TODO("Rz_Value bit_or()");
+  RZ_TODO("Rz_Value bit_or()\n");
 }
 
 static Rz_Value bit_xor(Rz_Value left, Rz_Value right)
 {
-  RZ_TODO("Rz_Value bit_xor()");
+  RZ_TODO("Rz_Value bit_xor()\n");
 }
 
 static Rz_Value bit_and(Rz_Value left, Rz_Value right)
 {
-  RZ_TODO("Rz_Value bit_and()");
+  RZ_TODO("Rz_Value bit_and()\n");
 }
 
 static Rz_Value bit_rshift(Rz_Value left, Rz_Value right)
 {
-  RZ_TODO("Rz_Value bit_rshift()");
+  RZ_TODO("Rz_Value bit_rshift()\n");
 }
 
 static Rz_Value bit_lshift(Rz_Value left, Rz_Value right)
 {
-  RZ_TODO("Rz_Value bit_lshift()");
+  RZ_TODO("Rz_Value bit_lshift()\n");
 }
 
 static Rz_Value equal(Rz_Value left, Rz_Value right)
 {
-  RZ_TODO("Rz_Value equal()");
+  RZ_TODO("Rz_Value equal()\n");
 }
 
 static Rz_Value not_equal(Rz_Value left, Rz_Value right)
 {
-  RZ_TODO("Rz_Value not_equal()");
+  RZ_TODO("Rz_Value not_equal()\n");
 }
 
 static Rz_Value greater_eq(Rz_Value left, Rz_Value right)
 {
-  RZ_TODO("Rz_Value greater_eq()");
+  RZ_TODO("Rz_Value greater_eq()\n");
 }
 
 static Rz_Value less_eq(Rz_Value left, Rz_Value right)
 {
-  RZ_TODO("Rz_Value less_eq()");
+  RZ_TODO("Rz_Value less_eq()\n");
 }
 
 static Rz_Value bool_and(Rz_Value left, Rz_Value right)
 {
-  RZ_TODO("Rz_Value bool_and()");
+  RZ_TODO("Rz_Value bool_and()\n");
 }
 
 static Rz_Value bool_or(Rz_Value left, Rz_Value right)
 {
-  RZ_TODO("Rz_Value bool_or()");
+  RZ_TODO("Rz_Value bool_or()\n");
 }
 
 Rz_Value rz_eval_arena(Rz_VM *vm) { vm->__current = vm->arena->count - 1; return rz_eval(vm, vm->__current); }
