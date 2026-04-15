@@ -1,6 +1,8 @@
 #ifndef RAIZ_VALUES_H
 #define RAIZ_VALUES_H
 
+#include "common.h" // bool, Rz_String
+
 typedef enum {
   RZ_VALUE_INT,
   RZ_VALUE_CHAR,
