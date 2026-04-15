@@ -20,6 +20,7 @@ bool build_raiz(bool no_logs, bool strict)
     "parser.c",
     "raiz.c",
     "runtime.c",
+    "values.c",
   };
 
   for (int i = 0; i < ARRAY_LEN(sources); ++i)
