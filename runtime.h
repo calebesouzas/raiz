@@ -14,6 +14,7 @@ typedef struct {
   Rz_Result result;
   Rz_ExprArena *arena;
   Rz_StringValueMap *scope; // only global at the moment.
+  size_t __current; // for tree walking purposes
 } Rz_VM; // calm down, it is not done yet
 
 Rz_VM rz_vm_new(Rz_ExprArena *arena, Rz_StringValueMap *scope);
