@@ -28,5 +28,6 @@ const char *rz_value_extract_kind(Rz_Value value)
     case RZ_VALUE_FLOAT:  return "float";
     case RZ_VALUE_STRING: return "string";
     case RZ_VALUE_VOID:   return "void";
+    default: RZ_PANIC("unreachable value kind (index: %d)\n", value.kind);
   }
 }
