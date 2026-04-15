@@ -250,7 +250,20 @@ static Rz_Value bit_lshift(Rz_Value left, Rz_Value right)
 
 static Rz_Value equal(Rz_Value left, Rz_Value right)
 {
-  RZ_TODO("Rz_Value equal()\n");
+  switch (left.kind)
+  {
+    case RZ_VALUE_INT: return rz_value_bool(left.as.integer == right.as.integer);
+    case RZ_VALUE_BOOL: return rz_value_bool(left.as.boolean == right.as.boolean);
+    case RZ_VALUE_VOID: return rz_value_bool(true);
+    case RZ_VALUE_FLOAT: return rz_value_bool(left.as.integer == right.as.integer);
+    case RZ_VALUE_STRING:
+      return rz_value_bool(
+        strncmp(left.as.string.data, right.as.string.data, left.as.string.size) == 0);
+    default: {
+      char buffer[64] = {0};
+      snprintf(buffer, sizeof(buffer), "value (%s)", rz_value_extract_kind(left));
+    } break;
+  }
 }
 
 static Rz_Value not_equal(Rz_Value left, Rz_Value right)
