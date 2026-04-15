@@ -1,6 +1,8 @@
 #ifndef RAIZ_AST_H
 #define RAIZ_AST_H
 
+#include "values.h"
+
 /* format: LEFT << 8 | RIGHT
  * to get LEFT: (PAIR >> 8)
  * to get right: (PAIR & 0xFF)
