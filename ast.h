@@ -88,7 +88,7 @@ uint16_t rz_get_binding_power(Rz_Operator op);
 void rz_push_expr(Rz_ExprArena *arena, Rz_Expr *expr);
 Rz_Expr *rz_expr_void(Rz_ExprArena *arena);
 Rz_Expr *rz_expr_unary(Rz_ExprArena *arena, Rz_Expr *target);
-Rz_Expr *rz_expr_literal(Rz_ExprArena *arena, int value);
+Rz_Expr *rz_expr_literal(Rz_ExprArena *arena, Rz_Value value);
 Rz_Expr *rz_expr_variable(Rz_ExprArena *arena, const char *symbol, size_t size);
 Rz_Expr *rz_expr_binary(Rz_ExprArena *arena, Rz_Expr *left, Rz_Expr *right, Rz_Operator op);
 

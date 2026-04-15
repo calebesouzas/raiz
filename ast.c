@@ -66,7 +66,7 @@ Rz_Expr *rz_expr_unary(Rz_ExprArena *arena, Rz_Expr *target)
   return &arena->items[result.id];
 }
 
-Rz_Expr *rz_expr_literal(Rz_ExprArena *arena, int value)
+Rz_Expr *rz_expr_literal(Rz_ExprArena *arena, Rz_Value value)
 {
   Rz_Expr result = (Rz_Expr) {
     .kind = RZ_EXPR_LITERAL,

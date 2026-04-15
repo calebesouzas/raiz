@@ -145,8 +145,8 @@ static inline Rz_Token number_literal(Rz_Lexer *lex)
   // TODO: learn how to do the reverse operation (extract string from a number)
   while (isdigit(peek(lex))) number = (number * 10) + (advance(lex) - '0');
 
-  Rz_Token token = make_token(lex, RZ_TOKEN_LIT_INT);
-  token.as.literal = number;
+  Rz_Token token = make_token(lex, RZ_TOKEN_LITERAL);
+  token.as.literal = rz_value_int(number);
   return token;
 }
 
@@ -174,12 +174,5 @@ static inline Rz_Token error(const char *message)
     .len = strlen(message)
   };
 }
-
-#undef peek
-#undef next
-#undef prev
-#undef advance
-#undef match
-#undef error
 
 #endif // RAIZ_LEXER_SOURCE

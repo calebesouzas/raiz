@@ -67,7 +67,7 @@ Rz_Expr *rz_parse_nud(Rz_Parser *par)
       advance(par);
       return rz_parse_nud(par);
     case RZ_TOKEN_EOF: return rz_expr_void(par->arena);
-    case RZ_TOKEN_LIT_INT:
+    case RZ_TOKEN_LITERAL:
       return rz_expr_literal(par->arena, advance(par).as.literal);
     case RZ_TOKEN_IDENT:
       return rz_expr_variable(par->arena, peek(par).lexeme, advance(par).len);

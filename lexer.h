@@ -1,12 +1,13 @@
 #ifndef RAIZ_LEXER_H
 #define RAIZ_LEXER_H
 
+#include "values.h"
 
 typedef enum
 {
   RZ_TOKEN_ERROR,
   RZ_TOKEN_EOF,
-  RZ_TOKEN_LIT_INT,
+  RZ_TOKEN_LITERAL,
   RZ_TOKEN_IDENT,
   RZ_TOKEN_OP,
   RZ_TOKEN_LPAREN,
@@ -16,7 +17,7 @@ typedef enum
 union Rz_TokenData
 {
   Rz_Operator op;
-  int literal;
+  Rz_Value literal;
 };
 
 typedef struct
