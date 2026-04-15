@@ -17,6 +17,7 @@ static inline Rz_Expr current(Rz_VM *vm);
 static inline Rz_VM *restore(Rz_VM *vm, size_t saved_current);
 static inline Rz_Expr pop(Rz_VM *vm);
 static inline bool match(Rz_VM *vm, Rz_ExprKind expected);
+static inline bool match_expr(Rz_VM *vm, size_t expr_index, Rz_ExprKind expected);
 static inline Rz_Expr_Unary unary(Rz_VM *vm);
 static inline Rz_Expr_Binary binary(Rz_VM *vm);
 static inline Rz_String variable(Rz_VM *vm);
@@ -100,7 +101,9 @@ Rz_Value rz_eval(Rz_VM *vm, size_t index)
       {
         Rz_Value value = rz_eval(vm, binary(vm).right_id);
 
-        if (!match(vm, RZ_EXPR_VARIABLE))
+        (void) restore(vm, saved);
+
+        if (!match_expr(vm, binary(vm).left_id, RZ_EXPR_VARIABLE))
         {
           RZ_PANIC("cannot assign value to non-variable left side\n");
         }
@@ -302,6 +305,8 @@ static inline Rz_VM *restore(Rz_VM *vm, size_t saved_current) { vm->__current = 
 static inline Rz_Expr pop(Rz_VM *vm) { return vm->arena->items[vm->__current--]; }
 
 static inline bool match(Rz_VM *vm, Rz_ExprKind expected) { return current(vm).kind == expected; }
+
+static inline bool match_expr(Rz_VM *vm, size_t expr_index, Rz_ExprKind expected) { return get(vm, expr_index).kind == expected; }
 
 static inline Rz_Expr_Unary unary(Rz_VM *vm) { return current(vm).as.unary; }
 
