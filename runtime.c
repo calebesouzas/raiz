@@ -14,6 +14,7 @@ Rz_VM rz_vm_new(Rz_ExprArena *arena, Rz_StringValueMap *scope)
 /* many helpers because i'm very lazy */
 static inline Rz_Expr get(Rz_VM *vm, size_t index);
 static inline Rz_Expr current(Rz_VM *vm);
+static inline Rz_VM *restore(Rz_VM *vm, size_t saved_current);
 static inline Rz_Expr pop(Rz_VM *vm);
 static inline bool match(Rz_VM *vm, Rz_ExprKind expected);
 static inline Rz_Expr_Unary unary(Rz_VM *vm);
@@ -81,24 +82,17 @@ static Rz_Value bool_or(Rz_Value left, Rz_Value right);
 
 Rz_Value rz_eval(Rz_VM *vm, size_t index)
 {
-#define return_defer(value)\
-  do\
-  {\
-    vm->arena->count = saved;\
-    return value;\
-  } while (0)
-
-  size_t saved = vm->arena->count;
-  vm->arena->count = index;
+  size_t saved = vm->__current;
+  vm->__current = index;
 
   switch (current(vm).kind)
   {
-    case RZ_EXPR_LITERAL: return_defer(literal(vm));
+    case RZ_EXPR_LITERAL: return literal(vm);
     case RZ_EXPR_UNARY:
       if (unary(vm).op != RZ_OP_SUBTRACT)
         RZ_PANIC("use unary with '-' operator\n");
 
-      return_defer(negative(rz_eval(vm, unary(vm).target_id)));
+      return negative(rz_eval(vm, unary(vm).target_id));
     case RZ_EXPR_BINARY:
       ; // HACK this thing literally made "declaration after label is a C23
         // extension" compiler warning disappear!
@@ -112,12 +106,13 @@ Rz_Value rz_eval(Rz_VM *vm, size_t index)
         }
         rz_scope_insert(vm->scope, variable(vm), value);
 
-        return_defer(value);
+        return value;
       }
 
       Rz_Value left = rz_eval(vm, binary(vm).left_id);
 
-      Rz_Value right = rz_eval(vm, binary(vm).right_id);
+      Rz_Value right = rz_eval(vm, binary(restore(vm, saved)).right_id);
+      (void) restore(vm, saved);
 
       if (!values_compatible(left, right))
         RZ_PANIC("cannot use %s operation with %s and %s\nExpressions should be of the same type\n",
@@ -128,33 +123,33 @@ Rz_Value rz_eval(Rz_VM *vm, size_t index)
       // TODO: implement binary operations with `Rz_Value`s
       switch (binary(vm).op)
       {
-        case RZ_OP_SUM:        return_defer(sum(left, right));
-        case RZ_OP_SUBTRACT:   return_defer(subtract(left, right));
-        case RZ_OP_MULTIPLY:   return_defer(multiply(left, right));
-        case RZ_OP_DIVIDE:     return_defer(divide(left, right));
-        case RZ_OP_MODULE:     return_defer(module(left, right));
-        case RZ_OP_GREATER:    return_defer(greater(left, right));
-        case RZ_OP_LESS:       return_defer(less(left, right));
-        case RZ_OP_BIT_OR:     return_defer(bit_or(left, right));
-        case RZ_OP_BIT_XOR:    return_defer(bit_xor(left, right));
-        case RZ_OP_BIT_AND:    return_defer(bit_and(left, right));
-        case RZ_OP_BIT_RSHIFT: return_defer(bit_rshift(left, right));
-        case RZ_OP_BIT_LSHIFT: return_defer(bit_lshift(left, right));
-        case RZ_OP_EQUAL:      return_defer(equal(left, right));
-        case RZ_OP_NOT_EQUAL:  return_defer(not_equal(left, right));
-        case RZ_OP_GREATER_EQ: return_defer(greater_eq(left, right));
-        case RZ_OP_LESS_EQ:    return_defer(less_eq(left, right));
-        case RZ_OP_BOOL_AND:   return_defer(bool_and(left, right));
-        case RZ_OP_BOOL_OR:    return_defer(bool_or(left, right));
+        case RZ_OP_SUM:        return sum(left, right);
+        case RZ_OP_SUBTRACT:   return subtract(left, right);
+        case RZ_OP_MULTIPLY:   return multiply(left, right);
+        case RZ_OP_DIVIDE:     return divide(left, right);
+        case RZ_OP_MODULE:     return module(left, right);
+        case RZ_OP_GREATER:    return greater(left, right);
+        case RZ_OP_LESS:       return less(left, right);
+        case RZ_OP_BIT_OR:     return bit_or(left, right);
+        case RZ_OP_BIT_XOR:    return bit_xor(left, right);
+        case RZ_OP_BIT_AND:    return bit_and(left, right);
+        case RZ_OP_BIT_RSHIFT: return bit_rshift(left, right);
+        case RZ_OP_BIT_LSHIFT: return bit_lshift(left, right);
+        case RZ_OP_EQUAL:      return equal(left, right);
+        case RZ_OP_NOT_EQUAL:  return not_equal(left, right);
+        case RZ_OP_GREATER_EQ: return greater_eq(left, right);
+        case RZ_OP_LESS_EQ:    return less_eq(left, right);
+        case RZ_OP_BOOL_AND:   return bool_and(left, right);
+        case RZ_OP_BOOL_OR:    return bool_or(left, right);
         default: RZ_UNREACHABLE("operator");
       }
     case RZ_EXPR_VARIABLE:
     {
       Rz_Value *value = rz_scope_get(vm->scope, variable(vm));
       if (!value) RZ_PANIC("undefined variable: '%.*s'\n", RZ_SV(variable(vm)));
-      return_defer(*value);
+      return *value;
     }
-    case RZ_EXPR_VOID: return_defer(rz_value_void());
+    case RZ_EXPR_VOID: return rz_value_void();
     default: // switch (arena->items[current].kind)
     RZ_UNREACHABLE("expression kind");
   }
@@ -212,7 +207,6 @@ static Rz_Value divide(Rz_Value left, Rz_Value right)
 {
   RZ_TODO("Rz_Value divide()");
 }
-
 static Rz_Value module(Rz_Value left, Rz_Value right)
 {
   RZ_TODO("Rz_Value module()");
@@ -283,16 +277,15 @@ static Rz_Value bool_or(Rz_Value left, Rz_Value right)
   RZ_TODO("Rz_Value bool_or()");
 }
 
-Rz_Value rz_eval_arena(Rz_VM *vm)
-{
-  return rz_eval(vm, vm->arena->count - 1);
-}
+Rz_Value rz_eval_arena(Rz_VM *vm) { vm->__current = vm->arena->count - 1; return rz_eval(vm, vm->__current); }
 
 static inline Rz_Expr get(Rz_VM *vm, size_t index) { return vm->arena->items[index]; }
 
-static inline Rz_Expr current(Rz_VM *vm) { return vm->arena->items[vm->arena->count - 1]; }
+static inline Rz_Expr current(Rz_VM *vm) { return vm->arena->items[vm->__current]; }
 
-static inline Rz_Expr pop(Rz_VM *vm) { return vm->arena->items[vm->arena->count--]; }
+static inline Rz_VM *restore(Rz_VM *vm, size_t saved_current) { vm->__current = saved_current; return vm; }
+
+static inline Rz_Expr pop(Rz_VM *vm) { return vm->arena->items[vm->__current--]; }
 
 static inline bool match(Rz_VM *vm, Rz_ExprKind expected) { return current(vm).kind == expected; }
 
