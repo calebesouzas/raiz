@@ -10,7 +10,7 @@ int main(void)
   char buffer[1024] = {0};
 
   printf("$> ");
-  Rz_StringDoubleMap scope = {0};
+  Rz_StringValueMap scope = {0};
   while (fgets(buffer, sizeof(buffer), stdin))
   {
     if (strncmp(buffer, "exit", 4) == 0) break;
