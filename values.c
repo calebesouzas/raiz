@@ -4,7 +4,7 @@ Rz_Value rz_value_int(int value)
 { return (Rz_Value) {.kind = RZ_VALUE_INT, .as.integer = value }; }
 
 Rz_Value rz_value_char(char value)
-{ return (Rz_Value) {.kind = RZ_VALUE_, .as.character = value }; }
+{ return (Rz_Value) {.kind = RZ_VALUE_CHAR, .as.character = value }; }
 
 Rz_Value rz_value_bool(bool value)
 { return (Rz_Value) {.kind = RZ_VALUE_BOOL, .as.boolean = value }; }
