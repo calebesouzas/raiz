@@ -27,7 +27,6 @@ void rz_push_expr(Rz_ExprArena *arena, Rz_Expr *expr)
   if (!expr->in_arena && arena->items != NULL)
   {
     expr->id = arena->count;
-    arena->current = arena->count;
     arena->items[arena->count++] = *expr;
     expr->in_arena = true;
   }
