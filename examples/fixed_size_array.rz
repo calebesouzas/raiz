@@ -1,7 +1,0 @@
-; fixed size array with 4 elements
-val list [int, 4] = [69, 420, 1337, 80085] ; just random numbers
-
-for place = 1, item in list
-{
-  println! "Item #\(place) = \(item)" ; smooth string interpolation syntax
-}
