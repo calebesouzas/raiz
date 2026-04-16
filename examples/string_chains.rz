@@ -36,7 +36,8 @@ fun main args [string] ->
     exit! 1
   }
   ; Will expand to this:
-  ``` ; multi line comments with syntax highlight!
+  ```raiz
+  ; yo, multi line comments with syntax highlight!
   on error
   {
     if error has UndefinedFunction(_)
