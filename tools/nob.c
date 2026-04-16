@@ -2,7 +2,7 @@
 #define NOB_STRIP_PREFIX
 #include "nob.h"
 
-#define BUILD_FOLDER "../build/"
+#define BUILD_FOLDER "build/"
 #define MAIN_BIN_PATH BUILD_FOLDER "raiz"
 
 bool build(bool);
@@ -24,15 +24,20 @@ main(int argc, char **argv) {
 
 bool
 build(bool strict) {
+  TODO("implement build()");
+
+  // @issue: read_entire_dir() doesn't return all the paths recursively
+  // @todo: build paths relative to `source/` to pass them into `clang` command
+
   File_Paths paths = {0};
-  if (!read_entire_dir("../source/", &paths)) {
+  if (!read_entire_dir("source/", &paths)) {
     nob_log(NOB_ERROR, "failed to open `source/` folder");
     return false;
   }
 
   Cmd cmd = {0};
 
-  cmd_append(&cmd, "clang", "-o", MAIN_BIN_PATH, "-Wall", "-Wextra");
+  cmd_append(&cmd, "clang", "-o", MAIN_BIN_PATH, "-I./source/", "-Wall", "-Wextra");
 
   for (int i = 0; i < paths.count; ++i) {
     const char *path = paths.items[i];
