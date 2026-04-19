@@ -1,12 +1,8 @@
 #include "filesystem/dirs.h"
 
-bool
+void
 print_object_type(const char *path, mode_t mode, void *data) {
   int level = *(int*)data; // dereference data as int pointer
-
-  if (path[0] == '.') {
-    return true; // just ignore them for now
-  }
 
   for (int i = 0; i < level; ++i) printf(" ");
 
@@ -18,8 +14,6 @@ print_object_type(const char *path, mode_t mode, void *data) {
   } else {
     printf("\n>> %s is an unhandled or invalid object type\n", path);
   }
-
-  return true;
 }
 
 int
