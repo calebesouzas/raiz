@@ -2,9 +2,17 @@
 
 /**
  * @doc!
- * @todo: finish implementing
- * @extra: i really don't know how to walk directories, and it's recursive, \
- * so it is even worse!
+ * @func: is_special_path
+ * @return: `true` if `path` == "." or `path` == ".."
+ */
+static inline bool
+is_special_path(const char *path) {
+  size_t len = strlen(path);
+  return strncmp(path, ".", len) == 0 || strncmp(path, "..", len) == 0;
+}
+
+/**
+ * @doc!
  * @func: raiz_dir_walk
  * @desc: Walks `path` directory running `func` for each object
  * @return: result where `false` means failure
@@ -21,35 +29,30 @@ raiz_dir_walk_recursive(
 
   struct dirent *entry;
   while ((entry = readdir(dir_p)) != NULL) {
-
     char path_buffer[RAIZ_MAX_FILE_NAME] = {0};
+    const size_t path_size = sizeof(path_buffer);
 
     const char *child_path = entry->d_name;
 
+    snprintf(path_buffer, path_size, "%s/%s", parent_path, child_path);
+
     struct stat child_status;
-    stat(child_path, &child_status);
+    stat(path_buffer, &child_status);
 
     if (S_ISDIR(child_status.st_mode)) {
-      size_t child_len = strlen(child_path);
 
       // skip `./` and `../` special folders
-      if (strncmp(child_path, ".", child_len) == 0
-          || strncmp(child_path, "..", child_len) == 0) continue;
-
-      snprintf(path_buffer, sizeof(path_buffer),
-          "%s/%s", parent_path, child_path);
+      if (is_special_path(child_path)) continue;
 
       func(path_buffer, child_status.st_mode, data);
 
-      if (!raiz_dir_walk_recursive(path_buffer, func, data)) goto fail;
+      (void) raiz_dir_walk_recursive(path_buffer, func, data);
+    } else {
+      // @todo: handle other types of objects
+      func(path_buffer, child_status.st_mode, data);
     }
-
-    func(child_path, child_status.st_mode, data);
   }
 
   closedir(dir_p);
   return true;
-fail:
-  closedir(dir_p);
-  return false;
 }
