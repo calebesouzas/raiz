@@ -43,7 +43,7 @@
     }\
     if ((da)->count >= (da)->capacity) {\
       (da)->capacity *= 2;\
-      (da)->items = realloc((da)->items, sizeof(*(da)->items*(da)->capacity));\
+      (da)->items = realloc((da)->items, sizeof(*(da)->items)*(da)->capacity);\
     }\
     if ((da)->items != NULL) {\
       (da)->items[(da)->count++] = (value);\
