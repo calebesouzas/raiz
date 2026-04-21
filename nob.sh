@@ -5,7 +5,7 @@
 set -xe
 
 if [ ! -e "./tools/nob" ]; then
-  cc -x c -o ./tools/nob ./tools/nob.c
+  clang -o ./tools/nob ./tools/nob.c ./source/filesystem/dirs.c -I./source/
 fi
 
 rm -rf ./build/
