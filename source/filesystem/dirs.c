@@ -2,8 +2,10 @@
 
 /**
  * @doc!
- * @func: is_special_path
- * @return: `true` if `path` == "." or `path` == ".."
+ * @name(function) is_special_path
+ * @tags helper, inline
+ * @param `path` file/folder name
+ * @return(bool) `true` if `path` == "." or `path` == ".."
  */
 static inline bool
 is_special_path(const char *path) {
@@ -13,10 +15,10 @@ is_special_path(const char *path) {
 
 /**
  * @doc!
- * @func: raiz_dir_walk
- * @desc: Walks `path` directory running `func` for each object
- * @return: result where `false` means failure
- * @issue(safety): it may stack overflow (due to no recursion limit)!
+ * @name(function) raiz_dir_walk
+ * @desc Walks `path` directory running `func` for each object
+ * @return(bool) `false` means failure
+ * @issue(safety) it may stack overflow (due to no recursion limit)!
  */
 bool
 raiz_dir_walk_recursive(

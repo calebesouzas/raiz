@@ -2,16 +2,14 @@
 
 /**
  * @doc!
- * @name common/arrays.h
- * @type header
+ * @name(header) common/arrays.h
  * @tags helper
  * @desc contains helpers for common arrays operations and implementations.
  */
 
 /**
  * @doc!
- * @name da_pattern
- * @type convention
+ * @name(convention) da_pattern
  * @desc shows how to use `raiz_da_*` helper macros.
  * Schema:
  * `da`: structure containing at least these three fields:
@@ -27,8 +25,7 @@
 
 /**
  * @doc!
- * @name da_append
- * @type macro
+ * @name(macro) da_append
  * @tags helper
  * @param `da` pointer to dynamic array (any structure following [@da_pattern])
  * @param `value` value to be pushed
