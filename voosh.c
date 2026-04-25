@@ -18,11 +18,12 @@ int
 main(int argc, char **argv, char **envp) {
   voosh_rebuild_urself(argc, argv, envp);
 
-  Voosh_Cmd command = voosh_parse_args(argc, argv);
+  Raiz_CStrings raiz_args = {0};
+  Voosh_Cmd command = voosh_parse_args(argc, argv, &raiz_args);
 
   switch (command.kind) {
-  case VOOSH_CMD_BUILD: if (!voosh_build(command.flags)) return -1; else break;
-  case VOOSH_CMD_RUN: if (!voosh_run(command.flags)) return -2; else break;
+  case VOOSH_CMD_RUN:   voosh_run(command.flags, raiz_args.items); break;
+  case VOOSH_CMD_BUILD: voosh_build(command.flags); break;
   default: RAIZ_PANIC("voosh: invalid command (index: %d)\n", command.kind);
   }
 
@@ -32,18 +33,25 @@ main(int argc, char **argv, char **envp) {
 static int  parse_flags  (Voosh_Cmd *cmd, char *arg);
 static bool parse_option (Voosh_Cmd *cmd, char *arg);
 static bool parse_command(Voosh_Cmd *cmd, char *arg);
+static void parse_raiz_args(char **argv, Raiz_CStrings *args);
 
 Voosh_Cmd
-voosh_parse_args(int argc, char **argv) {
+voosh_parse_args(int argc, char **argv, char ***raiz_args) {
   Voosh_Cmd cmd = {0};
 
   for (int i = 1; i < argc; ++i) {
     char *arg = argv[i];
     int err_index = 0;
 
+    // @todo don't nest!
     if (arg[0] == '-') {
-      if (arg[1] == '-' && !parse_option(&cmd, arg)) {
-        RAIZ_PANIC("voosh: invalid option: '--%s'\n", arg);
+      if (arg[1] == '-') {
+        if (arg[2] == '\0') {
+          parse_raiz_args(argc - i, argv + i, raiz_args);
+          break;
+        } else if (!parse_option(&cmd, arg)) {
+          RAIZ_PANIC("voosh: invalid option: '--%s'\n", arg);
+        }
       } else if ((err_index = parse_flags(&cmd, arg)) != 0) {
         RAIZ_PANIC("voosh: invalid flag: -%c\n", arg[err_index]);
       }
@@ -111,7 +119,15 @@ parse_command(Voosh_Cmd *cmd, char *arg) {
   return true;
 }
 
+static void
+parse_raiz_args(int argc, char **argv, Raiz_CStrings *args) {
+  for (int i = 0; i < argc; ++i) {
+    raiz_da_append(args, argv[i]);
+  }
+}
+
 // @todo support other compilers than Clang
+// @todo rebuild only when needed
 void
 voosh_rebuild_urself(int argc, char **argv, char **envp) {
   // @todo use environment variables
@@ -129,12 +145,59 @@ voosh_rebuild_urself(int argc, char **argv, char **envp) {
   exit(0);
 }
 
-void
-voosh_build(int flags) {
-  if (flags & VOOSH_FLAG_STRICT) {
-  }
+bool
+is_c_file(const char *path) {
+  size_t path_len = strlen(path);
+  if (!path_len > 2) RAIZ_PANIC("voosh: path %s is too short\n", path);
+  return path[path_len - 2] == '.' && path[path_len - 1] == 'c';
 }
 
 void
-voosh_run(int flags) {
+get_source_paths_func(const char *path, mode_t mode, void *raw_data) {
+  Raiz_CStrings *strings = raw_data;
+  if (S_ISREG(mode) && is_c_file(path)) raiz_da_append(strings, path);
+}
+
+void
+voosh_build(int flags) {
+  char **compiler_argv = {
+    "clang",
+    "-x", "c",
+    "-o", "./build/raiz",
+    "-Wall", "-Wextra",
+  };
+
+  char **strict_flags = {
+    "-Werror",
+    "-Wpedantic", "-pedantic",
+    "-fsanatize=address,memory,undefined"
+  };
+  size_t strict_flags_count = sizeof(strict_flags)/sizeof(strict_flags[0]);
+
+
+  Raiz_CStrings cmd = {0};
+
+  for (size_t i = 0; i < cmd.count; ++i) {
+    raiz_da_append(&cmd, compiler_argv[i]);
+  }
+
+  if (!raiz_dir_walk_recursive("./source", get_source_paths_func, &cmd)) {
+    RAIZ_PANIC("voosh: failed to open source folder:\n%s\n", strerror(errno));
+  }
+
+
+  if (flags & VOOSH_FLAG_STRICT) {
+    for (size_t i = cmd.count; i - cmd.count < strict_flags_count; ++i) {
+      raiz_da_append(&cmd, strict_flags[i]);
+    }
+  }
+
+  RAIZ_CMD_RUN_UNIX_VEC("clang", cmd.items);
+}
+
+void
+voosh_run(int flags, char **argv) {
+  (void) flags;
+
+  RAIZ_CMD_RUN_UNIX_VEC("./build/raiz", argv);
 }

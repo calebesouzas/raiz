@@ -46,7 +46,7 @@ typedef struct {
  * @name(function) parse_args
  * @desc turns command line arguments into a [@Cmd] with [@Flag]s
  */
-Voosh_Cmd voosh_parse_args(int argc, char **argv);
+Voosh_Cmd voosh_parse_args(int argc, char **argv, char ***raiz_args);
 
 /**
  * @doc!
@@ -68,7 +68,8 @@ void voosh_build(int flags);
  * @doc!
  * @name(function) run
  * @param `int flags`
- * @desc runs the Raiz project
+ * @param `char **argv`
+ * @desc runs the raiz binary with `argv` arguments
  * @note behaviour may change a little based on `flags`
  */
-void voosh_run(int flags);
+void voosh_run(int flags, char **argv);
