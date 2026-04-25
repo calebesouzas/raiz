@@ -1,5 +1,3 @@
-build/*
-temp/*
-*~
-nob
-nob.old
+/build
+/temp
+/voosh
