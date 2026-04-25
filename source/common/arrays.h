@@ -9,7 +9,7 @@
 
 /**
  * @doc!
- * @name(convention) da_pattern
+ * @name(convention) da
  * @desc shows how to use `raiz_da_*` helper macros.
  * Schema:
  * `da`: structure containing at least these three fields:
