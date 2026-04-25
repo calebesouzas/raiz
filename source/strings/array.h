@@ -16,3 +16,13 @@ typedef struct {
   Raiz_String *items;
   size_t count, capacity;
 } Raiz_Strings;
+
+/**
+ * @doc!
+ * @name(type) CStrings
+ * @desc [@da] of C style strings
+ */
+typedef struct {
+  char **items;
+  size_t count, capacity;
+} Raiz_CStrings;
