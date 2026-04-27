@@ -1,5 +1,6 @@
 #pragma once
 
+#include <errno.h>
 #include <unistd.h>
 
 #define RAIZ_CMD_RUN_UNIX_VA(command, ...)\
@@ -33,3 +34,15 @@
           __cmd, strerror(errno));\
     }\
   } while (0)
+
+typedef struct
+{
+  char **argv;
+  int argc;
+  uint32_t argv_capacity;
+} Raiz_Cmd;
+
+bool raiz_cmd_run(Raiz_Cmd *command);
+
+#define raiz_cmd_add(cmd, ...) raiz_cmd_add_((cmd), __VA_ARGS__, (char*)NULL)
+void raiz_cmd_add_(Raiz_Cmd *command, ...);
