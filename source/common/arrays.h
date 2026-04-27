@@ -47,5 +47,12 @@
     }\
   } while (0)
 
+#define raiz_da_free_malloced_items(da)\
+  do {\
+    for (size_t i = 0; i < (da)->count; i++) {\
+      free((da)->items[i]);\
+    }\
+  } while (0)
+
 #define RAIZ_ARRAY_LEN(known_size_array)\
   (sizeof((known_size_array)) / sizeof((known_size_array)[0]))
