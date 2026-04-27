@@ -12,6 +12,8 @@
 #include "source/shell/commands.h"
 #include "voosh.h"
 
+extern int execvpe(const char *path, char *const argv[], char *const envp[]);
+
 #define streq(source, destine) (strcmp(source, destine) == 0)
 #define strneq(source, destine, limit) (strncmp(source, destine, limit) == 0)
 
