@@ -58,3 +58,16 @@ raiz_dir_walk_recursive(
   closedir(dir_p);
   return true;
 }
+
+static void
+get_relative_file_paths(const char *path, mode_t mode, void *raw_data) {
+  Raiz_CStrings *paths = raw_data;
+  if (S_ISREG(mode)) raiz_da_append(paths, path);
+}
+
+Raiz_CStrings
+raiz_dir_get_relative_file_paths(const char *dir_path) {
+  Raiz_CStrings paths = {0};
+  raiz_dir_walk_recursive(dir_path, get_relative_file_paths, &paths);
+  return paths;
+}
