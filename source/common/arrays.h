@@ -46,3 +46,6 @@
       (da)->items[(da)->count++] = (value);\
     }\
   } while (0)
+
+#define RAIZ_ARRAY_LEN(known_size_array)\
+  (sizeof((known_size_array)) / sizeof((known_size_array)[0]))
