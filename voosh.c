@@ -92,6 +92,12 @@ command_run(Voosh *voosh) {
   RAIZ_CMD_RUN_UNIX_VEC(voosh->raiz_args.items[0], voosh->raiz_args.items);
 }
 
+bool
+is_c_file(char *path) {
+  // @note we're sure that `strlen(path)` > 0
+  return path[strlen(path) - 1] == 'c';
+}
+
 void
 command_build(Voosh *voosh) {
   // @todo implement raiz_da_append_many
@@ -100,6 +106,8 @@ command_build(Voosh *voosh) {
     "clang",
     "-o", "./build/raiz",
     "-Wall", "-Wextra",
+    "-I./source/",
+    "./source/main.c",
   };
 
   char *strict_compiler_flags[] = {
@@ -118,6 +126,14 @@ command_build(Voosh *voosh) {
       raiz_da_append(&dynamic_compiler_command, strict_compiler_flags[i]);
     }
   }
+
+#if 1
+  printf("voosh: running compiler command:\n $ ");
+  for (size_t i = 0; i < dynamic_compiler_command.count; i++) {
+    printf("%s ", dynamic_compiler_command.items[i]);
+  }
+  printf("\n");
+#endif
 
   RAIZ_CMD_RUN_UNIX_VEC(dynamic_compiler_command.items[0],
                         dynamic_compiler_command.items);
@@ -152,6 +168,8 @@ run_voosh_command(Voosh *voosh) {
   case VOOSH_CMD_NONE:  command_none(voosh);  break;
   default: assert(0 && "voosh: reached unreachable command");
   }
+
+  free(voosh->raiz_args.items);
 }
 
 int
@@ -204,6 +222,7 @@ rebuild(char **argv, char **envp) {
 
   pid_t clang_pid = fork();
   if (clang_pid == 0) {
+    // fprintf(stderr, "voosh: running compiler command\n");
     execlp("clang", "clang", "-o", "voosh", __FILE__, NULL);
   }
 
@@ -225,7 +244,7 @@ rebuild(char **argv, char **envp) {
     exit(2);
   }
 
-  // execvpe(argv[0], argv, envp);
+  execvpe(argv[0], argv, envp); // hope it doesn't do an infinite loop
 }
 
 void
