@@ -27,5 +27,6 @@ raiz_cmd_add_(Raiz_Cmd *command, ...)
   char *arg = NULL;
   for (int i = 0; (arg = va_arg(args, char*)) != NULL; i++)
   {
+    command->argv[command->argc++] = arg;
   }
 }
