@@ -3,6 +3,9 @@
 #include <dirent.h>
 #include <sys/stat.h>
 
+#include "common/arrays.h"
+#include "strings/array.h"
+
 #define RAIZ_MAX_FILE_NAME 1024
 
 typedef void (*Raiz_DirWalkFunc)(const char *path, mode_t mode, void *data);

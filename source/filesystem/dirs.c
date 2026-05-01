@@ -1,5 +1,4 @@
 #include "dirs.h"
-#include "strings/array.h"
 
 static inline bool
 is_special_path(const char *path) {
