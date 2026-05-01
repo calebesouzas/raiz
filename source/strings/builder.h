@@ -1,5 +1,7 @@
 #pragma once
 
+#include "slice.c"
+
 typedef struct
 {
   char *items;
