@@ -2,6 +2,9 @@
 
 #include <errno.h>
 #include <unistd.h>
+#include <stdint.h>
+
+#include "common/arrays.h"
 
 typedef struct
 {
