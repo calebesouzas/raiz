@@ -2,22 +2,22 @@
 #include "rebuild.h"
 
 int needs_rebuild(Raiz_CStrings *source_paths, char **argv);
-void rebuild(int argc, char **argv);
+void rebuild(char **argv);
 void run_new_version(char **argv);
 void regen_sources(Raiz_CStrings *source_paths);
-inline bool is_c_file(char *path);
-bool is_not_source_dot_c(char *path);
+static inline bool is_c_file(char *path);
+static inline bool is_not_source_dot_c(char *path);
 void add_source(Raiz_StringBuilder *source_builder, char *source_path);
 
 void
-raiz_rebuild_urself(int argc, char **argv)
+raiz_rebuild_urself(char **argv)
 {
   Raiz_CStrings source_paths = raiz_dir_get_relative_file_paths("./source");
   int ret = needs_rebuild(&source_paths, argv);
   if (ret >= 1)
   {
     regen_sources(&source_paths);
-    rebuild(argc, argv);
+    rebuild(argv);
   }
   else if (ret < 0)
   {
@@ -64,7 +64,7 @@ needs_rebuild(Raiz_CStrings *source_paths, char **argv)
 }
 
 void
-rebuild(int argc, char **argv)
+rebuild(char **argv)
 {
   pid_t clang_pid = fork();
 
@@ -90,7 +90,7 @@ rebuild(int argc, char **argv)
       return;
     }
 
-    run_new_version(argc, argv);
+    run_new_version(argv);
   }
   else if (WIFSIGNALED(clang_status))
   {
@@ -170,18 +170,22 @@ add_source(
     Raiz_StringBuilder *sources_builder,
     char *source_path)
 {
-  Raiz_StringBuilder source_builder = raiz_file_read(source_path);
-  raiz_strb_append(sources_builder, (Raiz_String*) source_builder);
-  free(source_builder.items);
+  Raiz_StringBuilder file_content = raiz_file_read(source_path);
+  Raiz_String string_cast = {
+    .items = file_content.items,
+    .count = file_content.count
+  };
+  raiz_strb_append(sources_builder, &string_cast);
+  free(file_content.items);
 }
 
-inline bool
+static inline bool
 is_c_file(char *path)
 {
   return path[strlen(path) - 1] == 'c';
 }
 
-inline bool
+static inline bool
 is_not_source_dot_c(char *path)
 {
   return strcmp(path, "./source/sources.c") != 0;

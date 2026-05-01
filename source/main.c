@@ -9,7 +9,7 @@
 int
 main(int argc, char **argv)
 {
-  raiz_rebuild_urself(argc, argv);
+  raiz_rebuild_urself(argv);
 
   if (argc > 1)
   {
