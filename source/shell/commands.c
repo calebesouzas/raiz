@@ -8,7 +8,7 @@
 void
 cmd_new(Raiz_Cmd *command)
 {
-  command->argv_capacity = RAIZ_DA_CAPACITY;
+  command->argv_capacity = RAIZ_DA_INITIAL_CAPACITY;
   command->argv = malloc(command->argv_capacity);
   RAIZ_ASSERT(command->argv, "failed to allocate command argv buffer\n");
 }
