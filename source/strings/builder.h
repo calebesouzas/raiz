@@ -1,6 +1,8 @@
 #pragma once
 
-#include "slice.c"
+#include "slice.h"
+
+#define RAIZ_STRB_INITIAL_CAPACITY 1024
 
 typedef struct
 {

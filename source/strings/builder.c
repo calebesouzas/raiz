@@ -6,11 +6,11 @@ raiz_strb_append(Raiz_StringBuilder *sb, Raiz_String *s)
 {
   if (sb->capacity == 0)
   {
-    sb->capacity = RAIZ_STRB_CAPACITY;
+    sb->capacity = RAIZ_STRB_INITIAL_CAPACITY;
     sb->items = malloc(sizeof(char) * sb->capacity);
   }
 
-  if (sb->count >= sb->capacity || sb->count + s->size >= sb->capacity)
+  if (sb->count >= sb->capacity || sb->count + s->count >= sb->capacity)
   {
     sb->capacity *= 2;
     sb->items = realloc(sb->items, sizeof(char) * sb->capacity);
@@ -18,12 +18,12 @@ raiz_strb_append(Raiz_StringBuilder *sb, Raiz_String *s)
 
   if (sb->items != NULL)
   {
-    char *push_addr = sb->items + sb->count > 0? sb->count - 1 : sb->count;
+    char *push_addr = sb->items + (sb->count > 0? sb->count - 1 : sb->count);
 
-    // @note(safety) will not overflow since `sb->capacity` was already handled
-    memcpy(push_addr, s->data, s->size);
+    //@note(safety) will not overflow since `sb->capacity` was already handled
+    memcpy(push_addr, s->items, s->count);
 
-    sb->count += s->size;
+    sb->count += s->count;
   }
 }
 
