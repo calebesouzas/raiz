@@ -1,10 +1,15 @@
+#ifdef _WIN32
+#error "Raiz is not implemented on Windows"
+#endif
+
 #include "common/libc.h"
 #include "errors/panics.h"
+#include "dev/rebuild.h"
 
 int
 main(int argc, char **argv)
 {
-  (void) argv;
+  raiz_rebuild_urself(argc, argv);
 
   if (argc > 1)
   {
@@ -17,3 +22,6 @@ main(int argc, char **argv)
 
   return 0;
 }
+
+// implementations:
+#include "sources.c"

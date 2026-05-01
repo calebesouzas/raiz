@@ -1,0 +1,7 @@
+#include "./filesystem/dirs.c"
+#include "./filesystem/time.c"
+#include "./filesystem/file.c"
+#include "./shell/commands.c"
+#include "./strings/builder.c"
+#include "./strings/slice.c"
+#include "./dev/rebuild.c"
