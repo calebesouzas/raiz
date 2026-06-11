@@ -9,7 +9,7 @@ In Brazil, it is a slang for people who do things with no frills, sometimes in
 a _hardcore_ way. At least this is the meaning i wanted to use...
 
 ## Important
-This is just a prototype! So please, don't expect things to work, be well 
+This is just a prototype! So please, don't expect the code to work, be well 
 optimized and secure. I'm currently racing to get a simple and working Raiz to 
 C transpiler and that's it.
 
