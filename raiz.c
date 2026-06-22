@@ -28,13 +28,12 @@ int main(int argc, char **argv) {
   if (err)
     return err;
 
-  AST ast = {0};
+  Expr ast = {0};
   err = Parser_build_ast(&ast, &toks);
   if (err)
     return err;
 
-  fprintf(stderr, "----------\n");
-  int result = eval(ast.root);
+  int result = eval(&ast);
   printf("%d\n", result);
   return 0;
 }
@@ -44,7 +43,6 @@ int eval(Expr *e) {
     fprintf(stderr, "expression is null\n");
     return 0;
   }
-  fprintf(stderr, "kind = %d\n", e->kind);
 
   switch (e->kind) {
   case EXPR_LITERAL:
@@ -55,11 +53,8 @@ int eval(Expr *e) {
       return -eval(e->unary.in);
     }
   case EXPR_BINARY: {
-    fprintf(stderr, "left side\n");
     int ls = eval(e->binary.ls);
-    fprintf(stderr, "right side\n");
     int rs = eval(e->binary.rs);
-    fprintf(stderr, "operator %s\n", token_label(&e->binary.op));
     switch (e->binary.op.kind) {
     case TOKEN_PLUS:
       return ls + rs;

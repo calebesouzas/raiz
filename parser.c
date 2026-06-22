@@ -6,7 +6,6 @@ int Parser_parse_nud(Expr *res, Parser *par) {
   Expr *in;
   int err;
 
-  fprintf(stderr, "parse_nud()\n");
   tok = Parser_cur(par);
   if (tok.kind == TOKEN_INVALID)
     return PARSER_INVALID_TOKEN;
@@ -35,21 +34,18 @@ int Parser_parse_nud(Expr *res, Parser *par) {
   return 0;
 }
 
-int Parser_parse_expr(Expr *res, Parser *par, uint8_t min_bp) {
-  Expr *ls;
+int Parser_parse_expr(Expr *ls, Parser *par, uint8_t min_bp) {
   Expr *rs;
+  Expr *res;
   Token op;
   uint8_t lbp, rbp;
   int err;
 
-  fprintf(stderr, "parse_expr()\n");
-  ls = res;
   err = Parser_parse_nud(ls, par);
   if (err)
     return err;
 
-  while (!(Parser_peek(par).kind & TOKEN_FLAG_BREAKING)) {
-    op = Parser_peek(par);
+  while (!((op = Parser_peek(par)).kind & TOKEN_FLAG_BREAKING)) {
     if (!(op.kind & TOKEN_FLAG_OP)) {
       fprintf(stderr, "expected operator, found %s\n", token_label(&op));
       return PARSER_EXPECTED_OPERATOR;
@@ -59,6 +55,7 @@ int Parser_parse_expr(Expr *res, Parser *par, uint8_t min_bp) {
     if (lbp < min_bp)
       break;
 
+    // to figure out: why do we need two advances?
     Parser_advance(par);
     Parser_advance(par);
 
@@ -67,19 +64,39 @@ int Parser_parse_expr(Expr *res, Parser *par, uint8_t min_bp) {
     if (err)
       return err;
 
+    res = Expr_();
     res->kind = EXPR_BINARY;
     res->binary.ls = Expr_copy(ls);
+    res->binary.op = op;
     res->binary.rs = rs;
+    memcpy(ls, res, sizeof(*ls));
   }
 
   return 0;
 }
 
-int Parser_build_ast(AST *ast, Token_A *toks) {
+void Parser_debug(Parser *par) {
+  fprintf(stderr, "parser->toks = (%p) {\n", par->ast);
+  Token *tok;
+  da_for(tok, par->toks) {
+    fprintf(stderr, "  %s,", token_label(tok));
+    if (i_tok == par->cur)
+      fprintf(stderr, " // current\n");
+    else
+      fprintf(stderr, "\n");
+  }
+  fprintf(stderr, "}\n// ------ //\n");
+
+  fprintf(stderr, "parser->ast = (%p):\n", par->ast);
+  Expr_dump(par->ast, 2, 0);
+  fprintf(stderr, "// ------ //\n");
+}
+
+int Parser_build_ast(Expr *ast, Token_A *toks) {
   Parser par = {ast, toks, 0}; // `0` -> current token
-  Expr *root = Expr_();
-  par.ast->root = root;
-  return Parser_parse_expr(root, &par, 0);
+  int err = Parser_parse_expr(par.ast, &par, 0);
+  Parser_debug(&par);
+  return err;
 }
 
 void binding_power_of(Token *op_tok, uint8_t *lbp, uint8_t *rbp) {
@@ -108,25 +125,49 @@ Expr *Expr_copy(Expr *src) {
   return e;
 }
 
-Token Parser_cur(Parser *par) {
-  fprintf(stderr, "parser.current = %zu (%s)\n", par->cur, token_label(&par->toks->dat[par->cur]));
-  return par->toks->dat[par->cur];
+void Expr_dump(Expr *root, size_t indent, size_t level) {
+  for (size_t i = 0; i < level * indent; i++) {
+    fputc(' ', stderr);
+  }
+  if (!root) {
+    fprintf(stderr, "null expression\n");
+    return;
+  }
+  switch (root->kind) {
+  case EXPR_LITERAL:
+    fprintf(stderr, "literal %d\n", root->literal);
+    break;
+  case EXPR_BINARY:
+    fprintf(stderr, "binary, operator %s\n", token_label(&root->binary.op));
+
+    for (size_t i = 0; i < level * indent; i++) {
+      fputc(' ', stderr);
+    }
+    fprintf(stderr, "left side:\n");
+    Expr_dump(root->binary.ls, indent, level + 1);
+
+    for (size_t i = 0; i < level * indent; i++) {
+      fputc(' ', stderr);
+    }
+    fprintf(stderr, "right side:\n");
+    Expr_dump(root->binary.rs, indent, level + 1);
+    break;
+  case EXPR_UNARY:
+    fprintf(stderr, "unary, operator %s\n", token_label(&root->binary.op));
+
+    for (size_t i = 0; i < level * indent; i++) {
+      fputc(' ', stderr);
+    }
+    fprintf(stderr, "inner side:\n");
+    Expr_dump(root->unary.in, indent, level + 1);
+    break;
+  }
 }
-Token Parser_peek(Parser *par) {
-  fprintf(stderr, "parser.peek() = %s\n", token_label(&par->toks->dat[par->cur+1]));
-  return par->toks->dat[par->cur+1];
-}
-Token Parser_next(Parser *par) {
-  fprintf(stderr, "parser.next() = %s\n", token_label(&par->toks->dat[par->cur+1]));
-  return par->toks->dat[par->cur++];
-}
-Token Parser_advance(Parser *par) {
-  Token cur, next;
-  cur = par->toks->dat[par->cur];
-  next = par->toks->dat[par->cur+1];
-  fprintf(stderr, "parser.advance() [%zu (%s) -> %zu (%s)]\n", par->cur, token_label(&cur), par->cur+1, token_label(&next));
-  return par->toks->dat[++par->cur];
-}
+
+Token Parser_cur(Parser *par) { return par->toks->dat[par->cur]; }
+Token Parser_peek(Parser *par) { return par->toks->dat[par->cur+1]; }
+Token Parser_next(Parser *par) { return par->toks->dat[par->cur++]; }
+Token Parser_advance(Parser *par) { return par->toks->dat[++par->cur]; }
 
 #endif // RAIZ_PARSER_C
 

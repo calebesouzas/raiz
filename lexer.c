@@ -17,11 +17,11 @@ int Lexer_tokenize(Token_A *toks, char *source) {
       if (isdigit(c)) {
         int num = c - '0';
         while (isdigit((c = source[i + 1])) || c == '_') {
-	  i++;
+          i++;
           if (c == '_')
             continue;
           num = (num * 10) + (c - '0');
-	}
+        }
         da_add(toks, ((Token){.kind = TOKEN_NUMBER, .value = num}));
       } else {
         fprintf(stderr, "unhandled byte (%02x) at index [%zu]\n", c, i);
