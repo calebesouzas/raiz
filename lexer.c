@@ -24,7 +24,7 @@ int Lexer_tokenize(Token_A *toks, char *source) {
 	}
         da_add(toks, ((Token){.kind = TOKEN_NUMBER, .value = num}));
       } else {
-        fprintf(stderr, "unhandled byte (%02x) at index [%d]\n", c, i);
+        fprintf(stderr, "unhandled byte (%02x) at index [%zu]\n", c, i);
       }
     } break;
     }
