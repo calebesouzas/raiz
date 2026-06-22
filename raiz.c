@@ -1,46 +1,19 @@
+#include <assert.h>
 #include <ctype.h>
 #include <stdio.h>
 #include <stdlib.h>
+#include <stdint.h>
+#include <string.h>
 /*
  Warning: this codebase is probably terrible...
 But maybe you can find something interesting in here, I really don't know
 */
 
-#define da_make(TypeName, TypeItems)\
-  typedef struct {\
-    size_t len, cap;\
-    TypeItems dat;\
-  } TypeName
-#define DEFAULT_DA_CAP 256
-#define da_size(da) (sizeof((da)->dat[0])*(da)->cap)
-// you know what? Yep, I just stole it from an "AI" or someone in a forum
-#define da_for(item, da)\
-  for (size_t i_##item = 0;\
-       (i_##item < (da)->len) && ((item) = &(da)->dat[i_##item]);\
-       i_##item++)
-#define da_add(da, val)\
-  do{\
-    if ((da)->cap == 0) (da)->cap = DEFAULT_DA_CAP;\
-    if ((da)->dat == NULL) (da)->dat = malloc(da_size(da));\
-    else if ((da)->len >= (da)->cap) {\
-      (da)->cap *= 2;\
-      (da)->dat = realloc((da)->dat, da_size(da));\
-    }\
-    if ((da)->dat != NULL) (da)->dat[(da)->len++] = (val);\
-  } while (0)
+#include "dynamic_arrays.h"
+#include "lexer.h"
+#include "parser.h"
 
-typedef struct {
-  enum {
-    TOKEN_NUMBER,
-    TOKEN_PLUS,
-    TOKEN_MINUS,
-    TOKEN_EOF,
-  } kind;
-  int value; // if it's `TOKEN_NUMBER`
-} Token;
-da_make(Token_A, Token*);
-
-int Lexer_tokenize(Token_A *toks, char *source);
+int eval(Expr *e);
 
 int main(int argc, char **argv) {
 #if 0
@@ -51,45 +24,56 @@ int main(int argc, char **argv) {
   }
 #endif
   Token_A toks = {0};
-  if (Lexer_tokenize(&toks, "69 + 1337\n") == 0) {
-    Token *tok = NULL;
-    da_for(tok, &toks) {
-      printf("Token [%d].kind = %d", i_tok, tok->kind);
-      if (tok->kind == TOKEN_NUMBER)
-        printf(" (%d)\n", tok->value);
-      else
-        printf("\n");
+  int err = Lexer_tokenize(&toks, "20 - 5 + 10 / 2 * 3\n");
+  if (err)
+    return err;
+
+  AST ast = {0};
+  err = Parser_build_ast(&ast, &toks);
+  if (err)
+    return err;
+
+  fprintf(stderr, "----------\n");
+  int result = eval(ast.root);
+  printf("%d\n", result);
+  return 0;
+}
+
+int eval(Expr *e) {
+  if (!e) {
+    fprintf(stderr, "expression is null\n");
+    return 0;
+  }
+  fprintf(stderr, "kind = %d\n", e->kind);
+
+  switch (e->kind) {
+  case EXPR_LITERAL:
+    return e->literal;
+  case EXPR_UNARY:
+    switch (e->unary.op.kind) {
+    case TOKEN_MINUS:
+      return -eval(e->unary.in);
     }
+  case EXPR_BINARY: {
+    fprintf(stderr, "left side\n");
+    int ls = eval(e->binary.ls);
+    fprintf(stderr, "right side\n");
+    int rs = eval(e->binary.rs);
+    fprintf(stderr, "operator %s\n", token_label(&e->binary.op));
+    switch (e->binary.op.kind) {
+    case TOKEN_PLUS:
+      return ls + rs;
+    case TOKEN_MINUS:
+      return ls - rs;
+    case TOKEN_STAR:
+      return ls * rs;
+    case TOKEN_SLASH:
+      return ls / rs;
+    }
+  } break;
   }
   return 0;
 }
 
-int Lexer_tokenize(Token_A *toks, char *source) {
-  size_t len = strlen(source);
-  size_t i;
-  char c;
-  for (i = 0; i < len; i++) {
-    c = source[i];
-    switch (c) {
-    case '+': da_add(toks, (Token){.kind = TOKEN_PLUS}); break;
-    case '-': da_add(toks, (Token){.kind = TOKEN_MINUS}); break;
-    case ' ': case '\n': case '\t': case '\r': break;
-    default: {
-      if (isdigit(c)) {
-        int num = c - '0';
-        while (isdigit((c = source[i + 1])) || c == '_') {
-	  i++;
-          if (c == '_')
-            continue;
-          num = (num * 10) + (c - '0');
-	}
-        da_add(toks, ((Token){.kind = TOKEN_NUMBER, .value = num}));
-      } else {
-        fprintf(stderr, "unhandled byte (%02x) at index [%d]\n", c, i);
-      }
-    } break;
-    }
-  }
-  da_add(toks, (Token){.kind=TOKEN_EOF});
-  return 0;
-}
+#include "lexer.c"
+#include "parser.c"
