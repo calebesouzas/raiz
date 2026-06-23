@@ -25,6 +25,19 @@ int Lexer_tokenize(Token_A *toks, char *source) {
           num = (num * 10) + (c - '0');
         }
         da_add(toks, ((Token){.kind = TOKEN_NUMBER, .value = num}));
+      } else if (isalpha(c) || c == '_') {
+        size_t start = i;
+	Token tok;
+
+        do {
+          i++;
+          c = source[i];
+        } while (i - start < TOKEN_IDENTIFIER_SIZE && isalnum(c) || c == '_');
+
+	if (!token_keyword(&tok, &source[start], i - start))
+          strncpy(tok.ident, &source[start], i - start);
+
+	da_add(toks, tok);
       } else {
         fprintf(stderr, "unhandled byte (%02x) at index [%zu]\n", c, i);
       }
@@ -33,6 +46,23 @@ int Lexer_tokenize(Token_A *toks, char *source) {
   }
   da_add(toks, (Token){.kind = TOKEN_EOF});
   return 0;
+}
+
+bool token_keyword(Token *tok, char *ident, size_t len) {
+  size_t i, keywords_size;
+  struct TokenKeywordTable key;
+
+  keywords_size = sizeof(KEYWORDS) / sizeof(KEYWORDS[0]);
+
+  for (i = 0; i < keywords_size; i++) {
+    key = KEYWORDS[i];
+
+    if (key.len == len && strncmp(ident, key.string, key.len) == 0) {
+      tok->kind = key.kind;
+      return true;
+    }
+  }
+  return false;
 }
 
 char *token_label(Token *tok) {
