@@ -27,6 +27,22 @@ int Parser_parse_nud(Expr *res, Parser *par) {
     res->kind = EXPR_UNARY;
     res->unary.op = tok;
     res->unary.in = in;
+  } else if (tok.kind == TOKEN_L_PAREN) {
+    Parser_advance(par);
+
+    in = Expr_();
+    err = Parser_parse_expr(in, par, 0);
+    if (err)
+      return err;
+
+    if (Parser_peek(par).kind != TOKEN_R_PAREN) {
+      fprintf(stderr, "group not closed after '%s'\n", token_label(&tok));
+      return PARSER_NON_CLOSED_GROUP;
+    }
+    Parser_advance(par); // consume ')'
+
+    res->kind = EXPR_GROUP;
+    res->group.in = in;
   } else {
     fprintf(stderr, "unexpected token: %s\n", token_label(&tok));
     return PARSER_UNEXPECTED_TOKEN;
@@ -160,6 +176,15 @@ void Expr_dump(Expr *root, size_t indent, size_t level) {
     }
     fprintf(stderr, "inner side:\n");
     Expr_dump(root->unary.in, indent, level + 1);
+    break;
+  case EXPR_GROUP:
+    fprintf(stderr, "group\n");
+
+    for (size_t i = 0; i < level * indent; i++) {
+      fputc(' ', stderr);
+    }
+    fprintf(stderr, "inner side:\n");
+    Expr_dump(root->group.in, indent, level + 1);
     break;
   }
 }

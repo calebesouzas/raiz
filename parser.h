@@ -6,6 +6,7 @@ struct Expr {
     EXPR_LITERAL,
     EXPR_BINARY,
     EXPR_UNARY,
+    EXPR_GROUP,
   } kind;
   union {
     int literal;
@@ -18,6 +19,9 @@ struct Expr {
       Token op;
       struct Expr *in;
     } unary;
+    struct {
+      struct Expr *in;
+    } group;
   };
 };
 
@@ -33,6 +37,8 @@ enum ParserError {
   PARSER_EXPECTED_OPERATOR = 1,
   PARSER_INVALID_TOKEN,
   PARSER_UNEXPECTED_TOKEN,
+  PARSER_NON_CLOSED_GROUP,
+  PARSER_TRAILING_PARENTHESES,
 };
 
 Expr *Expr_(void);

@@ -12,6 +12,8 @@ int Lexer_tokenize(Token_A *toks, char *source) {
     case '-': da_add(toks, (Token){.kind = TOKEN_MINUS}); break;
     case '*': da_add(toks, (Token){.kind = TOKEN_STAR}); break;
     case '/': da_add(toks, (Token){.kind = TOKEN_SLASH}); break;
+    case '(': da_add(toks, (Token){.kind = TOKEN_L_PAREN}); break;
+    case ')': da_add(toks, (Token){.kind = TOKEN_R_PAREN}); break;
     case ' ': case '\n': case '\t': case '\r': break;
     default: {
       if (isdigit(c)) {
@@ -45,6 +47,8 @@ char *token_label(Token *tok) {
   case TOKEN_MINUS: return "-";
   case TOKEN_STAR: return "*";
   case TOKEN_SLASH: return "/";
+  case TOKEN_L_PAREN: return "(";
+  case TOKEN_R_PAREN: return ")";
   case TOKEN_EOF: return "EOF";
   default: fprintf(stderr, "unknown token (id %d)\n", tok->kind); return NULL;
   }
