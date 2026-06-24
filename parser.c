@@ -223,6 +223,17 @@ void Expr_dump(Expr *root, size_t indent, size_t level) {
   case EXPR_IDENT:
     fprintf(stderr, "identifier %s\n", root->ident);
     break;
+  case EXPR_DECL: {
+    Token tok;
+    tok.kind = root->decl.kind;
+    fprintf(stderr, "%s declaration\n", token_label(&tok));
+
+    for (size_t i = 0; i < level * indent; i++) {
+      fputc(' ', stderr);
+    }
+    fprintf(stderr, "value:\n");
+    Expr_dump(root->decl.value, indent, level + 1);
+  } break;
   }
 }
 
