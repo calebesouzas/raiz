@@ -2,8 +2,8 @@
 #define RAIZ_PARSER_C
 
 int Parser_parse_nud(Expr *res, Parser *par) {
-  Token tok;
-  Expr *in;
+  Token tok, peeked;
+  Expr *in, *value;
   int err;
 
   tok = Parser_cur(par);
@@ -35,7 +35,8 @@ int Parser_parse_nud(Expr *res, Parser *par) {
     if (err)
       return err;
 
-    if (Parser_peek(par).kind != TOKEN_R_PAREN) {
+    peeked = Parser_peek(par);
+    if (peeked.kind != TOKEN_R_PAREN) {
       fprintf(stderr, "group not closed after '%s'\n", token_label(&tok));
       return PARSER_NON_CLOSED_GROUP;
     }
@@ -43,6 +44,39 @@ int Parser_parse_nud(Expr *res, Parser *par) {
 
     res->kind = EXPR_GROUP;
     res->group.in = in;
+  } else if (tok.kind == TOKEN_IDENT) {
+    res->kind = EXPR_IDENT;
+    strncpy(res->ident, tok.ident, TOKEN_IDENTIFIER_SIZE);
+  } else if (tok.kind == TOKEN_VAR || tok.kind == TOKEN_VAL) {
+    peeked = Parser_peek(par);
+    if (peeked.kind != TOKEN_IDENT) {
+      fprintf(stderr, "expected identifier, found %s\n", token_label(&peeked));
+      return PARSER_EXPECTED_IDENTIFIER;
+    }
+    char ident[TOKEN_IDENTIFIER_SIZE];
+    strncpy(ident, peeked.ident, sizeof(ident));
+    Parser_advance(par); // consume keyword
+
+    peeked = Parser_peek(par);
+    if (peeked.kind == TOKEN_EQUAL) {
+      Parser_advance(par); // identifier
+      Parser_advance(par); // '='
+
+      value = Expr_();
+      err = Parser_parse_expr(value, par, 0);
+      if (err)
+        return err;
+
+      res->decl.value = value;
+    } else if (tok.kind == TOKEN_VAL) {
+      fprintf(stderr, "expected assignment after '%s', found %s\n",
+              ident, token_label(&peeked));
+      return PARSER_EXPECTED_ASSIGNMENT;
+    }
+
+    res->kind = EXPR_DECL;
+    res->decl.kind = tok.kind;
+    strncpy(res->decl.ident, ident, TOKEN_IDENTIFIER_SIZE);
   } else {
     fprintf(stderr, "unexpected token: %s\n", token_label(&tok));
     return PARSER_UNEXPECTED_TOKEN;
@@ -185,6 +219,9 @@ void Expr_dump(Expr *root, size_t indent, size_t level) {
     }
     fprintf(stderr, "inner side:\n");
     Expr_dump(root->group.in, indent, level + 1);
+    break;
+  case EXPR_IDENT:
+    fprintf(stderr, "identifier %s\n", root->ident);
     break;
   }
 }

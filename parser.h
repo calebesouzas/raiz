@@ -7,6 +7,8 @@ struct Expr {
     EXPR_BINARY,
     EXPR_UNARY,
     EXPR_GROUP,
+    EXPR_IDENT,
+    EXPR_DECL,
   } kind;
   union {
     int literal;
@@ -22,6 +24,12 @@ struct Expr {
     struct {
       struct Expr *in;
     } group;
+    char ident[TOKEN_IDENTIFIER_SIZE];
+    struct {
+      uint32_t kind;
+      struct Expr *value;
+      char ident[TOKEN_IDENTIFIER_SIZE];
+    } decl;
   };
 };
 
@@ -39,6 +47,8 @@ enum ParserError {
   PARSER_UNEXPECTED_TOKEN,
   PARSER_NON_CLOSED_GROUP,
   PARSER_TRAILING_PARENTHESES,
+  PARSER_EXPECTED_IDENTIFIER,
+  PARSER_EXPECTED_ASSIGNMENT,
 };
 
 Expr *Expr_(void);
