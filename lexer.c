@@ -15,7 +15,13 @@ int Lexer_tokenize(Token_A *toks, char *source) {
     case '(': da_add(toks, (Token){.kind = TOKEN_L_PAREN}); break;
     case ')': da_add(toks, (Token){.kind = TOKEN_R_PAREN}); break;
     case '=': da_add(toks, (Token){.kind = TOKEN_EQUAL}); break;
-    case ' ': case '\n': case '\t': case '\r': break;
+    case '\n':
+      while (source[i+1] == '\n') {
+        i++;
+      }
+      da_add(toks, (Token){.kind = TOKEN_NEWLINE});
+      break;
+    case ' ': case '\t': case '\r': break;
     default: {
       if (isdigit(c)) {
         int num = c - '0';
@@ -29,6 +35,8 @@ int Lexer_tokenize(Token_A *toks, char *source) {
       } else if (isalpha(c) || c == '_') {
         size_t start = i;
         Token tok;
+
+        memset(tok.ident, 0, TOKEN_IDENTIFIER_SIZE);
 
         do {
           i++;
@@ -91,6 +99,7 @@ char *token_label(Token *tok) {
     return buf;
   } break;
   case TOKEN_EQUAL: return "=";
+  case TOKEN_NEWLINE: return "new line";
   case TOKEN_EOF: return "EOF";
   default: fprintf(stderr, "unknown token (id %d)\n", tok->kind); return NULL;
   }

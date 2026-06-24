@@ -14,6 +14,7 @@ But maybe you can find something interesting in here, I really don't know
 #include "lexer.h"
 #include "parser.h"
 #include "runtime.h"
+#include "program.h"
 
 int main(int argc, char **argv) {
 #if 0
@@ -24,17 +25,19 @@ int main(int argc, char **argv) {
   }
 #endif
   Token_A toks = {0};
-  int err = Lexer_tokenize(&toks, "var x = 420\n");
-  if (err)
-    return err;
-
-  Expr ast = {0};
-  err = Parser_build_ast(&ast, &toks);
+  int err = Lexer_tokenize(&toks, "var x = 420\nx = 33");
   if (err)
     return err;
 
   Symbol_A symbols = {0};
-  int result = eval(&ast, &symbols);
+  Parser par = Parser_setup(&toks);
+  Program pro = Program_setup(&symbols, &par);
+
+  err = Program_build(&pro, &par);
+  if (err)
+    return err;
+
+  int result = Program_run(&pro);
   fprintf(stderr, "; symbol count = %zu\n", symbols.len);
   printf("%d\n", result);
   return 0;
@@ -42,4 +45,5 @@ int main(int argc, char **argv) {
 
 #include "lexer.c"
 #include "parser.c"
+#include "program.c"
 #include "runtime.c"

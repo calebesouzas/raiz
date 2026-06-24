@@ -74,6 +74,12 @@ int Parser_parse_nud(Expr *res, Parser *par) {
       return PARSER_EXPECTED_ASSIGNMENT;
     }
 
+    if (!((peeked = Parser_peek(par)).kind & TOKEN_FLAG_FINISHER)) {
+      fprintf(stderr, "expected new line or ';', found %s\n",
+              token_label(&peeked));
+      return PARSER_EXPECTED_FINISH;
+    }
+
     res->kind = EXPR_DECL;
     res->decl.kind = tok.kind;
     strncpy(res->decl.ident, ident, TOKEN_IDENTIFIER_SIZE);
@@ -125,6 +131,10 @@ int Parser_parse_expr(Expr *ls, Parser *par, uint8_t min_bp) {
   return 0;
 }
 
+Parser Parser_setup(Token_A *toks) {
+  return (Parser) {.toks = toks, .cur = 0};
+}
+
 void Parser_debug(Parser *par) {
   fprintf(stderr, "parser->toks = (%p) {\n", par->ast);
   Token *tok;
@@ -140,13 +150,6 @@ void Parser_debug(Parser *par) {
   fprintf(stderr, "parser->ast = (%p):\n", par->ast);
   Expr_dump(par->ast, 2, 0);
   fprintf(stderr, "// ------ //\n");
-}
-
-int Parser_build_ast(Expr *ast, Token_A *toks) {
-  Parser par = {ast, toks, 0}; // `0` -> current token
-  int err = Parser_parse_expr(par.ast, &par, 0);
-  Parser_debug(&par);
-  return err;
 }
 
 void binding_power_of(Token *op_tok, uint8_t *lbp, uint8_t *rbp) {

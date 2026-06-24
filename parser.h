@@ -49,6 +49,7 @@ enum ParserError {
   PARSER_TRAILING_PARENTHESES,
   PARSER_EXPECTED_IDENTIFIER,
   PARSER_EXPECTED_ASSIGNMENT,
+  PARSER_EXPECTED_FINISH,
 };
 
 Expr *Expr_(void);
@@ -62,6 +63,7 @@ Token Parser_peek(Parser *par);
 Token Parser_next(Parser *par);
 Token Parser_advance(Parser *par);
 
+Parser Parser_setup(Token_A *toks);
 void Parser_debug(Parser *par);
 
 int Parser_parse_nud(Expr *res, Parser *par);

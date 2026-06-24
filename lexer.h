@@ -8,6 +8,7 @@ enum TokenFlags {
   TOKEN_FLAG_GROUPING = 1 << 19, // does it have a needed pair?
   TOKEN_FLAG_KEYWORD  = 1 << 20, // pretty obvious...
   TOKEN_FLAG_STARTER  = 1 << 21, // it may start an expression-like statement
+  TOKEN_FLAG_FINISHER = 1 << 22, // can it finish an expression-like statement?
 };
 
 enum TokenKind {
@@ -23,13 +24,14 @@ enum TokenKind {
   TOKEN_VAL     = 9 | TOKEN_FLAG_KEYWORD | TOKEN_FLAG_STARTER,
   TOKEN_IDENT   = 10,
   TOKEN_EQUAL   = 11 | TOKEN_FLAG_OP,
-  TOKEN_EOF     = 12 | TOKEN_FLAG_BREAKING,
+  TOKEN_NEWLINE = 12 | TOKEN_FLAG_BREAKING | TOKEN_FLAG_FINISHER,
+  TOKEN_EOF     = 13 | TOKEN_FLAG_BREAKING,
 };
 
 #define TOKEN_IDENTIFIER_SIZE 32
 
 typedef struct {
-  uint32_t kind;
+  enum TokenKind kind;
   int value; // if it's `TOKEN_NUMBER`
   char ident[TOKEN_IDENTIFIER_SIZE]; // if it's `TOKEN_IDENT`
 } Token;
