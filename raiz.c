@@ -24,10 +24,7 @@ int main(int argc, char **argv) {
   }
 #endif
   Token_A toks = {0};
-  // (5 + 4) * 2
-  // 9 * 2
-  // 18
-  int err = Lexer_tokenize(&toks, "a\n");
+  int err = Lexer_tokenize(&toks, "var x = 420\n");
   if (err)
     return err;
 
@@ -36,12 +33,9 @@ int main(int argc, char **argv) {
   if (err)
     return err;
 
-  Symbol a = {0};
-  strncpy(a.ident, "a", sizeof(a.ident));
-  a.value = 69;
   Symbol_A symbols = {0};
-  da_add(&symbols, a);
   int result = eval(&ast, &symbols);
+  fprintf(stderr, "; symbol count = %zu\n", symbols.len);
   printf("%d\n", result);
   return 0;
 }
