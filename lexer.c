@@ -34,10 +34,12 @@ int Lexer_tokenize(Token_A *toks, char *source) {
           c = source[i];
         } while (i - start < TOKEN_IDENTIFIER_SIZE && isalnum(c) || c == '_');
 
-	if (!token_keyword(&tok, &source[start], i - start))
+        if (!token_keyword(&tok, &source[start], i - start)) {
           strncpy(tok.ident, &source[start], i - start);
+	  tok.kind = TOKEN_IDENT;
+        }
 
-	da_add(toks, tok);
+        da_add(toks, tok);
       } else {
         fprintf(stderr, "unhandled byte (%02x) at index [%zu]\n", c, i);
       }
@@ -79,6 +81,14 @@ char *token_label(Token *tok) {
   case TOKEN_SLASH: return "/";
   case TOKEN_L_PAREN: return "(";
   case TOKEN_R_PAREN: return ")";
+  case TOKEN_VAR: return "var";
+  case TOKEN_VAL: return "val";
+  case TOKEN_IDENT: {
+    size_t size = strlen("identifier ") + TOKEN_IDENTIFIER_SIZE;
+    char *buf = malloc(size);
+    snprintf(buf, size, "identifier %s", tok->ident);
+    return buf;
+  } break;
   case TOKEN_EOF: return "EOF";
   default: fprintf(stderr, "unknown token (id %d)\n", tok->kind); return NULL;
   }
