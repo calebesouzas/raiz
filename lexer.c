@@ -48,6 +48,9 @@ int Lexer_tokenize(Token_A *toks, char *source) {
           tok.kind = TOKEN_IDENT;
         }
 
+        if (i - start > 0)
+          i--;
+
         da_add(toks, tok);
       } else {
         fprintf(stderr, "unhandled byte (%02x) at index [%zu]\n", c, i);
