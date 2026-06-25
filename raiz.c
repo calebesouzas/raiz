@@ -25,7 +25,7 @@ int main(int argc, char **argv) {
   }
 #endif
   Token_A toks = {0};
-  int err = Lexer_tokenize(&toks, "var x = 420\nx = 33");
+  int err = Lexer_tokenize(&toks, "var x\nval y = 32\nx = y * 2");
   if (err)
     return err;
 
