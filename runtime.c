@@ -20,6 +20,24 @@ int eval(Expr *e, Symbol_A *symbols) {
     }
     break;
   case EXPR_BINARY:
+    if (e->binary.op.kind == TOKEN_EQUAL) {
+      if (e->binary.ls->kind != EXPR_IDENT) {
+        fprintf(stderr, "can only assign to indentifiers\n");
+	return 0;
+      }
+      char *ident = e->binary.ls->ident;
+      da_for(sym, symbols) {
+        if (strcmp(ident, sym->ident) != 0)
+          continue;
+	if (!sym->is_variable) {
+          fprintf(stderr, "can't assign, '%s' is not a variable\n", ident);
+	  return 0;
+	}
+	sym->value = eval(e->binary.rs, symbols);
+	return sym->value;
+      }
+    }
+
     ls = eval(e->binary.ls, symbols);
     rs = eval(e->binary.rs, symbols);
     switch (e->binary.op.kind) {
@@ -43,7 +61,7 @@ int eval(Expr *e, Symbol_A *symbols) {
     fprintf(stderr, "symbol '%s' not found\n", e->ident);
   } break;
   case EXPR_DECL:
-    value = eval(e->decl.value, symbols);
+    value = e->decl.value != NULL ? eval(e->decl.value, symbols) : 0;
     da_for(sym, symbols) {
       if (!sym->is_variable) {
         fprintf(stderr, "attempt to assign to value %s\n", sym->ident);
