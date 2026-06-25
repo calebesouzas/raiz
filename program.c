@@ -8,14 +8,15 @@ int Program_build(Program *pro, Parser *par) {
 
   pro->toks = par->toks;
 
-  while ((tok = Parser_next(par)).kind != TOKEN_EOF) {
+  while ((tok = Parser_cur(par)).kind != TOKEN_EOF) {
     node = Expr_();
 
-    err = Parser_parse_expr(node, par, 0);
+    err = Parser_parse_line(node, par);
     if (err)
       return err;
 
     da_add(&pro->code, node);
+    Parser_advance(par);
   }
 
   return 0;
