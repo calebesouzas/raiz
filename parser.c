@@ -47,42 +47,6 @@ int Parser_parse_nud(Expr *res, Parser *par) {
   } else if (tok.kind == TOKEN_IDENT) {
     res->kind = EXPR_IDENT;
     strncpy(res->ident, tok.ident, TOKEN_IDENTIFIER_SIZE);
-  } else if (tok.kind == TOKEN_VAR || tok.kind == TOKEN_VAL) {
-    peeked = Parser_peek(par);
-    if (peeked.kind != TOKEN_IDENT) {
-      fprintf(stderr, "expected identifier, found %s\n", token_label(&peeked));
-      return PARSER_EXPECTED_IDENTIFIER;
-    }
-    char ident[TOKEN_IDENTIFIER_SIZE];
-    strncpy(ident, peeked.ident, sizeof(ident));
-    Parser_advance(par); // consume keyword
-
-    peeked = Parser_peek(par);
-    if (peeked.kind == TOKEN_EQUAL) {
-      Parser_advance(par); // identifier
-      Parser_advance(par); // '='
-
-      value = Expr_();
-      err = Parser_parse_expr(value, par, 0);
-      if (err)
-        return err;
-
-      res->decl.value = value;
-    } else if (tok.kind == TOKEN_VAL) {
-      fprintf(stderr, "expected assignment after '%s', found %s\n",
-              ident, token_label(&peeked));
-      return PARSER_EXPECTED_ASSIGNMENT;
-    }
-
-    if (!((peeked = Parser_peek(par)).kind & TOKEN_FLAG_FINISHER)) {
-      fprintf(stderr, "expected new line or ';', found %s\n",
-              token_label(&peeked));
-      return PARSER_EXPECTED_FINISH;
-    }
-
-    res->kind = EXPR_DECL;
-    res->decl.kind = tok.kind;
-    strncpy(res->decl.ident, ident, TOKEN_IDENTIFIER_SIZE);
   } else {
     fprintf(stderr, "unexpected token: %s\n", token_label(&tok));
     return PARSER_UNEXPECTED_TOKEN;
@@ -127,6 +91,61 @@ int Parser_parse_expr(Expr *ls, Parser *par, uint8_t min_bp) {
     res->binary.rs = rs;
     memcpy(ls, res, sizeof(*ls));
   }
+
+  return 0;
+}
+
+int Parser_parse_line(Expr *res, Parser *par) {
+  int err;
+  Token tok, peeked;
+  char ident[TOKEN_IDENTIFIER_SIZE];
+  Expr *value;
+
+  tok = Parser_cur(par);
+  if (!(tok.kind & TOKEN_FLAG_STARTER)) {
+    err = Parser_parse_expr(res, par, 0);
+    return err;
+  }
+  switch (tok.kind) {
+  case TOKEN_VAR:
+  case TOKEN_VAL:
+    peeked = Parser_peek(par);
+    if (peeked.kind != TOKEN_IDENT) {
+      fprintf(stderr, "expected identifier, found %s\n", token_label(&peeked));
+      return PARSER_EXPECTED_IDENTIFIER;
+    }
+    strncpy(ident, peeked.ident, sizeof(ident));
+    Parser_advance(par); // consume keyword
+
+    peeked = Parser_peek(par);
+    if (peeked.kind == TOKEN_EQUAL) {
+      Parser_advance(par); // identifier
+      Parser_advance(par); // '='
+
+      value = Expr_();
+      err = Parser_parse_expr(value, par, 0);
+      if (err)
+        return err;
+
+      res->decl.value = value;
+    } else if (tok.kind == TOKEN_VAL) {
+      fprintf(stderr, "expected assignment after '%s', found %s\n",
+              ident, token_label(&peeked));
+      return PARSER_EXPECTED_ASSIGNMENT;
+    }
+
+    res->kind = EXPR_DECL;
+    res->decl.kind = tok.kind;
+    strncpy(res->decl.ident, ident, TOKEN_IDENTIFIER_SIZE);
+    break; // case VAR or VAL
+  }
+
+  if (!((peeked = Parser_peek(par)).kind & TOKEN_FLAG_FINISHER)) {
+    fprintf(stderr, "expected new line or ';', found %s\n",
+            token_label(&peeked));
+    return PARSER_EXPECTED_FINISH;
+  }
+  Parser_advance(par); // new line
 
   return 0;
 }

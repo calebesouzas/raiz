@@ -68,6 +68,7 @@ void Parser_debug(Parser *par);
 
 int Parser_parse_nud(Expr *res, Parser *par);
 int Parser_parse_expr(Expr *res, Parser *par, uint8_t min_bp);
+int Parser_parse_line(Expr *res, Parser *par);
 
 void binding_power_of(Token *op, uint8_t *lbp, uint8_t *rbp);
 
