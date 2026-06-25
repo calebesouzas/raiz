@@ -10,6 +10,7 @@
 But maybe you can find something interesting in here, I really don't know
 */
 
+#include "macros.h"
 #include "dynamic_arrays.h"
 #include "lexer.h"
 #include "parser.h"

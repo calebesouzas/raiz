@@ -138,6 +138,7 @@ int Parser_parse_line(Expr *res, Parser *par) {
     res->decl.kind = tok.kind;
     strncpy(res->decl.ident, ident, TOKEN_IDENTIFIER_SIZE);
     break; // case VAR or VAL
+  default: UNREACHABLE("token %s\n", token_label(&tok));
   }
 
   if (!((peeked = Parser_peek(par)).kind & TOKEN_FLAG_FINISHER)) {
@@ -256,6 +257,7 @@ void Expr_dump(Expr *root, size_t indent, size_t level) {
     fprintf(stderr, "value:\n");
     Expr_dump(root->decl.value, indent, level + 1);
   } break;
+  default: UNREACHABLE("expression kind (%d)\n", root->kind);
   }
 }
 

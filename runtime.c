@@ -17,6 +17,8 @@ int eval(Expr *e, Symbol_A *symbols) {
     switch (e->unary.op.kind) {
     case TOKEN_MINUS:
       return -eval(e->unary.in, symbols);
+    default:
+      PANIC("invalid unary operator (token %s)\n", token_label(&e->binary.op));
     }
     break;
   case EXPR_BINARY:
@@ -49,6 +51,8 @@ int eval(Expr *e, Symbol_A *symbols) {
       return ls * rs;
     case TOKEN_SLASH:
       return ls / rs;
+    default:
+      PANIC("invalid binary operator (token %s)\n", token_label(&e->binary.op));
     }
   case EXPR_GROUP:
     return eval(e->group.in, symbols);
@@ -79,6 +83,7 @@ int eval(Expr *e, Symbol_A *symbols) {
     da_add(symbols, new_symbol);
 
     return new_symbol.value;
+  default: UNREACHABLE("expression kind (%d)\n", e->kind);
   }
   return 0;
 }
