@@ -1,7 +1,7 @@
 #ifndef RAIZ_PARSER_H
 #define RAIZ_PARSER_H
 
-struct Expr {
+typedef struct Expr {
   enum {
     EXPR_LITERAL,
     EXPR_BINARY,
@@ -9,6 +9,7 @@ struct Expr {
     EXPR_GROUP,
     EXPR_IDENT,
     EXPR_DECL,
+    EXPR_BLOCK,
   } kind;
   union {
     int literal;
@@ -30,10 +31,13 @@ struct Expr {
       struct Expr *value;
       char ident[TOKEN_IDENTIFIER_SIZE];
     } decl;
+    struct {
+      struct Expr **dat;
+      size_t len, cap;
+    } block;
   };
-};
-
-typedef struct Expr Expr;
+} Expr;
+da_make(ExprNode_A, Expr**);
 
 typedef struct {
   Expr *ast;
@@ -45,11 +49,12 @@ enum ParserError {
   PARSER_EXPECTED_OPERATOR = 1,
   PARSER_INVALID_TOKEN,
   PARSER_UNEXPECTED_TOKEN,
-  PARSER_NON_CLOSED_GROUP,
   PARSER_TRAILING_PARENTHESES,
   PARSER_EXPECTED_IDENTIFIER,
   PARSER_EXPECTED_ASSIGNMENT,
   PARSER_EXPECTED_FINISH,
+  PARSER_NOT_CLOSED_GROUP,
+  PARSER_NOT_CLOSED_BLOCK,
 };
 
 Expr *Expr_(void);

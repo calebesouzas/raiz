@@ -2,8 +2,8 @@
 #define RAIZ_PARSER_C
 
 int Parser_parse_nud(Expr *res, Parser *par) {
-  Token tok, peeked;
-  Expr *in, *value;
+  Token tok, peeked, cur;
+  Expr *in, *value, *line;
   int err;
 
   tok = Parser_cur(par);
@@ -38,7 +38,7 @@ int Parser_parse_nud(Expr *res, Parser *par) {
     peeked = Parser_peek(par);
     if (peeked.kind != TOKEN_R_PAREN) {
       fprintf(stderr, "group not closed after '%s'\n", token_label(&tok));
-      return PARSER_NON_CLOSED_GROUP;
+      return PARSER_NOT_CLOSED_GROUP;
     }
     Parser_advance(par); // consume ')'
 
@@ -47,7 +47,31 @@ int Parser_parse_nud(Expr *res, Parser *par) {
   } else if (tok.kind == TOKEN_IDENT) {
     res->kind = EXPR_IDENT;
     strncpy(res->ident, tok.ident, TOKEN_IDENTIFIER_SIZE);
-  } else {
+  } else if (tok.kind == TOKEN_L_CURLY) {
+    Parser_advance(par); // `{`
+    do {
+      line = Expr_();
+
+      err = Parser_parse_line(line, par);
+      if (err)
+        return err;
+
+      peeked = Parser_peek(par);
+
+      da_add(&res->block, line);
+    } while (par->cur < par->toks->len && peeked.kind != TOKEN_R_CURLY);
+
+    if (peeked.kind != TOKEN_R_CURLY) {
+      fprintf(stderr, "not closed block\n");
+      //@todo print start line when we track line numbers
+      return PARSER_NOT_CLOSED_BLOCK;
+    }
+    Parser_advance(par); // before '}'
+
+    res->kind = EXPR_BLOCK;
+  } else if (tok.kind == TOKEN_EOF || tok.kind == TOKEN_R_CURLY)
+    return -1;
+  else {
     fprintf(stderr, "unexpected token: %s\n", token_label(&tok));
     return PARSER_UNEXPECTED_TOKEN;
   }
@@ -102,9 +126,15 @@ int Parser_parse_line(Expr *res, Parser *par) {
   Expr *value;
 
   tok = Parser_cur(par);
+  while (tok.kind & TOKEN_FLAG_FINISHER)
+    tok = Parser_advance(par);
+
   if (!(tok.kind & TOKEN_FLAG_STARTER)) {
     err = Parser_parse_expr(res, par, 0);
-    return err;
+    if (err)
+      return err;
+
+    goto finish_line;
   }
   switch (tok.kind) {
   case TOKEN_VAR:
@@ -141,13 +171,15 @@ int Parser_parse_line(Expr *res, Parser *par) {
   default: UNREACHABLE("token %s\n", token_label(&tok));
   }
 
+finish_line:
   if (!((peeked = Parser_peek(par)).kind & TOKEN_FLAG_FINISHER)) {
     fprintf(stderr, "expected new line or ';', found %s\n",
             token_label(&peeked));
     return PARSER_EXPECTED_FINISH;
   }
-  Parser_advance(par); // new line
 
+  // Parser_advance(par);
+  Parser_advance(par);
   return 0;
 }
 

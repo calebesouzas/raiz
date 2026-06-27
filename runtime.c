@@ -1,9 +1,13 @@
 #ifndef RAIZ_RUNTIME_C
 #define RAIZ_RUNTIME_C
 
-int eval(Expr *e, Symbol_A *symbols) {
+int eval(Expr *e, Scope *s) {
   Symbol *sym, new_symbol;
+  Scope *s_in;
   int value, ls, rs;
+  char *ident;
+  void *save;
+  Expr **line;
 
   if (!e) {
     fprintf(stderr, "expression is null\n");
@@ -16,7 +20,7 @@ int eval(Expr *e, Symbol_A *symbols) {
   case EXPR_UNARY:
     switch (e->unary.op.kind) {
     case TOKEN_MINUS:
-      return -eval(e->unary.in, symbols);
+      return -eval(e->unary.in, s);
     default:
       PANIC("invalid unary operator (token %s)\n", token_label(&e->binary.op));
     }
@@ -27,21 +31,22 @@ int eval(Expr *e, Symbol_A *symbols) {
         fprintf(stderr, "can only assign to indentifiers\n");
 	return 0;
       }
-      char *ident = e->binary.ls->ident;
-      da_for(sym, symbols) {
-        if (strcmp(ident, sym->ident) != 0)
-          continue;
-	if (!sym->is_variable) {
-          fprintf(stderr, "can't assign, '%s' is not a variable\n", ident);
-	  return 0;
-	}
-	sym->value = eval(e->binary.rs, symbols);
-	return sym->value;
+      ident = e->binary.ls->ident;
+      sym = Scope_search(s, ident, 0);
+      if (sym == NULL) {
+        fprintf(stderr, "undefined symbol '%s'\n", ident);
+	return 0;
       }
+      if (!sym->is_variable) {
+        fprintf(stderr, "can't assign, '%s' is not a variable\n", ident);
+	return 0;
+      }
+      sym->value = eval(e->binary.rs, s);
+      return sym->value;
     }
 
-    ls = eval(e->binary.ls, symbols);
-    rs = eval(e->binary.rs, symbols);
+    ls = eval(e->binary.ls, s);
+    rs = eval(e->binary.rs, s);
     switch (e->binary.op.kind) {
     case TOKEN_PLUS:
       return ls + rs;
@@ -55,35 +60,43 @@ int eval(Expr *e, Symbol_A *symbols) {
       PANIC("invalid binary operator (token %s)\n", token_label(&e->binary.op));
     }
   case EXPR_GROUP:
-    return eval(e->group.in, symbols);
-  case EXPR_IDENT: {
-    da_for(sym, symbols) {
-      if (strcmp(e->ident, sym->ident) == 0) {
-        return symbols->dat[i_sym].value;
-      }
-    }
-    fprintf(stderr, "symbol '%s' not found\n", e->ident);
-  } break;
-  case EXPR_DECL:
-    value = e->decl.value != NULL ? eval(e->decl.value, symbols) : 0;
-    da_for(sym, symbols) {
-      if (!sym->is_variable) {
-        fprintf(stderr, "attempt to assign to value %s\n", sym->ident);
-        return 0;
-      }
-      if (strcmp(sym->ident, e->decl.ident) == 0) {
-        sym->value = value;
-        return sym->value;
-      }
+    return eval(e->group.in, s);
+  case EXPR_IDENT:
+    sym = Scope_search(s, e->ident, 0);
+
+    if (sym == NULL) {
+      fprintf(stderr, "symbol '%s' not found\n", e->ident);
+      return 0;
     }
 
+    return sym->value;
+  case EXPR_DECL:
+    save = s->parent;
+    s->parent = NULL;
+    sym = Scope_search(s, e->decl.ident, 0);
+    if (sym != NULL) {
+      // already declared in this scope
+      fprintf(stderr, "symbol '%s' already declared in this scope\n",
+              e->decl.ident);
+      return 0;
+    }
+    s->parent = (Scope*)save;
+
+    value = e->decl.value != NULL ? eval(e->decl.value, s) : 0;
     new_symbol.value = value;
     new_symbol.is_variable = e->decl.kind == TOKEN_VAR;
     strcpy(new_symbol.ident, e->decl.ident);
-    da_add(symbols, new_symbol);
+    da_add(&s->symbols, new_symbol);
 
     return new_symbol.value;
-  default: UNREACHABLE("expression kind (%d)\n", e->kind);
+  case EXPR_BLOCK:
+    s_in = Scope_new(s);
+    da_for(line, &e->block) {
+      value = eval(*line, s_in);
+    }
+    free(s_in);
+    s->inner = NULL;
+    return value;
   }
   return 0;
 }

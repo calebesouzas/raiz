@@ -10,10 +10,17 @@
 But maybe you can find something interesting in here, I really don't know
 */
 
+char code[] = {
+  #embed "test_code.rz"
+  , 0
+};
+
 #include "macros.h"
 #include "dynamic_arrays.h"
 #include "lexer.h"
 #include "parser.h"
+#include "symbols.h"
+#include "scope.h"
 #include "runtime.h"
 #include "program.h"
 
@@ -26,25 +33,25 @@ int main(int argc, char **argv) {
   }
 #endif
   Token_A toks = {0};
-  int err = Lexer_tokenize(&toks, "var x\nval y = 32\nx = y * 2");
+  int err = Lexer_tokenize(&toks, code);
   if (err)
     return err;
 
-  Symbol_A symbols = {0};
+  Scope *scope = Scope_();
   Parser par = Parser_setup(&toks);
-  Program pro = Program_setup(&symbols, &par);
+  Program pro = Program_setup(scope, &par);
 
-  err = Program_build(&pro, &par);
+  err = Program_build(&pro);
   if (err)
     return err;
 
   int result = Program_run(&pro);
-  fprintf(stderr, "; symbol count = %zu\n", symbols.len);
   printf("%d\n", result);
   return 0;
 }
 
 #include "lexer.c"
 #include "parser.c"
+#include "scope.c"
 #include "program.c"
 #include "runtime.c"

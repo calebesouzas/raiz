@@ -1,19 +1,35 @@
 #ifndef RAIZ_PROGRAM_C
 #define RAIZ_PROGRAM_C
 
-int Program_build(Program *pro, Parser *par) {
+void breakpoint(void) {
+  for (int i = 0; i < 3; i++);
+}
+
+int Program_build(Program *pro) {
   int err;
   Token tok, peeked;
   Expr *node;
+  Parser *par;
 
-  pro->toks = par->toks;
+  par = pro->par;
 
   while ((tok = Parser_cur(par)).kind != TOKEN_EOF) {
     node = Expr_();
 
     err = Parser_parse_line(node, par);
-    if (err)
+    if (err > 0) {
+      breakpoint();
+      Token *t;
+      da_for(t, par->toks) {
+        fprintf(stderr, "token #%zu: %s,", i_t+1, token_label(t));
+	if (i_t == par->cur)
+          fprintf(stderr, " // current\n");
+	else
+          fprintf(stderr, "\n");
+      }
       return err;
+    } else if (err < 0)
+      break;
 
     da_add(&pro->code, node);
     Parser_advance(par);
@@ -28,7 +44,7 @@ int Program_run(Program *pro) {
 
   value = 0;
   da_for(expr, &pro->code) {
-    value = eval(*expr, pro->syms);
+    value = eval(*expr, pro->sco);
   }
 
   return value;
@@ -51,10 +67,11 @@ void Program_debug(Program *pro, size_t indent) {
   fprintf(stderr, "}\n// -------- //\n");
 }
 
-Program Program_setup(Symbol_A *syms, Parser *par) {
+Program Program_setup(Scope *sco, Parser *par) {
   Program pro = {0};
   pro.toks = par->toks;
-  pro.syms = syms;
+  pro.sco = sco;
+  pro.par = par;
   return pro;
 }
 

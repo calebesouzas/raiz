@@ -14,6 +14,8 @@ int Lexer_tokenize(Token_A *toks, char *source) {
     case '/': da_add(toks, (Token){.kind = TOKEN_SLASH}); break;
     case '(': da_add(toks, (Token){.kind = TOKEN_L_PAREN}); break;
     case ')': da_add(toks, (Token){.kind = TOKEN_R_PAREN}); break;
+    case '{': da_add(toks, (Token){.kind = TOKEN_L_CURLY}); break;
+    case '}': da_add(toks, (Token){.kind = TOKEN_R_CURLY}); break;
     case '=': da_add(toks, (Token){.kind = TOKEN_EQUAL}); break;
     case '\n':
       while (source[i+1] == '\n') {
@@ -103,6 +105,8 @@ char *token_label(Token *tok) {
   } break;
   case TOKEN_EQUAL: return "=";
   case TOKEN_NEWLINE: return "new line";
+  case TOKEN_L_CURLY: return "{";
+  case TOKEN_R_CURLY: return "}";
   case TOKEN_EOF: return "EOF";
   default: fprintf(stderr, "unknown token (id %d)\n", tok->kind); return NULL;
   }
