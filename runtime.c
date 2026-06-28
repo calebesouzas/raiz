@@ -18,9 +18,14 @@ int eval(Expr *e, Scope *s) {
   case EXPR_LITERAL:
     return e->literal;
   case EXPR_UNARY:
+    value = eval(e->unary.in, s);
     switch (e->unary.op.kind) {
     case TOKEN_MINUS:
-      return -eval(e->unary.in, s);
+      return -value;
+    case TOKEN_BANG:
+      return !value;
+    case TOKEN_TILDE:
+      return ~value;
     default:
       PANIC("invalid unary operator (token %s)\n", token_label(&e->binary.op));
     }
@@ -56,6 +61,32 @@ int eval(Expr *e, Scope *s) {
       return ls * rs;
     case TOKEN_SLASH:
       return ls / rs;
+    case TOKEN_EQUAL_X2:
+      return ls == rs;
+    case TOKEN_BANG_EQUAL:
+      return ls != rs;
+    case TOKEN_PIPE:
+      return ls | rs;
+    case TOKEN_PIPE_X2:
+      return ls || rs;
+    case TOKEN_AMPER:
+      return ls & rs;
+    case TOKEN_AMPER_X2:
+      return ls && rs;
+    case TOKEN_HAT:
+      return ls ^ rs;
+    case TOKEN_LESS:
+      return ls < rs;
+    case TOKEN_LESS_EQUAL:
+      return ls <= rs;
+    case TOKEN_LESS_X2:
+      return ls << rs;
+    case TOKEN_GREAT:
+      return ls > rs;
+    case TOKEN_GREAT_EQUAL:
+      return ls >= rs;
+    case TOKEN_GREAT_X2:
+      return ls >> rs;
     default:
       PANIC("invalid binary operator (token %s)\n", token_label(&e->binary.op));
     }

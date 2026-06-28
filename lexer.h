@@ -2,38 +2,71 @@
 #define RAIZ_LEXER_H
 
 enum TokenFlags {
-  TOKEN_FLAG_BREAKING = 1 << 16, // breaks Pratt Parser loop
-  TOKEN_FLAG_OP       = 1 << 17, // is it an operator?
-  TOKEN_FLAG_UNARY    = 1 << 18, // can it also be unary operator?
-  TOKEN_FLAG_GROUPING = 1 << 19, // does it have a needed pair?
-  TOKEN_FLAG_KEYWORD  = 1 << 20, // pretty obvious...
-  TOKEN_FLAG_STARTER  = 1 << 21, // it may start an expression-like statement
-  TOKEN_FLAG_FINISHER = 1 << 22, // can it finish an expression-like statement?
+  TOKEN_FLAG_BREAKING = 1 << 0, // breaks Pratt Parser loop
+  TOKEN_FLAG_OP       = 1 << 1, // is it an operator?
+  TOKEN_FLAG_UNARY    = 1 << 2, // can it also be unary operator?
+  TOKEN_FLAG_GROUPING = 1 << 3, // does it have a needed pair?
+  TOKEN_FLAG_KEYWORD  = 1 << 4, // pretty obvious...
+  TOKEN_FLAG_STARTER  = 1 << 5, // it may start an expression-like statement
+  TOKEN_FLAG_FINISHER = 1 << 6, // can it finish an expression-like statement?
+  TOKEN_FLAG_RIGHT    = 1 << 7, // is it right associative infix operator?
 };
 
+#define TOKEN_X_MACRO\
+  X(TOKEN_INVALID,  0)\
+  X(TOKEN_NUMBER,   0)\
+  X(TOKEN_IDENT,    0)\
+\
+  X(TOKEN_EQUAL,      TOKEN_FLAG_OP | TOKEN_FLAG_RIGHT)\
+  X(TOKEN_PLUS,       TOKEN_FLAG_OP)\
+  X(TOKEN_MINUS,      TOKEN_FLAG_OP | TOKEN_FLAG_UNARY)\
+  X(TOKEN_STAR,       TOKEN_FLAG_OP)\
+  X(TOKEN_SLASH,      TOKEN_FLAG_OP)\
+  X(TOKEN_EQUAL_X2,   TOKEN_FLAG_OP)\
+  X(TOKEN_BANG,       TOKEN_FLAG_OP | TOKEN_FLAG_UNARY)\
+  X(TOKEN_BANG_EQUAL, TOKEN_FLAG_OP)\
+  X(TOKEN_AMPER,      TOKEN_FLAG_OP)\
+  X(TOKEN_AMPER_X2,   TOKEN_FLAG_OP)\
+  X(TOKEN_PIPE,       TOKEN_FLAG_OP)\
+  X(TOKEN_PIPE_X2,    TOKEN_FLAG_OP)\
+  X(TOKEN_HAT,        TOKEN_FLAG_OP)\
+  X(TOKEN_TILDE,      TOKEN_FLAG_OP | TOKEN_FLAG_UNARY)\
+  X(TOKEN_LESS,       TOKEN_FLAG_OP)\
+  X(TOKEN_LESS_X2,    TOKEN_FLAG_OP)\
+  X(TOKEN_LESS_EQUAL, TOKEN_FLAG_OP)\
+  X(TOKEN_GREAT,      TOKEN_FLAG_OP)\
+  X(TOKEN_GREAT_X2,   TOKEN_FLAG_OP)\
+  X(TOKEN_GREAT_EQUAL,TOKEN_FLAG_OP)\
+\
+  X(TOKEN_L_PAREN, TOKEN_FLAG_GROUPING)\
+  X(TOKEN_R_PAREN, TOKEN_FLAG_GROUPING | TOKEN_FLAG_BREAKING)\
+  X(TOKEN_L_CURLY, TOKEN_FLAG_GROUPING)\
+  X(TOKEN_R_CURLY, TOKEN_FLAG_GROUPING | TOKEN_FLAG_BREAKING)\
+\
+  X(TOKEN_VAR, TOKEN_FLAG_KEYWORD | TOKEN_FLAG_STARTER)\
+  X(TOKEN_VAL, TOKEN_FLAG_KEYWORD | TOKEN_FLAG_STARTER)\
+\
+  X(TOKEN_NEWLINE, TOKEN_FLAG_BREAKING | TOKEN_FLAG_FINISHER)\
+\
+  X(TOKEN_EOF, TOKEN_FLAG_BREAKING)
+
 enum TokenKind {
-  TOKEN_INVALID = 0,
-  TOKEN_NUMBER  = 1,
-  TOKEN_PLUS    = 2 | TOKEN_FLAG_OP,
-  TOKEN_MINUS   = 3 | TOKEN_FLAG_OP | TOKEN_FLAG_UNARY,
-  TOKEN_STAR    = 4 | TOKEN_FLAG_OP,
-  TOKEN_SLASH   = 5 | TOKEN_FLAG_OP,
-  TOKEN_L_PAREN = 6 | TOKEN_FLAG_GROUPING,
-  TOKEN_R_PAREN = 7 | TOKEN_FLAG_GROUPING | TOKEN_FLAG_BREAKING,
-  TOKEN_VAR     = 8 | TOKEN_FLAG_KEYWORD | TOKEN_FLAG_STARTER,
-  TOKEN_VAL     = 9 | TOKEN_FLAG_KEYWORD | TOKEN_FLAG_STARTER,
-  TOKEN_IDENT   = 10,
-  TOKEN_EQUAL   = 11 | TOKEN_FLAG_OP,
-  TOKEN_NEWLINE = 12 | TOKEN_FLAG_BREAKING | TOKEN_FLAG_FINISHER,
-  TOKEN_L_CURLY = 13,
-  TOKEN_R_CURLY = 14 | TOKEN_FLAG_BREAKING,
-  TOKEN_EOF     = 15 | TOKEN_FLAG_BREAKING,
+#define X(kind, flags) kind,
+TOKEN_X_MACRO
+#undef X
+};
+
+const int TOKEN_FLAGS[] = {
+#define X(kind, flags) flags,
+TOKEN_X_MACRO
+#undef X
 };
 
 #define TOKEN_IDENTIFIER_SIZE 32
 
 typedef struct {
   enum TokenKind kind;
+  int flags;
   int value; // if it's `TOKEN_NUMBER`
   char ident[TOKEN_IDENTIFIER_SIZE]; // if it's `TOKEN_IDENT`
 } Token;

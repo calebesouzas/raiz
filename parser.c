@@ -13,14 +13,15 @@ int Parser_parse_nud(Expr *res, Parser *par) {
   else if (tok.kind == TOKEN_NUMBER) {
     res->kind = EXPR_LITERAL;
     res->literal = tok.value;
-  } else if (tok.kind & TOKEN_FLAG_UNARY) {
-    uint8_t lbp, rbp;
-    binding_power_of(&tok, &lbp, &rbp);
+  } else if (tok.flags & TOKEN_FLAG_UNARY) {
+    uint8_t bp = get_binding_power(tok.kind);
+    if (tok.flags & TOKEN_FLAG_RIGHT)
+      bp -= 1;
 
     Parser_advance(par);
 
     in = Expr_();
-    err = Parser_parse_expr(in, par, rbp);
+    err = Parser_parse_expr(in, par, bp);
     if (err)
       return err;
 
@@ -69,9 +70,7 @@ int Parser_parse_nud(Expr *res, Parser *par) {
     Parser_advance(par); // before '}'
 
     res->kind = EXPR_BLOCK;
-  } else if (tok.kind == TOKEN_EOF || tok.kind == TOKEN_R_CURLY)
-    return -1;
-  else {
+  } else {
     fprintf(stderr, "unexpected token: %s\n", token_label(&tok));
     return PARSER_UNEXPECTED_TOKEN;
   }
@@ -82,21 +81,24 @@ int Parser_parse_expr(Expr *ls, Parser *par, uint8_t min_bp) {
   Expr *rs;
   Expr *res;
   Token op;
-  uint8_t lbp, rbp;
+  uint8_t bp;
   int err;
 
   err = Parser_parse_nud(ls, par);
   if (err)
     return err;
 
-  while (!((op = Parser_peek(par)).kind & TOKEN_FLAG_BREAKING)) {
-    if (!(op.kind & TOKEN_FLAG_OP)) {
+  while (!((op = Parser_peek(par)).flags & TOKEN_FLAG_BREAKING)) {
+    if (!(op.flags & TOKEN_FLAG_OP)) {
       fprintf(stderr, "expected operator, found %s\n", token_label(&op));
       return PARSER_EXPECTED_OPERATOR;
     }
 
-    binding_power_of(&op, &lbp, &rbp);
-    if (lbp < min_bp)
+    bp = get_binding_power(op.kind);
+    if (op.flags & TOKEN_FLAG_RIGHT)
+      bp -= 1;
+
+    if (bp < min_bp)
       break;
 
     // to figure out: why do we need two advances?
@@ -104,7 +106,7 @@ int Parser_parse_expr(Expr *ls, Parser *par, uint8_t min_bp) {
     Parser_advance(par);
 
     rs = Expr_();
-    err = Parser_parse_expr(rs, par, rbp);
+    err = Parser_parse_expr(rs, par, bp);
     if (err)
       return err;
 
@@ -126,10 +128,10 @@ int Parser_parse_line(Expr *res, Parser *par) {
   Expr *value;
 
   tok = Parser_cur(par);
-  while (tok.kind & TOKEN_FLAG_FINISHER)
+  while (tok.flags & TOKEN_FLAG_FINISHER)
     tok = Parser_advance(par);
 
-  if (!(tok.kind & TOKEN_FLAG_STARTER)) {
+  if (!(tok.flags & TOKEN_FLAG_STARTER)) {
     err = Parser_parse_expr(res, par, 0);
     if (err)
       return err;
@@ -172,7 +174,7 @@ int Parser_parse_line(Expr *res, Parser *par) {
   }
 
 finish_line:
-  if (!((peeked = Parser_peek(par)).kind & TOKEN_FLAG_FINISHER)) {
+  if (!((peeked = Parser_peek(par)).flags & TOKEN_FLAG_FINISHER)) {
     fprintf(stderr, "expected new line or ';', found %s\n",
             token_label(&peeked));
     return PARSER_EXPECTED_FINISH;
@@ -204,15 +206,29 @@ void Parser_debug(Parser *par) {
   fprintf(stderr, "// ------ //\n");
 }
 
-void binding_power_of(Token *op_tok, uint8_t *lbp, uint8_t *rbp) {
-  const uint8_t SUM_SUB = 1;
-  const uint8_t MUL_DIV = 3;
-  uint32_t op = op_tok->kind;
-  assert((op_tok->kind & TOKEN_FLAG_OP) && "Should provide operator token");
-  switch (op) {
-  case TOKEN_PLUS: case TOKEN_MINUS: *lbp = SUM_SUB; *rbp = SUM_SUB+1; break;
-  case TOKEN_STAR: case TOKEN_SLASH: *lbp = MUL_DIV; *rbp = MUL_DIV+1; break;
-  default: break;
+uint8_t get_binding_power(enum TokenKind kind) {
+  switch(kind) {
+  case TOKEN_EQUAL:       return 10;  // =
+  case TOKEN_BANG:        return 20;  // !
+  case TOKEN_PIPE_X2:     return 30;  // ||
+  case TOKEN_AMPER_X2:    return 40;  // &&
+  case TOKEN_TILDE:       return 50;  // ~
+  case TOKEN_PIPE:        return 60;  // |
+  case TOKEN_HAT:         return 70;  // ^
+  case TOKEN_AMPER:       return 80;  // &
+  case TOKEN_EQUAL_X2:                // ==
+  case TOKEN_BANG_EQUAL:  return 90;  // !=
+  case TOKEN_LESS:                    // <
+  case TOKEN_LESS_EQUAL:              // <=
+  case TOKEN_GREAT:                   // >
+  case TOKEN_GREAT_EQUAL: return 100; // >=
+  case TOKEN_LESS_X2:                 // <<
+  case TOKEN_GREAT_X2:    return 110; // >>
+  case TOKEN_PLUS:                    // +
+  case TOKEN_MINUS:       return 120; // -
+  case TOKEN_STAR:                    // *
+  case TOKEN_SLASH:       return 130; // /
+  default: PANIC("token is not an operator or is unhandled (id %d)\n", kind);
   }
 }
 

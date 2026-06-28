@@ -1,6 +1,9 @@
 #ifndef RAIZ_LEXER_C
 #define RAIZ_LEXER_C
 
+#define tk(k, ...)\
+((Token){.kind = (k), .flags = TOKEN_FLAGS[(k)], __VA_ARGS__})
+
 int Lexer_tokenize(Token_A *toks, char *source) {
   size_t len = strlen(source);
   size_t i;
@@ -8,20 +11,74 @@ int Lexer_tokenize(Token_A *toks, char *source) {
   for (i = 0; i < len; i++) {
     c = source[i];
     switch (c) {
-    case '+': da_add(toks, (Token){.kind = TOKEN_PLUS}); break;
-    case '-': da_add(toks, (Token){.kind = TOKEN_MINUS}); break;
-    case '*': da_add(toks, (Token){.kind = TOKEN_STAR}); break;
-    case '/': da_add(toks, (Token){.kind = TOKEN_SLASH}); break;
-    case '(': da_add(toks, (Token){.kind = TOKEN_L_PAREN}); break;
-    case ')': da_add(toks, (Token){.kind = TOKEN_R_PAREN}); break;
-    case '{': da_add(toks, (Token){.kind = TOKEN_L_CURLY}); break;
-    case '}': da_add(toks, (Token){.kind = TOKEN_R_CURLY}); break;
-    case '=': da_add(toks, (Token){.kind = TOKEN_EQUAL}); break;
+    case '+': da_add(toks, tk(TOKEN_PLUS)); break;
+    case '-': da_add(toks, tk(TOKEN_MINUS)); break;
+    case '*': da_add(toks, tk(TOKEN_STAR)); break;
+    case '/': da_add(toks, tk(TOKEN_SLASH)); break;
+    case '(': da_add(toks, tk(TOKEN_L_PAREN)); break;
+    case ')': da_add(toks, tk(TOKEN_R_PAREN)); break;
+    case '{': da_add(toks, tk(TOKEN_L_CURLY)); break;
+    case '}': da_add(toks, tk(TOKEN_R_CURLY)); break;
+    case '~': da_add(toks, tk(TOKEN_TILDE)); break;
+    case '=':
+      if (source[i+1] == '=') {
+        i++;
+        da_add(toks, tk(TOKEN_EQUAL_X2));
+      } else {
+        da_add(toks, tk(TOKEN_EQUAL));
+      }
+      break;
+    case '!':
+      if (source[i+1] == '=') {
+        i++;
+        da_add(toks, tk(TOKEN_BANG_EQUAL));
+      } else {
+        da_add(toks, tk(TOKEN_BANG));
+      }
+      break;
+    case '|':
+      if (source[i+1] == c) {
+        i++;
+        da_add(toks, tk(TOKEN_PIPE_X2));
+      } else {
+        da_add(toks, tk(TOKEN_PIPE));
+      }
+      break;
+    case '&':
+      if (source[i+1] == c) {
+        i++;
+        da_add(toks, tk(TOKEN_AMPER_X2));
+      } else {
+        da_add(toks, tk(TOKEN_AMPER));
+      }
+      break;
+    case '<':
+      if (source[i+1] == c) {
+        i++;
+        da_add(toks, tk(TOKEN_LESS_X2));
+      } else if (source[i+1] == '=') {
+        i++;
+        da_add(toks, tk(TOKEN_LESS_EQUAL));
+      } else {
+        da_add(toks, tk(TOKEN_LESS));
+      }
+      break;
+    case '>':
+      if (source[i+1] == c) {
+        i++;
+        da_add(toks, tk(TOKEN_GREAT_X2));
+      } else if (source[i+1] == '=') {
+        i++;
+        da_add(toks, tk(TOKEN_GREAT_EQUAL));
+      } else {
+        da_add(toks, tk(TOKEN_GREAT));
+      }
+      break;
     case '\n':
       while (source[i+1] == '\n') {
         i++;
       }
-      da_add(toks, (Token){.kind = TOKEN_NEWLINE});
+      da_add(toks, tk(TOKEN_NEWLINE));
       break;
     case ' ': case '\t': case '\r': break;
     default: {
@@ -33,7 +90,7 @@ int Lexer_tokenize(Token_A *toks, char *source) {
             continue;
           num = (num * 10) + (c - '0');
         }
-        da_add(toks, ((Token){.kind = TOKEN_NUMBER, .value = num}));
+        da_add(toks, tk(TOKEN_NUMBER, .value = num));
       } else if (isalpha(c) || c == '_') {
         size_t start = i;
         Token tok;
@@ -48,6 +105,7 @@ int Lexer_tokenize(Token_A *toks, char *source) {
         if (!token_keyword(&tok, &source[start], i - start)) {
           strncpy(tok.ident, &source[start], i - start);
           tok.kind = TOKEN_IDENT;
+          tok.flags = TOKEN_FLAGS[tok.kind];
         }
 
         if (i - start > 0)
@@ -60,7 +118,7 @@ int Lexer_tokenize(Token_A *toks, char *source) {
     } break;
     }
   }
-  da_add(toks, (Token){.kind = TOKEN_EOF});
+  da_add(toks, tk(TOKEN_EOF));
   return 0;
 }
 
@@ -75,6 +133,7 @@ bool token_keyword(Token *tok, char *ident, size_t len) {
 
     if (key.len == len && strncmp(ident, key.string, key.len) == 0) {
       tok->kind = key.kind;
+      tok->flags = TOKEN_FLAGS[key.kind];
       return true;
     }
   }
@@ -104,6 +163,15 @@ char *token_label(Token *tok) {
     return buf;
   } break;
   case TOKEN_EQUAL: return "=";
+  case TOKEN_EQUAL_X2: return "==";
+  case TOKEN_BANG: return "!";
+  case TOKEN_BANG_EQUAL: return "!=";
+  case TOKEN_AMPER: return "&";
+  case TOKEN_AMPER_X2: return "&&";
+  case TOKEN_PIPE: return "|";
+  case TOKEN_PIPE_X2: return "||";
+  case TOKEN_HAT: return "^";
+  case TOKEN_TILDE: return "~";
   case TOKEN_NEWLINE: return "new line";
   case TOKEN_L_CURLY: return "{";
   case TOKEN_R_CURLY: return "}";
