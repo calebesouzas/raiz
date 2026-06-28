@@ -65,7 +65,7 @@ TOKEN_X_MACRO
 #undef X
 };
 
-#define TOKEN_IDENTIFIER_SIZE 32
+#define TOKEN_IDENTIFIER_SIZE ((size_t)32)
 
 typedef struct {
   enum TokenKind kind;
