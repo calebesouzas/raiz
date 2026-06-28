@@ -10,6 +10,7 @@ typedef struct {
 
 Program Program_setup(Scope *sco, Parser *par);
 void Program_debug(Program *pro, size_t indent);
+void Program_free(Program *pro);
 int Program_build(Program *pro);
 int Program_run(Program *pro);
 

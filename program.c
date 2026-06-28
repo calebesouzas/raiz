@@ -75,4 +75,15 @@ Program Program_setup(Scope *sco, Parser *par) {
   return pro;
 }
 
+void Program_free(Program *pro) {
+  Expr **expr;
+
+  da_for(expr, &pro->code) {
+    Expr_free(*expr);
+  }
+
+  Scope_free(pro->sco);
+  da_free(pro->toks);
+}
+
 #endif // RAIZ_PROGRAM_C

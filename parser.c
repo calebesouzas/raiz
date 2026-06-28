@@ -246,6 +246,39 @@ Expr *Expr_copy(Expr *src) {
   return e;
 }
 
+void Expr_free(Expr *node) {
+  Expr **expr;
+
+  if (node == NULL)
+    return;
+
+  switch (node->kind) {
+  case EXPR_LITERAL:
+  case EXPR_IDENT:
+    break;
+  case EXPR_BINARY:
+    Expr_free(node->binary.ls);
+    Expr_free(node->binary.rs);
+    break;
+  case EXPR_UNARY:
+    Expr_free(node->unary.in);
+    break;
+  case EXPR_GROUP:
+    Expr_free(node->group.in);
+    break;
+  case EXPR_DECL:
+    if (node->decl.value != NULL)
+      Expr_free(node->decl.value);
+    break;
+  case EXPR_BLOCK:
+    da_for(expr, &node->block) {
+      Expr_free(*expr);
+    }
+    break;
+  }
+  free(node);
+}
+
 void Expr_dump(Expr *root, size_t indent, size_t level) {
   for (size_t i = 0; i < level * indent; i++) {
     fputc(' ', stderr);

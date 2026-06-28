@@ -34,7 +34,11 @@ Symbol *Scope_search(Scope *sco, char *symbol, size_t len) {
   return NULL;
 }
 
-Scope *Scope_next(Scope **sco) { (*sco) = (*sco)->parent; return *sco; }
-Scope *Scope_prev(Scope **sco) { (*sco) = (*sco)->inner; return *sco; }
+void Scope_free(Scope *sco) {
+  if (sco->inner != NULL)
+    Scope_free(sco->inner);
 
+  da_free(&sco->symbols);
+  free(sco);
+}
 #endif // RAIZ_SCOPE_C

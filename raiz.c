@@ -47,6 +47,8 @@ int main(int argc, char **argv) {
 
   int result = Program_run(&pro);
   printf("%d\n", result);
+
+  Program_free(&pro);
   return 0;
 }
 

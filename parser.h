@@ -61,6 +61,8 @@ Expr *Expr_(void);
 
 Expr *Expr_copy(Expr *src);
 
+void Expr_free(Expr *node);
+
 void Expr_dump(Expr *root, size_t indent, size_t level);
 
 Token Parser_cur(Parser *par);

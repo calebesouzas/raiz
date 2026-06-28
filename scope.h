@@ -10,8 +10,7 @@ Scope *Scope_(void);
 Scope *Scope_new(Scope *parent);
 Symbol *Scope_search(Scope *sco, char *symbol, size_t len);
 
-Scope *Scope_next(Scope **sco); // advance and return the new current
-Scope *Scope_prev(Scope **sco); // retreat and return the new current
+void Scope_free(Scope *sco);
 
 #endif // RAIZ_SCOPE_H
 
