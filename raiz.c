@@ -33,7 +33,8 @@ int main(int argc, char **argv) {
   }
 #endif
   Token_A toks = {0};
-  int err = Lexer_tokenize(&toks, code);
+  Lexer lex = Lexer_setup(&toks, code);
+  int err = Lexer_tokenize(&lex);
   if (err)
     return err;
 

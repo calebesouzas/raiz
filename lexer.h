@@ -68,14 +68,35 @@ TOKEN_X_MACRO
 #define TOKEN_IDENTIFIER_SIZE ((size_t)32)
 
 typedef struct {
+  // identification
   enum TokenKind kind;
   int flags;
+
+  // data
   int value; // if it's `TOKEN_NUMBER`
   char ident[TOKEN_IDENTIFIER_SIZE]; // if it's `TOKEN_IDENT`
+
+  // metadata
+  char *source;
+  size_t start, line, column, len;
 } Token;
 da_make(Token_A, Token*);
 
-int Lexer_tokenize(Token_A *toks, char *source);
+typedef struct {
+  Token_A *toks;
+  char *source;
+  size_t source_len;
+
+  // source iteration
+  char c;
+  size_t i;
+
+  // For `Token` metadata
+  size_t start, lines, columns;
+} Lexer;
+
+Lexer Lexer_setup(Token_A *toks, char *source);
+int Lexer_tokenize(Lexer *lex);
 
 char *token_label(Token *tok);
 bool token_keyword(Token *tok, char *ident, size_t len);
@@ -93,5 +114,14 @@ const struct TokenKeywordTable KEYWORDS[] = {
   {"true", 4, TOKEN_TRUE, 1},
   {"false", 5, TOKEN_FALSE, 0},
 };
+
+char Lexer_peek(Lexer *lex);
+char Lexer_next(Lexer *lex);
+char Lexer_advance(Lexer *lex);
+char Lexer_cur(Lexer *lex);
+bool Lexer_active(Lexer *lex);
+char *Lexer_point(Lexer *lex);
+size_t Lexer_len(Lexer *lex);
+void Lexer_add(Lexer *lex, Token tok);
 
 #endif // RAIZ_LEXER_H

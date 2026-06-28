@@ -1,124 +1,131 @@
 #ifndef RAIZ_LEXER_C
 #define RAIZ_LEXER_C
 
+#define cur() Lexer_cur(lex)
+#define peek() Lexer_peek(lex)
+#define advance() Lexer_advance(lex)
+#define add(tok) Lexer_add(lex, (tok))
+
 #define tk(k, ...)\
 ((Token){.kind = (k), .flags = TOKEN_FLAGS[(k)], __VA_ARGS__})
 
-int Lexer_tokenize(Token_A *toks, char *source) {
-  size_t len = strlen(source);
-  size_t i;
-  char c;
-  for (i = 0; i < len; i++) {
-    c = source[i];
-    switch (c) {
-    case '+': da_add(toks, tk(TOKEN_PLUS)); break;
-    case '-': da_add(toks, tk(TOKEN_MINUS)); break;
-    case '*': da_add(toks, tk(TOKEN_STAR)); break;
-    case '/': da_add(toks, tk(TOKEN_SLASH)); break;
-    case '(': da_add(toks, tk(TOKEN_L_PAREN)); break;
-    case ')': da_add(toks, tk(TOKEN_R_PAREN)); break;
-    case '{': da_add(toks, tk(TOKEN_L_CURLY)); break;
-    case '}': da_add(toks, tk(TOKEN_R_CURLY)); break;
-    case '~': da_add(toks, tk(TOKEN_TILDE)); break;
+int Lexer_tokenize(Lexer *lex) {
+  Token_A *toks = lex->toks;
+
+  for (lex->c = lex->source[0]; Lexer_active(lex); advance()) {
+    lex->start = lex->i;
+    lex->columns++;
+    switch (lex->c) {
+    case '+': add(tk(TOKEN_PLUS)); break;
+    case '-': add(tk(TOKEN_MINUS)); break;
+    case '*': add(tk(TOKEN_STAR)); break;
+    case '/': add(tk(TOKEN_SLASH)); break;
+    case '(': add(tk(TOKEN_L_PAREN)); break;
+    case ')': add(tk(TOKEN_R_PAREN)); break;
+    case '{': add(tk(TOKEN_L_CURLY)); break;
+    case '}': add(tk(TOKEN_R_CURLY)); break;
+    case '~': add(tk(TOKEN_TILDE)); break;
     case '=':
-      if (source[i+1] == '=') {
-        i++;
-        da_add(toks, tk(TOKEN_EQUAL_X2));
+      if (peek() == '=') {
+        advance();
+        add(tk(TOKEN_EQUAL_X2));
       } else {
-        da_add(toks, tk(TOKEN_EQUAL));
+        add(tk(TOKEN_EQUAL));
       }
       break;
     case '!':
-      if (source[i+1] == '=') {
-        i++;
-        da_add(toks, tk(TOKEN_BANG_EQUAL));
+      if (peek() == '=') {
+        advance();
+        add(tk(TOKEN_BANG_EQUAL));
       } else {
-        da_add(toks, tk(TOKEN_BANG));
+        add(tk(TOKEN_BANG));
       }
       break;
     case '|':
-      if (source[i+1] == c) {
-        i++;
-        da_add(toks, tk(TOKEN_PIPE_X2));
+      if (peek() == cur()) {
+        advance();
+        add(tk(TOKEN_PIPE_X2));
       } else {
-        da_add(toks, tk(TOKEN_PIPE));
+        add(tk(TOKEN_PIPE));
       }
       break;
     case '&':
-      if (source[i+1] == c) {
-        i++;
-        da_add(toks, tk(TOKEN_AMPER_X2));
+      if (peek() == cur()) {
+        advance();
+        add(tk(TOKEN_AMPER_X2));
       } else {
-        da_add(toks, tk(TOKEN_AMPER));
+        add(tk(TOKEN_AMPER));
       }
       break;
     case '<':
-      if (source[i+1] == c) {
-        i++;
-        da_add(toks, tk(TOKEN_LESS_X2));
-      } else if (source[i+1] == '=') {
-        i++;
-        da_add(toks, tk(TOKEN_LESS_EQUAL));
+      if (peek() == cur()) {
+        advance();
+        add(tk(TOKEN_LESS_X2));
+      } else if (peek() == '=') {
+        advance();
+        add(tk(TOKEN_LESS_EQUAL));
       } else {
-        da_add(toks, tk(TOKEN_LESS));
+        add(tk(TOKEN_LESS));
       }
       break;
     case '>':
-      if (source[i+1] == c) {
-        i++;
-        da_add(toks, tk(TOKEN_GREAT_X2));
-      } else if (source[i+1] == '=') {
-        i++;
-        da_add(toks, tk(TOKEN_GREAT_EQUAL));
+      if (peek() == cur()) {
+        advance();
+        add(tk(TOKEN_GREAT_X2));
+      } else if (peek() == '=') {
+        advance();
+        add(tk(TOKEN_GREAT_EQUAL));
       } else {
-        da_add(toks, tk(TOKEN_GREAT));
+        add(tk(TOKEN_GREAT));
       }
       break;
     case '\n':
-      while (source[i+1] == '\n') {
-        i++;
+      lex->columns = 1;
+      while (peek() == '\n') {
+        lex->lines++;
+        advance();
       }
-      da_add(toks, tk(TOKEN_NEWLINE));
+      add(tk(TOKEN_NEWLINE));
       break;
     case ' ': case '\t': case '\r': break;
     default: {
-      if (isdigit(c)) {
-        int num = c - '0';
-        while (isdigit((c = source[i + 1])) || c == '_') {
-          i++;
-          if (c == '_')
+      if (isdigit(cur())) {
+        int num = cur() - '0';
+        while (isdigit(peek()) || peek() == '_') {
+          advance();
+          if (cur() == '_')
             continue;
-          num = (num * 10) + (c - '0');
+          num = (num * 10) + (cur() - '0');
         }
         da_add(toks, tk(TOKEN_NUMBER, .value = num));
-      } else if (isalpha(c) || c == '_') {
-        size_t start = i;
+      } else if (isalpha(cur()) || cur() == '_') {
         Token tok;
 
         memset(tok.ident, 0, TOKEN_IDENTIFIER_SIZE);
 
         do {
-          i++;
-          c = source[i];
-        } while (i - start < TOKEN_IDENTIFIER_SIZE && isalnum(c) || c == '_');
+          advance();
+        } while (Lexer_len(lex) < TOKEN_IDENTIFIER_SIZE
+            && isalnum(cur()) || cur() == '_');
 
-        if (!token_keyword(&tok, &source[start], i - start)) {
-          strncpy(tok.ident, &source[start], i - start);
+        if (!token_keyword(&tok, Lexer_point(lex), Lexer_len(lex))) {
+          strncpy(tok.ident, Lexer_point(lex), Lexer_len(lex));
           tok.kind = TOKEN_IDENT;
           tok.flags = TOKEN_FLAGS[tok.kind];
         }
 
-        if (i - start > 0)
-          i--;
+        if (Lexer_len(lex) > 0)
+          lex->i--;
 
         da_add(toks, tok);
       } else {
-        fprintf(stderr, "unhandled byte (%02x) at index [%zu]\n", c, i);
+        fprintf(stderr, "unhandled byte %02x at index %zu\n", lex->c, lex->i);
+        return 1;
       }
     } break;
     }
   }
-  da_add(toks, tk(TOKEN_EOF));
+  add(tk(TOKEN_EOF));
   return 0;
 }
 
@@ -179,6 +186,50 @@ char *token_label(Token *tok) {
   case TOKEN_EOF: return "EOF";
   default: fprintf(stderr, "unknown token (id %d)\n", tok->kind); return NULL;
   }
+}
+
+Lexer Lexer_setup(Token_A *toks, char *source) {
+  Lexer lex = {0};
+  lex.toks = toks;
+  lex.source = source;
+  lex.source_len = strlen(source);
+  return lex;
+}
+
+char Lexer_peek(Lexer *lex) {
+  lex->c = lex->source[lex->i+1];
+  return lex->c;
+}
+char Lexer_next(Lexer *lex) {
+  lex->c = lex->source[lex->i++];
+  return lex->c;
+}
+char Lexer_advance(Lexer *lex) {
+  lex->c = lex->source[++lex->i];
+  return lex->c;
+}
+char Lexer_cur(Lexer *lex) {
+  return lex->c;
+}
+bool Lexer_active(Lexer *lex) {
+  return lex->i < lex->source_len;
+}
+char *Lexer_point(Lexer *lex) {
+  return &lex->source[lex->start];
+}
+size_t Lexer_len(Lexer *lex) {
+  return lex->i - lex->start;
+}
+
+void Lexer_add(Lexer *lex, Token tok) {
+  tok.source = lex->source;
+  tok.len = Lexer_len(lex);
+  if (tok.len == 0)
+    tok.len = 1;
+  tok.start = lex->start;
+  tok.line = lex->lines;
+  tok.column = lex->columns;
+  da_add(lex->toks, tok);
 }
 
 #endif // RAIZ_LEXER_C
