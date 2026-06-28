@@ -15,7 +15,7 @@ Scope *Scope_new(Scope *parent) {
   return inner;
 }
 
-Symbol *Scope_search_(Scope *sco, char *symbol, size_t len) {
+Symbol *Scope_search(Scope *sco, char *symbol, size_t len) {
   Symbol *sym;
   Scope *cur = sco;
   size_t l = len > 0 ? len : strlen(symbol);
@@ -26,7 +26,7 @@ Symbol *Scope_search_(Scope *sco, char *symbol, size_t len) {
   }
   do {
     da_for(sym, &cur->symbols) {
-      if (strcmp(sym->ident, symbol) == 0)
+      if (strncmp(sym->ident, symbol, l) == 0)
         return sym;
     }
     cur = cur->parent;
