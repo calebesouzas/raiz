@@ -8,7 +8,10 @@ typedef struct Scope {
 
 Scope *Scope_(void);
 Scope *Scope_new(Scope *parent);
-Symbol *Scope_search(Scope *sco, char *symbol, size_t len);
+#define Scope_search(sco, sym, len)\
+  Scope_search_(sco, sym, len);\
+  fprintf(stderr, "searching at %s:%d from %s()\n", __FILE__, __LINE__, __FUNCTION__)
+Symbol *Scope_search_(Scope *sco, char *symbol, size_t len);
 
 void Scope_free(Scope *sco);
 

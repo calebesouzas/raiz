@@ -12,24 +12,24 @@ typedef struct Expr {
     EXPR_BLOCK,
   } kind;
   union {
-    int literal;
+    Token *literal;
     struct {
-      Token op;
+      Token *op;
       struct Expr *ls;
       struct Expr *rs;
     } binary;
     struct {
-      Token op;
+      Token *op;
       struct Expr *in;
     } unary;
     struct {
       struct Expr *in;
     } group;
-    char ident[TOKEN_IDENTIFIER_SIZE];
+    Token *ident;
     struct {
-      uint32_t kind;
+      Token *tok;
+      Token *ident;
       struct Expr *value;
-      char ident[TOKEN_IDENTIFIER_SIZE];
     } decl;
     struct {
       struct Expr **dat;
@@ -65,10 +65,10 @@ void Expr_free(Expr *node);
 
 void Expr_dump(Expr *root, size_t indent, size_t level);
 
-Token Parser_cur(Parser *par);
-Token Parser_peek(Parser *par);
-Token Parser_next(Parser *par);
-Token Parser_advance(Parser *par);
+Token *Parser_cur(Parser *par);
+Token *Parser_peek(Parser *par);
+Token *Parser_next(Parser *par);
+Token *Parser_advance(Parser *par);
 
 Parser Parser_setup(Token_A *toks);
 void Parser_debug(Parser *par);

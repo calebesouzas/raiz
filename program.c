@@ -7,13 +7,13 @@ void breakpoint(void) {
 
 int Program_build(Program *pro) {
   int err;
-  Token tok, peeked;
+  Token *tok, *peeked;
   Expr *node;
   Parser *par;
 
   par = pro->par;
 
-  while ((tok = Parser_cur(par)).kind != TOKEN_EOF) {
+  while ((tok = Parser_cur(par))->kind != TOKEN_EOF) {
     node = Expr_();
 
     err = Parser_parse_line(node, par);
@@ -22,9 +22,9 @@ int Program_build(Program *pro) {
       Token *t;
       da_for(t, par->toks) {
         fprintf(stderr, "token #%zu: %s,", i_t+1, token_label(t));
-	if (i_t == par->cur)
+        if (i_t == par->cur)
           fprintf(stderr, " // current\n");
-	else
+        else
           fprintf(stderr, "\n");
       }
       return err;

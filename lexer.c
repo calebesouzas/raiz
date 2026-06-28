@@ -97,7 +97,7 @@ int Lexer_tokenize(Lexer *lex) {
             continue;
           num = (num * 10) + (cur() - '0');
         }
-        da_add(toks, tk(TOKEN_NUMBER, .value = num));
+        add(tk(TOKEN_NUMBER, .value = num));
       } else if (isalpha(cur()) || cur() == '_') {
         Token tok;
 
@@ -117,7 +117,7 @@ int Lexer_tokenize(Lexer *lex) {
         if (Lexer_len(lex) > 0)
           lex->i--;
 
-        da_add(toks, tok);
+        add(tok);
       } else {
         fprintf(stderr, "unhandled byte %02x at index %zu\n", lex->c, lex->i);
         return 1;
@@ -218,14 +218,12 @@ char *Lexer_point(Lexer *lex) {
   return &lex->source[lex->start];
 }
 size_t Lexer_len(Lexer *lex) {
-  return lex->i - lex->start;
+  return ((int)lex->i) - lex->start;
 }
 
 void Lexer_add(Lexer *lex, Token tok) {
-  tok.source = lex->source;
-  tok.len = Lexer_len(lex);
-  if (tok.len == 0)
-    tok.len = 1;
+  tok.source = Lexer_point(lex);
+  tok.len = Lexer_len(lex) + 1;
   tok.start = lex->start;
   tok.line = lex->lines;
   tok.column = lex->columns;

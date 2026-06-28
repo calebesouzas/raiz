@@ -15,7 +15,7 @@ Scope *Scope_new(Scope *parent) {
   return inner;
 }
 
-Symbol *Scope_search(Scope *sco, char *symbol, size_t len) {
+Symbol *Scope_search_(Scope *sco, char *symbol, size_t len) {
   Symbol *sym;
   Scope *cur = sco;
   size_t l = len > 0 ? len : strlen(symbol);

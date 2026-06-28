@@ -16,10 +16,10 @@ int eval(Expr *e, Scope *s) {
 
   switch (e->kind) {
   case EXPR_LITERAL:
-    return e->literal;
+    return e->literal->value;
   case EXPR_UNARY:
     value = eval(e->unary.in, s);
-    switch (e->unary.op.kind) {
+    switch (e->unary.op->kind) {
     case TOKEN_MINUS:
       return -value;
     case TOKEN_BANG:
@@ -27,17 +27,17 @@ int eval(Expr *e, Scope *s) {
     case TOKEN_TILDE:
       return ~value;
     default:
-      PANIC("invalid unary operator (token %s)\n", token_label(&e->binary.op));
+      PANIC("invalid unary operator (token %s)\n", token_label(e->binary.op));
     }
     break;
   case EXPR_BINARY:
-    if (e->binary.op.kind == TOKEN_EQUAL) {
+    if (e->binary.op->kind == TOKEN_EQUAL) {
       if (e->binary.ls->kind != EXPR_IDENT) {
         fprintf(stderr, "can only assign to indentifiers\n");
 	return 0;
       }
-      ident = e->binary.ls->ident;
-      sym = Scope_search(s, ident, 0);
+      ident = e->binary.ls->ident->source;
+      sym = Scope_search(s, ident, e->binary.ls->ident->len);
       if (sym == NULL) {
         fprintf(stderr, "undefined symbol '%s'\n", ident);
 	return 0;
@@ -52,7 +52,7 @@ int eval(Expr *e, Scope *s) {
 
     ls = eval(e->binary.ls, s);
     rs = eval(e->binary.rs, s);
-    switch (e->binary.op.kind) {
+    switch (e->binary.op->kind) {
     case TOKEN_PLUS:
       return ls + rs;
     case TOKEN_MINUS:
@@ -88,15 +88,16 @@ int eval(Expr *e, Scope *s) {
     case TOKEN_GREAT_X2:
       return ls >> rs;
     default:
-      PANIC("invalid binary operator (token %s)\n", token_label(&e->binary.op));
+      PANIC("invalid binary operator (token %s)\n", token_label(e->binary.op));
     }
   case EXPR_GROUP:
     return eval(e->group.in, s);
   case EXPR_IDENT:
-    sym = Scope_search(s, e->ident, 0);
+    sym = Scope_search(s, e->ident->source, e->ident->len);
 
     if (sym == NULL) {
-      fprintf(stderr, "symbol '%s' not found\n", e->ident);
+      fprintf(stderr, "symbol '%.*s' not found\n",
+              e->ident->len, e->ident->source);
       return 0;
     }
 
@@ -104,19 +105,20 @@ int eval(Expr *e, Scope *s) {
   case EXPR_DECL:
     save = s->parent;
     s->parent = NULL;
-    sym = Scope_search(s, e->decl.ident, 0);
+    sym = Scope_search(s, e->decl.ident->source, e->decl.ident->len);
     if (sym != NULL) {
       // already declared in this scope
-      fprintf(stderr, "symbol '%s' already declared in this scope\n",
-              e->decl.ident);
+      fprintf(stderr, "symbol '%.*s' already declared in this scope\n",
+              e->decl.ident->len, e->decl.ident->source);
       return 0;
     }
     s->parent = (Scope*)save;
 
     value = e->decl.value != NULL ? eval(e->decl.value, s) : 0;
     new_symbol.value = value;
-    new_symbol.is_variable = e->decl.kind == TOKEN_VAR;
-    strcpy(new_symbol.ident, e->decl.ident);
+    new_symbol.is_variable = e->decl.tok->kind == TOKEN_VAR;
+    strncpy(new_symbol.ident, e->decl.ident->source, e->decl.ident->len);
+    new_symbol.ident[e->decl.ident->len] = '\0';
     da_add(&s->symbols, new_symbol);
 
     return new_symbol.value;

@@ -2,20 +2,20 @@
 #define RAIZ_PARSER_C
 
 int Parser_parse_nud(Expr *res, Parser *par) {
-  Token tok, peeked, cur;
+  Token *tok, *peeked;
   Expr *in, *value, *line;
   int err;
 
   tok = Parser_cur(par);
-  if (tok.kind == TOKEN_INVALID)
+  if (tok->kind == TOKEN_INVALID)
     return PARSER_INVALID_TOKEN;
 
-  else if (tok.flags & TOKEN_FLAG_CONST) {
+  else if (tok->flags & TOKEN_FLAG_CONST) {
     res->kind = EXPR_LITERAL;
-    res->literal = tok.value;
-  } else if (tok.flags & TOKEN_FLAG_UNARY) {
-    uint8_t bp = get_binding_power(tok.kind);
-    if (tok.flags & TOKEN_FLAG_RIGHT)
+    res->literal = tok;
+  } else if (tok->flags & TOKEN_FLAG_UNARY) {
+    uint8_t bp = get_binding_power(tok->kind);
+    if (tok->flags & TOKEN_FLAG_RIGHT)
       bp -= 1;
 
     Parser_advance(par);
@@ -28,7 +28,7 @@ int Parser_parse_nud(Expr *res, Parser *par) {
     res->kind = EXPR_UNARY;
     res->unary.op = tok;
     res->unary.in = in;
-  } else if (tok.kind == TOKEN_L_PAREN) {
+  } else if (tok->kind == TOKEN_L_PAREN) {
     Parser_advance(par);
 
     in = Expr_();
@@ -37,18 +37,18 @@ int Parser_parse_nud(Expr *res, Parser *par) {
       return err;
 
     peeked = Parser_peek(par);
-    if (peeked.kind != TOKEN_R_PAREN) {
-      fprintf(stderr, "group not closed after '%s'\n", token_label(&tok));
+    if (peeked->kind != TOKEN_R_PAREN) {
+      fprintf(stderr, "group not closed after '%s'\n", token_label(tok));
       return PARSER_NOT_CLOSED_GROUP;
     }
     Parser_advance(par); // consume ')'
 
     res->kind = EXPR_GROUP;
     res->group.in = in;
-  } else if (tok.kind == TOKEN_IDENT) {
+  } else if (tok->kind == TOKEN_IDENT) {
     res->kind = EXPR_IDENT;
-    strncpy(res->ident, tok.ident, TOKEN_IDENTIFIER_SIZE);
-  } else if (tok.kind == TOKEN_L_CURLY) {
+    res->ident = tok;
+  } else if (tok->kind == TOKEN_L_CURLY) {
     Parser_advance(par); // `{`
     do {
       line = Expr_();
@@ -60,9 +60,9 @@ int Parser_parse_nud(Expr *res, Parser *par) {
       peeked = Parser_peek(par);
 
       da_add(&res->block, line);
-    } while (par->cur < par->toks->len && peeked.kind != TOKEN_R_CURLY);
+    } while (par->cur < par->toks->len && peeked->kind != TOKEN_R_CURLY);
 
-    if (peeked.kind != TOKEN_R_CURLY) {
+    if (peeked->kind != TOKEN_R_CURLY) {
       fprintf(stderr, "not closed block\n");
       //@todo print start line when we track line numbers
       return PARSER_NOT_CLOSED_BLOCK;
@@ -71,7 +71,7 @@ int Parser_parse_nud(Expr *res, Parser *par) {
 
     res->kind = EXPR_BLOCK;
   } else {
-    fprintf(stderr, "unexpected token: %s\n", token_label(&tok));
+    fprintf(stderr, "unexpected token: %s\n", token_label(tok));
     return PARSER_UNEXPECTED_TOKEN;
   }
   return 0;
@@ -80,7 +80,7 @@ int Parser_parse_nud(Expr *res, Parser *par) {
 int Parser_parse_expr(Expr *ls, Parser *par, uint8_t min_bp) {
   Expr *rs;
   Expr *res;
-  Token op;
+  Token *op;
   uint8_t bp;
   int err;
 
@@ -88,14 +88,14 @@ int Parser_parse_expr(Expr *ls, Parser *par, uint8_t min_bp) {
   if (err)
     return err;
 
-  while (!((op = Parser_peek(par)).flags & TOKEN_FLAG_BREAKING)) {
-    if (!(op.flags & TOKEN_FLAG_OP)) {
-      fprintf(stderr, "expected operator, found %s\n", token_label(&op));
+  while (!((op = Parser_peek(par))->flags & TOKEN_FLAG_BREAKING)) {
+    if (!(op->flags & TOKEN_FLAG_OP)) {
+      fprintf(stderr, "expected operator, found %s\n", token_label(op));
       return PARSER_EXPECTED_OPERATOR;
     }
 
-    bp = get_binding_power(op.kind);
-    if (op.flags & TOKEN_FLAG_RIGHT)
+    bp = get_binding_power(op->kind);
+    if (op->flags & TOKEN_FLAG_RIGHT)
       bp -= 1;
 
     if (bp < min_bp)
@@ -123,34 +123,34 @@ int Parser_parse_expr(Expr *ls, Parser *par, uint8_t min_bp) {
 
 int Parser_parse_line(Expr *res, Parser *par) {
   int err;
-  Token tok, peeked;
+  Token *tok, *peeked;
   char ident[TOKEN_IDENTIFIER_SIZE];
   Expr *value;
 
   tok = Parser_cur(par);
-  while (tok.flags & TOKEN_FLAG_FINISHER)
+  while (tok->flags & TOKEN_FLAG_FINISHER)
     tok = Parser_advance(par);
 
-  if (!(tok.flags & TOKEN_FLAG_STARTER)) {
+  if (!(tok->flags & TOKEN_FLAG_STARTER)) {
     err = Parser_parse_expr(res, par, 0);
     if (err)
       return err;
 
     goto finish_line;
   }
-  switch (tok.kind) {
+  switch (tok->kind) {
   case TOKEN_VAR:
   case TOKEN_VAL:
     peeked = Parser_peek(par);
-    if (peeked.kind != TOKEN_IDENT) {
-      fprintf(stderr, "expected identifier, found %s\n", token_label(&peeked));
+    if (peeked->kind != TOKEN_IDENT) {
+      fprintf(stderr, "expected identifier, found %s\n", token_label(peeked));
       return PARSER_EXPECTED_IDENTIFIER;
     }
-    strncpy(ident, peeked.ident, sizeof(ident));
+    strncpy(ident, peeked->ident, sizeof(ident));
     Parser_advance(par); // consume keyword
 
     peeked = Parser_peek(par);
-    if (peeked.kind == TOKEN_EQUAL) {
+    if (peeked->kind == TOKEN_EQUAL) {
       Parser_advance(par); // identifier
       Parser_advance(par); // '='
 
@@ -160,23 +160,23 @@ int Parser_parse_line(Expr *res, Parser *par) {
         return err;
 
       res->decl.value = value;
-    } else if (tok.kind == TOKEN_VAL) {
+    } else if (tok->kind == TOKEN_VAL) {
       fprintf(stderr, "expected assignment after '%s', found %s\n",
-              ident, token_label(&peeked));
+              ident, token_label(peeked));
       return PARSER_EXPECTED_ASSIGNMENT;
     }
 
     res->kind = EXPR_DECL;
-    res->decl.kind = tok.kind;
-    strncpy(res->decl.ident, ident, TOKEN_IDENTIFIER_SIZE);
+    res->decl.tok = tok;
+    res->decl.ident = tok + 1;
     break; // case VAR or VAL
-  default: UNREACHABLE("token %s\n", token_label(&tok));
+  default: UNREACHABLE("token %s\n", token_label(tok));
   }
 
 finish_line:
-  if (!((peeked = Parser_peek(par)).flags & TOKEN_FLAG_FINISHER)) {
+  if (!((peeked = Parser_peek(par))->flags & TOKEN_FLAG_FINISHER)) {
     fprintf(stderr, "expected new line or ';', found %s\n",
-            token_label(&peeked));
+            token_label(peeked));
     return PARSER_EXPECTED_FINISH;
   }
 
@@ -289,10 +289,10 @@ void Expr_dump(Expr *root, size_t indent, size_t level) {
   }
   switch (root->kind) {
   case EXPR_LITERAL:
-    fprintf(stderr, "literal %d\n", root->literal);
+    fprintf(stderr, "literal %d\n", root->literal->value);
     break;
   case EXPR_BINARY:
-    fprintf(stderr, "binary, operator %s\n", token_label(&root->binary.op));
+    fprintf(stderr, "binary, operator %s\n", token_label(root->binary.op));
 
     for (size_t i = 0; i < level * indent; i++) {
       fputc(' ', stderr);
@@ -307,7 +307,7 @@ void Expr_dump(Expr *root, size_t indent, size_t level) {
     Expr_dump(root->binary.rs, indent, level + 1);
     break;
   case EXPR_UNARY:
-    fprintf(stderr, "unary, operator %s\n", token_label(&root->binary.op));
+    fprintf(stderr, "unary, operator %s\n", token_label(root->binary.op));
 
     for (size_t i = 0; i < level * indent; i++) {
       fputc(' ', stderr);
@@ -325,12 +325,10 @@ void Expr_dump(Expr *root, size_t indent, size_t level) {
     Expr_dump(root->group.in, indent, level + 1);
     break;
   case EXPR_IDENT:
-    fprintf(stderr, "identifier %s\n", root->ident);
+    fprintf(stderr, "identifier %.*s\n", root->ident->len, root->ident->source);
     break;
   case EXPR_DECL: {
-    Token tok;
-    tok.kind = root->decl.kind;
-    fprintf(stderr, "%s declaration\n", token_label(&tok));
+    fprintf(stderr, "%s declaration\n", token_label(root->decl.tok));
 
     for (size_t i = 0; i < level * indent; i++) {
       fputc(' ', stderr);
@@ -342,10 +340,10 @@ void Expr_dump(Expr *root, size_t indent, size_t level) {
   }
 }
 
-Token Parser_cur(Parser *par) { return par->toks->dat[par->cur]; }
-Token Parser_peek(Parser *par) { return par->toks->dat[par->cur+1]; }
-Token Parser_next(Parser *par) { return par->toks->dat[par->cur++]; }
-Token Parser_advance(Parser *par) { return par->toks->dat[++par->cur]; }
+Token *Parser_cur(Parser *par) { return &par->toks->dat[par->cur]; }
+Token *Parser_peek(Parser *par) { return &par->toks->dat[par->cur+1]; }
+Token *Parser_next(Parser *par) { return &par->toks->dat[par->cur++]; }
+Token *Parser_advance(Parser *par) { return &par->toks->dat[++par->cur]; }
 
 #endif // RAIZ_PARSER_C
 
