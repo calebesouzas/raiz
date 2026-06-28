@@ -9,12 +9,13 @@ enum TokenFlags {
   TOKEN_FLAG_KEYWORD  = 1 << 4, // pretty obvious...
   TOKEN_FLAG_STARTER  = 1 << 5, // it may start an expression-like statement
   TOKEN_FLAG_FINISHER = 1 << 6, // can it finish an expression-like statement?
-  TOKEN_FLAG_RIGHT    = 1 << 7, // is it right associative infix operator?
+  TOKEN_FLAG_RIGHT    = 1 << 7, // is it a right associative infix operator?
+  TOKEN_FLAG_CONST    = 1 << 8, // is it a constant?
 };
 
 #define TOKEN_X_MACRO\
   X(TOKEN_INVALID,  0)\
-  X(TOKEN_NUMBER,   0)\
+  X(TOKEN_NUMBER,   TOKEN_FLAG_CONST)\
   X(TOKEN_IDENT,    0)\
 \
   X(TOKEN_EQUAL,      TOKEN_FLAG_OP | TOKEN_FLAG_RIGHT)\
@@ -45,6 +46,8 @@ enum TokenFlags {
 \
   X(TOKEN_VAR, TOKEN_FLAG_KEYWORD | TOKEN_FLAG_STARTER)\
   X(TOKEN_VAL, TOKEN_FLAG_KEYWORD | TOKEN_FLAG_STARTER)\
+  X(TOKEN_TRUE, TOKEN_FLAG_KEYWORD | TOKEN_FLAG_CONST)\
+  X(TOKEN_FALSE, TOKEN_FLAG_KEYWORD | TOKEN_FLAG_CONST)\
 \
   X(TOKEN_NEWLINE, TOKEN_FLAG_BREAKING | TOKEN_FLAG_FINISHER)\
 \
@@ -81,11 +84,14 @@ struct TokenKeywordTable {
   char *string;
   size_t len;
   uint32_t kind;
+  int value;
 };
 
 const struct TokenKeywordTable KEYWORDS[] = {
-  {"var", 3, TOKEN_VAR},
-  {"val", 3, TOKEN_VAL},
+  {"var", 3, TOKEN_VAR, 0},
+  {"val", 3, TOKEN_VAL, 0},
+  {"true", 4, TOKEN_TRUE, 1},
+  {"false", 5, TOKEN_FALSE, 0},
 };
 
 #endif // RAIZ_LEXER_H

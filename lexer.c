@@ -133,6 +133,7 @@ bool token_keyword(Token *tok, char *ident, size_t len) {
 
     if (key.len == len && strncmp(ident, key.string, key.len) == 0) {
       tok->kind = key.kind;
+      tok->value = key.value;
       tok->flags = TOKEN_FLAGS[key.kind];
       return true;
     }

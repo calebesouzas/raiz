@@ -1,6 +1,2 @@
-var x = 2
-{
-  val y = {
-    x * x + 5 * x + 2
-  }
-}
+var x = 10
+x < 15 && true

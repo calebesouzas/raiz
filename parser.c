@@ -10,7 +10,7 @@ int Parser_parse_nud(Expr *res, Parser *par) {
   if (tok.kind == TOKEN_INVALID)
     return PARSER_INVALID_TOKEN;
 
-  else if (tok.kind == TOKEN_NUMBER) {
+  else if (tok.flags & TOKEN_FLAG_CONST) {
     res->kind = EXPR_LITERAL;
     res->literal = tok.value;
   } else if (tok.flags & TOKEN_FLAG_UNARY) {
