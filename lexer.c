@@ -25,6 +25,7 @@ int Lexer_tokenize(Lexer *lex) {
     case '{': add(tk(TOKEN_L_CURLY)); break;
     case '}': add(tk(TOKEN_R_CURLY)); break;
     case '~': add(tk(TOKEN_TILDE)); break;
+    case '^': add(tk(TOKEN_HAT)); break;
     case '=':
       if (peek() == '=') {
         advance();
