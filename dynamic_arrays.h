@@ -28,6 +28,16 @@
     if ((da)->dat != NULL) (da)->dat[(da)->len++] = (val);\
   } while (0)
 
+#define da_copy(da, src)\
+  do{\
+    (da)->dat = malloc(da_size((src)));\
+    if ((da)->dat) {\
+      (da)->len = (src)->len;\
+      (da)->cap = (src)->cap;\
+      memcpy((da)->dat, (src)->dat, (da)->len);\
+    }\
+  } while (0)
+
 #define da_free(da)\
   do{\
     free((da)->dat);\
