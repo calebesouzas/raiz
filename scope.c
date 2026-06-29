@@ -8,6 +8,20 @@ Scope *Scope_(void) {
   return s;
 }
 
+Scope *Scope_copy(Scope *parent) {
+  Scope *s = malloc(sizeof(*s));
+  if (s) {
+    da_copy(&s->symbols, &parent->symbols);
+
+    if (parent->inner) {
+      Scope *i = Scope_copy(parent->inner);
+      s->inner = i;
+    }
+  }
+
+  return s;
+}
+
 Scope *Scope_new(Scope *parent) {
   Scope *inner = Scope_();
   inner->parent = parent;

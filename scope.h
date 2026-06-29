@@ -7,6 +7,7 @@ typedef struct Scope {
 } Scope;
 
 Scope *Scope_(void);
+Scope *Scope_copy(Scope *parent);
 Scope *Scope_new(Scope *parent);
 Symbol *Scope_search(Scope *sco, char *symbol, size_t len);
 
