@@ -197,8 +197,7 @@ Lexer Lexer_setup(Token_A *toks, char *source) {
 }
 
 char Lexer_peek(Lexer *lex) {
-  lex->c = lex->source[lex->i+1];
-  return lex->c;
+  return lex->source[lex->i+1];
 }
 char Lexer_next(Lexer *lex) {
   lex->c = lex->source[lex->i++];
