@@ -50,6 +50,92 @@ int Program_run(Program *pro) {
   return value;
 }
 
+#undef add
+#define add(code, token) da_add(errs, ((SemanticError){(code), (token)}))
+void Expr_check(Expr *expr, SemanticError_A *errs, Scope *sco) {
+  if (!expr)
+    return;
+
+  Symbol *sym;
+  Token *ident;
+  Scope *inner;
+  void *save;
+
+  switch (expr->kind) {
+  case EXPR_LITERAL:
+  case EXPR_UNARY:
+    break; // nothing to check?
+  case EXPR_BINARY:
+    if (expr->binary.op->kind == TOKEN_EQUAL) {
+      if (expr->binary.ls->kind != EXPR_IDENT) {
+        add(ERR_SEM_ASSIGN_TO_RVALUE, NULL); // from where do I get the token?
+      }
+      ident = expr->binary.ls->ident;
+      sym = Scope_search(sco, ident->source, ident->len);
+      if (sym == NULL) {
+        add(ERR_SEM_UNDEFINED_SYMBOL, ident);
+      }
+      if (!sym->is_variable) {
+        add(ERR_SEM_ASSIGN_TO_VAL, ident);
+      }
+    }
+    Expr_check(expr->binary.ls, errs, sco);
+    Expr_check(expr->binary.rs, errs, sco);
+    break;
+  case EXPR_GROUP:
+    Expr_check(expr->group.in, errs, sco);
+    break;
+  case EXPR_IDENT:
+    sym = Scope_search(sco, expr->ident->source, expr->ident->len);
+
+    if (sym == NULL) {
+      add(ERR_SEM_UNDEFINED_SYMBOL, expr->ident);
+    }
+    break;
+  case EXPR_DECL:
+    ident = expr->decl.ident;
+    save = sco->parent;
+    sco->parent = NULL;
+    sym = Scope_search(sco, ident->source, ident->len);
+    if (sym != NULL) {
+      add(ERR_SEM_ALREADY_DECLARED_SYMBOL, ident);
+    }
+    sco->parent = (Scope*)save;
+
+    if (expr->decl.value)
+      Expr_check(expr->decl.value, errs, sco);
+
+    Symbol new_symbol = {0};
+    new_symbol.is_variable = expr->decl.tok->kind == TOKEN_VAR;
+    strncpy(new_symbol.ident, expr->decl.ident->source, expr->decl.ident->len);
+    new_symbol.ident[expr->decl.ident->len] = '\0';
+
+    da_add(&sco->symbols, new_symbol);
+
+    break;
+  case EXPR_BLOCK:
+    inner = Scope_new(sco);
+    Expr **line;
+    da_for(line, &expr->block) {
+      Expr_check(*line, errs, sco);
+    }
+    free(inner);
+    sco->inner = NULL;
+    break;
+  }
+}
+
+void Program_check(Program *pro, SemanticError_A *errs, size_t max_errs) {
+  Expr **expr;
+  Scope *sco = Scope_copy(pro->sco);
+  da_for(expr, &pro->code) {
+    Expr_check(*expr, errs, pro->sco);
+    if (errs->len > max_errs)
+      return;
+  }
+  Scope_free(sco);
+}
+
 void Program_debug(Program *pro, size_t indent) {
   Token *tok;
   Expr **expr;

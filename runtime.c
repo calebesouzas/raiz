@@ -9,11 +9,6 @@ int eval(Expr *e, Scope *s) {
   void *save;
   Expr **line;
 
-  if (!e) {
-    fprintf(stderr, "expression is null\n");
-    return 0;
-  }
-
   switch (e->kind) {
   case EXPR_LITERAL:
     return e->literal->value;
@@ -32,20 +27,8 @@ int eval(Expr *e, Scope *s) {
     break;
   case EXPR_BINARY:
     if (e->binary.op->kind == TOKEN_EQUAL) {
-      if (e->binary.ls->kind != EXPR_IDENT) {
-        fprintf(stderr, "can only assign to indentifiers\n");
-	return 0;
-      }
       ident = e->binary.ls->ident->source;
       sym = Scope_search(s, ident, e->binary.ls->ident->len);
-      if (sym == NULL) {
-        fprintf(stderr, "undefined symbol '%s'\n", ident);
-	return 0;
-      }
-      if (!sym->is_variable) {
-        fprintf(stderr, "can't assign, '%s' is not a variable\n", ident);
-	return 0;
-      }
       sym->value = eval(e->binary.rs, s);
       return sym->value;
     }
@@ -94,24 +77,11 @@ int eval(Expr *e, Scope *s) {
     return eval(e->group.in, s);
   case EXPR_IDENT:
     sym = Scope_search(s, e->ident->source, e->ident->len);
-
-    if (sym == NULL) {
-      fprintf(stderr, "symbol '%.*s' not found\n",
-              e->ident->len, e->ident->source);
-      return 0;
-    }
-
     return sym->value;
   case EXPR_DECL:
     save = s->parent;
     s->parent = NULL;
     sym = Scope_search(s, e->decl.ident->source, e->decl.ident->len);
-    if (sym != NULL) {
-      // already declared in this scope
-      fprintf(stderr, "symbol '%.*s' already declared in this scope\n",
-              e->decl.ident->len, e->decl.ident->source);
-      return 0;
-    }
     s->parent = (Scope*)save;
 
     value = e->decl.value != NULL ? eval(e->decl.value, s) : 0;
