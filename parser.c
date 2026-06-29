@@ -70,6 +70,20 @@ int Parser_parse_nud(Expr *res, Parser *par) {
     Parser_advance(par); // before '}'
 
     res->kind = EXPR_BLOCK;
+  } else if (tok->kind == TOKEN_HAT) {
+    uint32_t level = 0;
+    do {
+      level++;
+      tok = Parser_advance(par);
+    } while (Parser_cur(par)->kind == TOKEN_HAT);
+    if (tok->kind != TOKEN_IDENT) {
+      fprintf(stderr, "expected identifier, found %s\n", token_label(tok));
+      return PARSER_EXPECTED_IDENTIFIER;
+    }
+
+    res->kind = EXPR_PARENT;
+    res->parent.level = level;
+    res->parent.ident = tok;
   } else {
     fprintf(stderr, "unexpected token: %s\n", token_label(tok));
     return PARSER_UNEXPECTED_TOKEN;
@@ -255,6 +269,7 @@ void Expr_free(Expr *node) {
   switch (node->kind) {
   case EXPR_LITERAL:
   case EXPR_IDENT:
+  case EXPR_PARENT:
     break;
   case EXPR_BINARY:
     Expr_free(node->binary.ls);

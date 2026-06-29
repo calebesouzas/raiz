@@ -69,14 +69,17 @@ void Expr_check(Expr *expr, SemanticError_A *errs, Scope *sco) {
     if (expr->binary.op->kind == TOKEN_EQUAL) {
       if (expr->binary.ls->kind != EXPR_IDENT) {
         add(ERR_SEM_ASSIGN_TO_RVALUE, NULL); // from where do I get the token?
+        return;
       }
       ident = expr->binary.ls->ident;
-      sym = Scope_search(sco, ident->source, ident->len);
+      sym = Scope_search_until_global(sco, ident->source, ident->len);
       if (sym == NULL) {
         add(ERR_SEM_UNDEFINED_SYMBOL, ident);
+	return;
       }
       if (!sym->is_variable) {
         add(ERR_SEM_ASSIGN_TO_VAL, ident);
+	return;
       }
     }
     Expr_check(expr->binary.ls, errs, sco);
@@ -86,21 +89,20 @@ void Expr_check(Expr *expr, SemanticError_A *errs, Scope *sco) {
     Expr_check(expr->group.in, errs, sco);
     break;
   case EXPR_IDENT:
-    sym = Scope_search(sco, expr->ident->source, expr->ident->len);
+    sym = Scope_search_until_global(sco, expr->ident->source, expr->ident->len);
 
     if (sym == NULL) {
       add(ERR_SEM_UNDEFINED_SYMBOL, expr->ident);
+      return;
     }
     break;
   case EXPR_DECL:
     ident = expr->decl.ident;
-    save = sco->parent;
-    sco->parent = NULL;
-    sym = Scope_search(sco, ident->source, ident->len);
+    sym = Scope_search_single_level(sco, ident->source, ident->len);
     if (sym != NULL) {
       add(ERR_SEM_ALREADY_DECLARED_SYMBOL, ident);
+      return;
     }
-    sco->parent = (Scope*)save;
 
     if (expr->decl.value)
       Expr_check(expr->decl.value, errs, sco);
@@ -117,10 +119,24 @@ void Expr_check(Expr *expr, SemanticError_A *errs, Scope *sco) {
     inner = Scope_new(sco);
     Expr **line;
     da_for(line, &expr->block) {
-      Expr_check(*line, errs, sco);
+      Expr_check(*line, errs, inner);
     }
     free(inner);
     sco->inner = NULL;
+    break;
+  case EXPR_PARENT:
+    ident = expr->parent.ident;
+    Scope *target = sco;
+    uint32_t level = expr->parent.level;
+
+    for (uint32_t i = 0; target && i < level; i++)
+      target = target->parent;
+
+    sym = Scope_search_until_global(target, ident->source, ident->len);
+    if (sym == NULL) {
+      add(ERR_SEM_UNDEFINED_SYMBOL, ident);
+      return;
+    }
     break;
   }
 }
@@ -129,7 +145,7 @@ void Program_check(Program *pro, SemanticError_A *errs, size_t max_errs) {
   Expr **expr;
   Scope *sco = Scope_copy(pro->sco);
   da_for(expr, &pro->code) {
-    Expr_check(*expr, errs, pro->sco);
+    Expr_check(*expr, errs, sco);
     if (errs->len > max_errs)
       return;
   }

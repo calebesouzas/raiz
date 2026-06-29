@@ -3,7 +3,7 @@
 
 int eval(Expr *e, Scope *s) {
   Symbol *sym, new_symbol;
-  Scope *s_in;
+  Scope *s_in, *target;
   int value, ls, rs;
   char *ident;
   void *save;
@@ -28,7 +28,7 @@ int eval(Expr *e, Scope *s) {
   case EXPR_BINARY:
     if (e->binary.op->kind == TOKEN_EQUAL) {
       ident = e->binary.ls->ident->source;
-      sym = Scope_search(s, ident, e->binary.ls->ident->len);
+      sym = Scope_search_until_global(s, ident, e->binary.ls->ident->len);
       sym->value = eval(e->binary.rs, s);
       return sym->value;
     }
@@ -76,13 +76,11 @@ int eval(Expr *e, Scope *s) {
   case EXPR_GROUP:
     return eval(e->group.in, s);
   case EXPR_IDENT:
-    sym = Scope_search(s, e->ident->source, e->ident->len);
+    sym = Scope_search_until_global(s, e->ident->source, e->ident->len);
     return sym->value;
   case EXPR_DECL:
-    save = s->parent;
-    s->parent = NULL;
-    sym = Scope_search(s, e->decl.ident->source, e->decl.ident->len);
-    s->parent = (Scope*)save;
+    sym = Scope_search_single_level(
+              s, e->decl.ident->source, e->decl.ident->len);
 
     value = e->decl.value != NULL ? eval(e->decl.value, s) : 0;
     new_symbol.value = value;
@@ -100,6 +98,17 @@ int eval(Expr *e, Scope *s) {
     free(s_in);
     s->inner = NULL;
     return value;
+  case EXPR_PARENT:
+    target = s;
+    uint32_t level = e->parent.level;
+    Token *identifier = e->parent.ident;
+
+    for (uint32_t i = 0; target && i < level; i++)
+      target = target->parent;
+
+    sym = Scope_search_until_global(
+              target, identifier->source, identifier->len);
+    return sym->value;
   }
   return 0;
 }

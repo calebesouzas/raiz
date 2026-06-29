@@ -10,6 +10,7 @@ typedef struct Expr {
     EXPR_IDENT,
     EXPR_DECL,
     EXPR_BLOCK,
+    EXPR_PARENT,
   } kind;
   union {
     Token *literal;
@@ -35,6 +36,10 @@ typedef struct Expr {
       struct Expr **dat;
       size_t len, cap;
     } block;
+    struct {
+      uint32_t level;
+      Token *ident;
+    } parent;
   };
 } Expr;
 da_make(ExprNode_A, Expr**);

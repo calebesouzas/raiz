@@ -29,22 +29,29 @@ Scope *Scope_new(Scope *parent) {
   return inner;
 }
 
-Symbol *Scope_search(Scope *sco, char *symbol, size_t len) {
+Symbol *Scope_search_single_level(Scope *sco, char *symbol, size_t len) {
+  Symbol *sym;
+
+  da_for(sym, &sco->symbols) {
+    if (strncmp(sym->ident, symbol, len) == 0)
+      return sym;
+  }
+
+  return NULL;
+}
+
+Symbol *Scope_search_until_global(Scope *sco, char *symbol, size_t len) {
   Symbol *sym;
   Scope *cur = sco;
-  size_t l = len > 0 ? len : strlen(symbol);
-  if (l > TOKEN_IDENTIFIER_SIZE) {
-    fprintf(stderr, "error: symbol '%s' length (%zu) is greater than %zu\n",
-            symbol, l, TOKEN_IDENTIFIER_SIZE);
-    return NULL;
-  }
+
   do {
-    da_for(sym, &cur->symbols) {
-      if (strncmp(sym->ident, symbol, l) == 0)
-        return sym;
-    }
+    sym = Scope_search_single_level(cur, symbol, len);
+    if (sym)
+      return sym;
+
     cur = cur->parent;
   } while (cur != NULL);
+
   return NULL;
 }
 

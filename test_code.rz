@@ -1,3 +1,5 @@
-val x = 10
-val y = 15
-y ^ x ^ x == y
+val x = 35
+val y = {
+  val x = 16
+  x + ^x
+}
