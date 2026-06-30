@@ -4,10 +4,13 @@
 #define cur() Lexer_cur(lex)
 #define peek() Lexer_peek(lex)
 #define advance() Lexer_advance(lex)
+#define active() Lexer_active(lex)
 #define add(tok) Lexer_add(lex, (tok))
 
 #define tk(k, ...)\
 ((Token){.kind = (k), .flags = TOKEN_FLAGS[(k)], __VA_ARGS__})
+
+static bool skip_comments(Lexer *lex);
 
 int Lexer_tokenize(Lexer *lex) {
   Token_A *toks = lex->toks;
@@ -19,7 +22,6 @@ int Lexer_tokenize(Lexer *lex) {
     case '+': add(tk(TOKEN_PLUS)); break;
     case '-': add(tk(TOKEN_MINUS)); break;
     case '*': add(tk(TOKEN_STAR)); break;
-    case '/': add(tk(TOKEN_SLASH)); break;
     case '(': add(tk(TOKEN_L_PAREN)); break;
     case ')': add(tk(TOKEN_R_PAREN)); break;
     case '{': add(tk(TOKEN_L_CURLY)); break;
@@ -124,10 +126,35 @@ int Lexer_tokenize(Lexer *lex) {
         return 1;
       }
     } break;
+    case '/':
+      if (!skip_comments(lex)) {
+        add(tk(TOKEN_SLASH));
+      }
+      break;
     }
   }
   add(tk(TOKEN_EOF));
   return 0;
+}
+
+bool skip_comments(Lexer *lex) {
+  if (peek() == '/') {
+    do advance(); while (peek() != '\n' && active());
+    lex->lines++;
+    lex->columns = 1;
+    return true;
+  } else if (peek() == '*') { //@todo suport /* */ comments
+    advance();
+    advance();
+    for (uint32_t level = 1; level > 0 && active(); advance()) {
+      if (cur() == '/' && peek() == '*')
+        level++;
+      else if (cur() == '*' && peek() == '/')
+        level--;
+    }
+    return true;
+  }
+  return false;
 }
 
 bool token_keyword(Token *tok, char *ident, size_t len) {
