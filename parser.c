@@ -340,7 +340,7 @@ void Expr_dump(Expr *root, size_t indent, size_t level) {
     Expr_dump(root->group.in, indent, level + 1);
     break;
   case EXPR_IDENT:
-    fprintf(stderr, "identifier %.*s\n", root->ident->len, root->ident->source);
+    fprintf(stderr, "identifier %.*s\n", root->ident->len, root->ident->lexeme);
     break;
   case EXPR_DECL: {
     fprintf(stderr, "%s declaration\n", token_label(root->decl.tok));

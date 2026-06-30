@@ -27,7 +27,7 @@ int eval(Expr *e, Scope *s) {
     break;
   case EXPR_BINARY:
     if (e->binary.op->kind == TOKEN_EQUAL) {
-      ident = e->binary.ls->ident->source;
+      ident = e->binary.ls->ident->lexeme;
       sym = Scope_search_until_global(s, ident, e->binary.ls->ident->len);
       sym->value = eval(e->binary.rs, s);
       return sym->value;
@@ -76,16 +76,16 @@ int eval(Expr *e, Scope *s) {
   case EXPR_GROUP:
     return eval(e->group.in, s);
   case EXPR_IDENT:
-    sym = Scope_search_until_global(s, e->ident->source, e->ident->len);
+    sym = Scope_search_until_global(s, e->ident->lexeme, e->ident->len);
     return sym->value;
   case EXPR_DECL:
     sym = Scope_search_single_level(
-              s, e->decl.ident->source, e->decl.ident->len);
+              s, e->decl.ident->lexeme, e->decl.ident->len);
 
     value = e->decl.value != NULL ? eval(e->decl.value, s) : 0;
     new_symbol.value = value;
     new_symbol.is_variable = e->decl.tok->kind == TOKEN_VAR;
-    strncpy(new_symbol.ident, e->decl.ident->source, e->decl.ident->len);
+    strncpy(new_symbol.ident, e->decl.ident->lexeme, e->decl.ident->len);
     new_symbol.ident[e->decl.ident->len] = '\0';
     da_add(&s->symbols, new_symbol);
 
@@ -107,7 +107,7 @@ int eval(Expr *e, Scope *s) {
       target = target->parent;
 
     sym = Scope_search_until_global(
-              target, identifier->source, identifier->len);
+              target, identifier->lexeme, identifier->len);
     return sym->value;
   }
   return 0;

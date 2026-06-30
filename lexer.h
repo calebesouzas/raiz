@@ -77,7 +77,7 @@ typedef struct {
   char ident[TOKEN_IDENTIFIER_SIZE]; // if it's `TOKEN_IDENT`
 
   // metadata
-  char *source;
+  char *lexeme;
   size_t start, line, column, len;
 } Token;
 da_make(Token_A, Token*);

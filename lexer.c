@@ -251,7 +251,7 @@ size_t Lexer_len(Lexer *lex) {
 }
 
 void Lexer_add(Lexer *lex, Token tok) {
-  tok.source = Lexer_point(lex);
+  tok.lexeme = Lexer_point(lex);
   tok.len = Lexer_len(lex) + 1;
   tok.start = lex->start;
   tok.line = lex->lines;

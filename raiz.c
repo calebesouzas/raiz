@@ -65,7 +65,7 @@ int main(int argc, char **argv) {
 void print_errs(SemanticError_A *errs) {
 #define SPEC "error at [%zu] (%zu:%zu): "
 #define DAT e->token->start, e->token->line, e->token->column
-#define TOK e->token->len, e->token->source
+#define TOK e->token->len, e->token->lexeme
 #define P(...) fprintf(stderr, __VA_ARGS__)
 
   SemanticError *e;

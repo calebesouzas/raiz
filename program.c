@@ -72,7 +72,7 @@ void Expr_check(Expr *expr, SemanticError_A *errs, Scope *sco) {
         return;
       }
       ident = expr->binary.ls->ident;
-      sym = Scope_search_until_global(sco, ident->source, ident->len);
+      sym = Scope_search_until_global(sco, ident->lexeme, ident->len);
       if (sym == NULL) {
         add(ERR_SEM_UNDEFINED_SYMBOL, ident);
 	return;
@@ -89,7 +89,7 @@ void Expr_check(Expr *expr, SemanticError_A *errs, Scope *sco) {
     Expr_check(expr->group.in, errs, sco);
     break;
   case EXPR_IDENT:
-    sym = Scope_search_until_global(sco, expr->ident->source, expr->ident->len);
+    sym = Scope_search_until_global(sco, expr->ident->lexeme, expr->ident->len);
 
     if (sym == NULL) {
       add(ERR_SEM_UNDEFINED_SYMBOL, expr->ident);
@@ -98,7 +98,7 @@ void Expr_check(Expr *expr, SemanticError_A *errs, Scope *sco) {
     break;
   case EXPR_DECL:
     ident = expr->decl.ident;
-    sym = Scope_search_single_level(sco, ident->source, ident->len);
+    sym = Scope_search_single_level(sco, ident->lexeme, ident->len);
     if (sym != NULL) {
       add(ERR_SEM_ALREADY_DECLARED_SYMBOL, ident);
       return;
@@ -109,7 +109,7 @@ void Expr_check(Expr *expr, SemanticError_A *errs, Scope *sco) {
 
     Symbol new_symbol = {0};
     new_symbol.is_variable = expr->decl.tok->kind == TOKEN_VAR;
-    strncpy(new_symbol.ident, expr->decl.ident->source, expr->decl.ident->len);
+    strncpy(new_symbol.ident, expr->decl.ident->lexeme, expr->decl.ident->len);
     new_symbol.ident[expr->decl.ident->len] = '\0';
 
     da_add(&sco->symbols, new_symbol);
@@ -132,7 +132,7 @@ void Expr_check(Expr *expr, SemanticError_A *errs, Scope *sco) {
     for (uint32_t i = 0; target && i < level; i++)
       target = target->parent;
 
-    sym = Scope_search_until_global(target, ident->source, ident->len);
+    sym = Scope_search_until_global(target, ident->lexeme, ident->len);
     if (sym == NULL) {
       add(ERR_SEM_UNDEFINED_SYMBOL, ident);
       return;
