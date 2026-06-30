@@ -30,8 +30,9 @@
 
 #define da_copy(da, src)\
   do{\
-    (da)->dat = malloc(da_size((src)));\
-    if ((da)->dat) {\
+    if ((src)->dat != NULL)\
+      (da)->dat = malloc(da_size((src)));\
+    if ((da)->dat != NULL) {\
       (da)->len = (src)->len;\
       (da)->cap = (src)->cap;\
       memcpy((da)->dat, (src)->dat, (da)->len);\
