@@ -194,6 +194,8 @@ Lexer Lexer_setup(Token_A *toks, char *source) {
   lex.toks = toks;
   lex.source = source;
   lex.source_len = strlen(source);
+  lex.columns = 1;
+  lex.lines = 1;
   return lex;
 }
 
@@ -226,7 +228,7 @@ void Lexer_add(Lexer *lex, Token tok) {
   tok.len = Lexer_len(lex) + 1;
   tok.start = lex->start;
   tok.line = lex->lines;
-  tok.column = lex->columns;
+  tok.column = lex->columns+1;
   da_add(lex->toks, tok);
 }
 
