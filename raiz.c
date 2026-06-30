@@ -1,5 +1,6 @@
 #include <assert.h>
 #include <ctype.h>
+#include <limits.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <stdint.h>
@@ -15,6 +16,7 @@ char code[] = {
   , 0
 };
 
+#include "cast.h"
 #include "macros.h"
 #include "dynamic_arrays.h"
 #include "lexer.h"
@@ -65,7 +67,7 @@ int main(int argc, char **argv) {
 void print_errs(SemanticError_A *errs) {
 #define SPEC "error at [%zu] (%zu:%zu): "
 #define DAT e->token->start, e->token->line, e->token->column
-#define TOK e->token->len, e->token->lexeme
+#define TOK size_t_int(e->token->len, INT_MAX), e->token->lexeme
 #define P(...) fprintf(stderr, __VA_ARGS__)
 
   SemanticError *e;
