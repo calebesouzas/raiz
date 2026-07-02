@@ -211,9 +211,19 @@ char *token_label(Token *tok) {
   case TOKEN_NEWLINE: return "new line";
   case TOKEN_L_CURLY: return "{";
   case TOKEN_R_CURLY: return "}";
+  case TOKEN_LESS: return "<";
+  case TOKEN_LESS_EQUAL: return "<=";
+  case TOKEN_LESS_X2: return "<<";
+  case TOKEN_GREAT: return ">";
+  case TOKEN_GREAT_EQUAL: return ">=";
+  case TOKEN_GREAT_X2: return ">>";
+  case TOKEN_TRUE: return "true";
+  case TOKEN_FALSE: return "false";
+  case TOKEN_IF: return "if";
+  case TOKEN_ELSE: return "else";
   case TOKEN_EOF: return "EOF";
-  default: fprintf(stderr, "unknown token (id %d)\n", tok->kind); return NULL;
   }
+  fprintf(stderr, "unknown token (id %d)\n", tok->kind); return NULL;
 }
 
 Lexer Lexer_setup(Token_A *toks, char *source) {
