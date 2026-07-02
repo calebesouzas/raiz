@@ -75,11 +75,11 @@ void Expr_check(Expr *expr, SemanticError_A *errs, Scope *sco) {
       sym = Scope_search_until_global(sco, ident->lexeme, ident->len);
       if (sym == NULL) {
         add(ERR_SEM_UNDEFINED_SYMBOL, ident);
-	return;
+        return;
       }
       if (!sym->is_variable) {
         add(ERR_SEM_ASSIGN_TO_VAL, ident);
-	return;
+        return;
       }
     }
     Expr_check(expr->binary.ls, errs, sco);
@@ -137,6 +137,20 @@ void Expr_check(Expr *expr, SemanticError_A *errs, Scope *sco) {
       add(ERR_SEM_UNDEFINED_SYMBOL, ident);
       return;
     }
+    break;
+  case EXPR_IF:
+    if (expr->if_node.then_branch->kind == EXPR_DECL) {
+      add(ERR_SEM_DECL_AFTER_IF_ELSE, expr->if_node.then_branch->decl.tok);
+      return;
+    } else if (expr->if_node.else_branch
+        && expr->if_node.else_branch->kind == EXPR_DECL) {
+      add(ERR_SEM_DECL_AFTER_IF_ELSE, expr->if_node.else_branch->decl.tok);
+      return;
+    }
+    Expr_check(expr->if_node.cond, errs, sco);
+    Expr_check(expr->if_node.then_branch, errs, sco);
+    if (expr->if_node.else_branch)
+      Expr_check(expr->if_node.else_branch, errs, sco);
     break;
   }
 }

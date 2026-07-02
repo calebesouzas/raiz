@@ -85,6 +85,9 @@ void print_errs(SemanticError_A *errs) {
     case ERR_SEM_ASSIGN_TO_RVALUE:
       P(SPEC"attempt to assign to rvalue\n", DAT);
       break;
+    case ERR_SEM_DECL_AFTER_IF_ELSE:
+      P(SPEC"'%.*s' declaration after `if-else`\n", DAT, TOK);
+      break;
     }
   }
 }

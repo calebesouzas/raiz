@@ -109,6 +109,14 @@ int eval(Expr *e, Scope *s) {
     sym = Scope_search_until_global(
               target, identifier->lexeme, identifier->len);
     return sym->value;
+  case EXPR_IF: {
+    int cond = eval(e->if_node.cond, s);
+    if (cond) {
+      return eval(e->if_node.then_branch, s);
+    } else if (e->if_node.else_branch) {
+      return eval(e->if_node.else_branch, s);
+    }
+  } break;
   }
   return 0;
 }

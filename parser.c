@@ -84,6 +84,51 @@ int Parser_parse_nud(Expr *res, Parser *par) {
     res->kind = EXPR_PARENT;
     res->parent.level = level;
     res->parent.ident = tok;
+  } else if (tok->kind == TOKEN_IF) {
+    Parser_advance(par);
+
+    Expr *cond = Expr_();
+    err = Parser_parse_expr(cond, par, 0);
+    if (err)
+      return err;
+
+    peeked = Parser_peek(par);
+    if (peeked->flags & TOKEN_FLAG_STARTER) {
+      fprintf(stderr, "expected block expression after `if`, found '%s'\n",
+              token_label(peeked));
+      return PARSER_EXPECTED_EXPRESSION;
+    }
+    Parser_advance(par);
+
+    Expr *then_branch = Expr_();
+    err = Parser_parse_expr(then_branch, par, 0);
+    if (err)
+      return err;
+
+    Expr *else_branch = NULL;
+    peeked = Parser_peek(par);
+
+    if (peeked->kind == TOKEN_ELSE) {
+      Parser_advance(par);
+
+      peeked = Parser_peek(par);
+      if (peeked->flags & TOKEN_FLAG_STARTER) {
+        fprintf(stderr, "expected block expression after `if`, found '%s'\n",
+                token_label(peeked));
+        return PARSER_EXPECTED_EXPRESSION;
+      }
+
+      Parser_advance(par);
+      else_branch = Expr_();
+      err = Parser_parse_expr(else_branch, par, 0);
+      if (err)
+        return err;
+    }
+
+    res->kind = EXPR_IF;
+    res->if_node.cond = cond;
+    res->if_node.then_branch = then_branch;
+    res->if_node.else_branch = else_branch;
   } else {
     fprintf(stderr, "unexpected token: %s\n", token_label(tok));
     return PARSER_UNEXPECTED_TOKEN;
@@ -289,6 +334,12 @@ void Expr_free(Expr *node) {
     da_for(expr, &node->block) {
       Expr_free(*expr);
     }
+    break;
+  case EXPR_IF:
+    Expr_free(node->if_node.cond);
+    Expr_free(node->if_node.then_branch);
+    if (node->if_node.else_branch)
+      Expr_free(node->if_node.else_branch);
     break;
   }
   free(node);

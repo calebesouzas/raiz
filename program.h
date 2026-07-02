@@ -7,6 +7,7 @@ typedef struct {
     ERR_SEM_ALREADY_DECLARED_SYMBOL,
     ERR_SEM_ASSIGN_TO_VAL,
     ERR_SEM_ASSIGN_TO_RVALUE,
+    ERR_SEM_DECL_AFTER_IF_ELSE,
   } code;
   Token *token;
 } SemanticError;

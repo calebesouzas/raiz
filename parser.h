@@ -11,6 +11,7 @@ typedef struct Expr {
     EXPR_DECL,
     EXPR_BLOCK,
     EXPR_PARENT,
+    EXPR_IF,
   } kind;
   union {
     Token *literal;
@@ -40,6 +41,9 @@ typedef struct Expr {
       uint32_t level;
       Token *ident;
     } parent;
+    struct {
+      struct Expr *cond, *then_branch, *else_branch;
+    } if_node;
   };
 } Expr;
 da_make(ExprNode_A, Expr**);
@@ -58,6 +62,7 @@ enum ParserError {
   PARSER_EXPECTED_IDENTIFIER,
   PARSER_EXPECTED_ASSIGNMENT,
   PARSER_EXPECTED_FINISH,
+  PARSER_EXPECTED_EXPRESSION,
   PARSER_NOT_CLOSED_GROUP,
   PARSER_NOT_CLOSED_BLOCK,
 };
