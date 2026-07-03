@@ -122,6 +122,8 @@ EvalResult eval(Expr *e, Scope *s) {
     s_in = Scope_new(s);
     da_for(line, &e->block) {
       res = eval(*line, s_in);
+      if (res.sig == SIGNAL_BREAK)
+        break;
     }
     free(s_in);
     s->inner = NULL;
@@ -147,21 +149,20 @@ EvalResult eval(Expr *e, Scope *s) {
     }
     break;
   case EXPR_WHILE:
-    while ((res = eval(e->while_node.cond, s)).value) {
+    while ((cond = eval(e->while_node.cond, s).value)) {
       if (res.sig == SIGNAL_BREAK)
         break;
       if (res.sig == SIGNAL_CONTINUE)
         continue;
 
-      value = eval(e->while_node.body, s).value;
+      res = eval(e->while_node.body, s);
     }
     if (res.sig == SIGNAL_BREAK && e->while_node.else_branch) {
-      value = eval(e->while_node.else_branch, s).value;
+      res = eval(e->while_node.else_branch, s);
     } else if (e->while_node.then_branch) {
-      value = eval(e->while_node.then_branch, s).value;
+      res = eval(e->while_node.then_branch, s);
     }
     res.sig = SIGNAL_NONE;
-    res.value = value;
     break;
   case EXPR_BREAK:
     res.sig = SIGNAL_BREAK;
