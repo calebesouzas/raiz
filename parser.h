@@ -12,6 +12,9 @@ typedef struct Expr {
     EXPR_BLOCK,
     EXPR_PARENT,
     EXPR_IF,
+    EXPR_WHILE,
+    EXPR_BREAK,
+    EXPR_CONTINUE,
   } kind;
   union {
     Token *literal;
@@ -44,6 +47,9 @@ typedef struct Expr {
     struct {
       struct Expr *cond, *then_branch, *else_branch;
     } if_node;
+    struct {
+      struct Expr *cond, *body, *then_branch, *else_branch;
+    } while_node;
   };
 } Expr;
 da_make(ExprNode_A, Expr**);

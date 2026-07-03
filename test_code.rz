@@ -1,11 +1,14 @@
-val x = 35
-val y = {
-  val x = 16
-  /* x = 16, ^x = 35 */
-  x + ^x
-} // 51
-var z = if y == 51 {
-  17
+val max = 15
+val point = 10
+
+var i = 0
+while i < max {
+  if i > point {
+    break
+  }
+  i = i + 1
+} then {
+  i
 } else {
-  71
+  96
 }

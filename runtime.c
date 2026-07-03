@@ -1,26 +1,32 @@
 #ifndef RAIZ_RUNTIME_C
 #define RAIZ_RUNTIME_C
 
-int eval(Expr *e, Scope *s) {
+EvalResult eval(Expr *e, Scope *s) {
   Symbol *sym, new_symbol;
   Scope *s_in, *target;
-  int value, ls, rs;
+  int value, ls, rs, cond;
   char *ident;
   void *save;
   Expr **line;
+  EvalResult res = {0};
+  EvalResult other = {0};
 
   switch (e->kind) {
   case EXPR_LITERAL:
-    return e->literal->value;
+    res.value = e->literal->value;
+    break;
   case EXPR_UNARY:
-    value = eval(e->unary.in, s);
+    value = eval(e->unary.in, s).value;
     switch (e->unary.op->kind) {
     case TOKEN_MINUS:
-      return -value;
+      res.value = -value;
+      break;
     case TOKEN_BANG:
-      return !value;
+      res.value = !value;
+      break;
     case TOKEN_TILDE:
-      return ~value;
+      res.value = ~value;
+      break;
     default:
       PANIC("invalid unary operator (token %s)\n", token_label(e->binary.op));
     }
@@ -29,75 +35,97 @@ int eval(Expr *e, Scope *s) {
     if (e->binary.op->kind == TOKEN_EQUAL) {
       ident = e->binary.ls->ident->lexeme;
       sym = Scope_search_until_global(s, ident, e->binary.ls->ident->len);
-      sym->value = eval(e->binary.rs, s);
-      return sym->value;
+      sym->value = eval(e->binary.rs, s).value;
+      res.value = sym->value;
+      return res;
     }
 
-    ls = eval(e->binary.ls, s);
-    rs = eval(e->binary.rs, s);
+    ls = eval(e->binary.ls, s).value;
+    rs = eval(e->binary.rs, s).value;
     switch (e->binary.op->kind) {
     case TOKEN_PLUS:
-      return ls + rs;
+      res.value = ls + rs;
+      break;
     case TOKEN_MINUS:
-      return ls - rs;
+      res.value = ls - rs;
+      break;
     case TOKEN_STAR:
-      return ls * rs;
+      res.value = ls * rs;
+      break;
     case TOKEN_SLASH:
-      return ls / rs;
+      res.value = ls / rs;
+      break;
     case TOKEN_EQUAL_X2:
-      return ls == rs;
+      res.value = ls == rs;
+      break;
     case TOKEN_BANG_EQUAL:
-      return ls != rs;
+      res.value = ls != rs;
+      break;
     case TOKEN_PIPE:
-      return ls | rs;
+      res.value = ls | rs;
+      break;
     case TOKEN_PIPE_X2:
-      return ls || rs;
+      res.value = ls || rs;
+      break;
     case TOKEN_AMPER:
-      return ls & rs;
+      res.value = ls & rs;
+      break;
     case TOKEN_AMPER_X2:
-      return ls && rs;
+      res.value = ls && rs;
+      break;
     case TOKEN_HAT:
-      return ls ^ rs;
+      res.value = ls ^ rs;
+      break;
     case TOKEN_LESS:
-      return ls < rs;
+      res.value = ls < rs;
+      break;
     case TOKEN_LESS_EQUAL:
-      return ls <= rs;
+      res.value = ls <= rs;
+      break;
     case TOKEN_LESS_X2:
-      return ls << rs;
+      res.value = ls << rs;
+      break;
     case TOKEN_GREAT:
-      return ls > rs;
+      res.value = ls > rs;
+      break;
     case TOKEN_GREAT_EQUAL:
-      return ls >= rs;
+      res.value = ls >= rs;
+      break;
     case TOKEN_GREAT_X2:
-      return ls >> rs;
+      res.value = ls >> rs;
+      break;
     default:
       PANIC("invalid binary operator (token %s)\n", token_label(e->binary.op));
     }
+    break;
   case EXPR_GROUP:
-    return eval(e->group.in, s);
+    res.value = eval(e->group.in, s).value;
+    break;
   case EXPR_IDENT:
     sym = Scope_search_until_global(s, e->ident->lexeme, e->ident->len);
-    return sym->value;
+    res.value = sym->value;
+    break;
   case EXPR_DECL:
     sym = Scope_search_single_level(
               s, e->decl.ident->lexeme, e->decl.ident->len);
 
-    value = e->decl.value != NULL ? eval(e->decl.value, s) : 0;
+    value = e->decl.value != NULL ? eval(e->decl.value, s).value : 0;
     new_symbol.value = value;
     new_symbol.is_variable = e->decl.tok->kind == TOKEN_VAR;
     strncpy(new_symbol.ident, e->decl.ident->lexeme, e->decl.ident->len);
     new_symbol.ident[e->decl.ident->len] = '\0';
     da_add(&s->symbols, new_symbol);
 
-    return new_symbol.value;
+    res.value = new_symbol.value;
+    break;
   case EXPR_BLOCK:
     s_in = Scope_new(s);
     da_for(line, &e->block) {
-      value = eval(*line, s_in);
+      res = eval(*line, s_in);
     }
     free(s_in);
     s->inner = NULL;
-    return value;
+    break;
   case EXPR_PARENT:
     target = s;
     uint32_t level = e->parent.level;
@@ -108,17 +136,41 @@ int eval(Expr *e, Scope *s) {
 
     sym = Scope_search_until_global(
               target, identifier->lexeme, identifier->len);
-    return sym->value;
-  case EXPR_IF: {
-    int cond = eval(e->if_node.cond, s);
+    res.value = sym->value;
+    break;
+  case EXPR_IF:
+    cond = eval(e->if_node.cond, s).value;
     if (cond) {
-      return eval(e->if_node.then_branch, s);
+      res = eval(e->if_node.then_branch, s);
     } else if (e->if_node.else_branch) {
-      return eval(e->if_node.else_branch, s);
+      res = eval(e->if_node.else_branch, s);
     }
-  } break;
+    break;
+  case EXPR_WHILE:
+    while ((res = eval(e->while_node.cond, s)).value) {
+      if (res.sig == SIGNAL_BREAK)
+        break;
+      if (res.sig == SIGNAL_CONTINUE)
+        continue;
+
+      value = eval(e->while_node.body, s).value;
+    }
+    if (res.sig == SIGNAL_BREAK && e->while_node.else_branch) {
+      value = eval(e->while_node.else_branch, s).value;
+    } else if (e->while_node.then_branch) {
+      value = eval(e->while_node.then_branch, s).value;
+    }
+    res.sig = SIGNAL_NONE;
+    res.value = value;
+    break;
+  case EXPR_BREAK:
+    res.sig = SIGNAL_BREAK;
+    break;
+  case EXPR_CONTINUE:
+    res.sig = SIGNAL_CONTINUE;
+    break;
   }
-  return 0;
+  return res;
 }
 
 #endif // RAIZ_RUNTIME_C

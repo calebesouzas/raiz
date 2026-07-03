@@ -229,6 +229,79 @@ int Parser_parse_line(Expr *res, Parser *par) {
     res->decl.tok = tok;
     res->decl.ident = tok + 1;
     break; // case VAR or VAL
+  case TOKEN_WHILE:
+    Parser_advance(par);
+
+    Expr *cond = Expr_();
+    err = Parser_parse_expr(cond, par, 0);
+    if (err)
+      return err;
+
+    peeked = Parser_peek(par);
+    if (peeked->flags & TOKEN_FLAG_STARTER) {
+      fprintf(stderr, "expected block expression after `while`, found '%s'\n",
+              token_label(peeked));
+      return PARSER_EXPECTED_EXPRESSION;
+    }
+    Parser_advance(par);
+
+    Expr *body = Expr_();
+    err = Parser_parse_expr(body, par, 0);
+    if (err)
+      return err;
+
+    Expr *then_branch = NULL;
+    peeked = Parser_peek(par);
+
+    if (peeked->kind == TOKEN_THEN) {
+      Parser_advance(par);
+
+      peeked = Parser_peek(par);
+      if (peeked->flags & TOKEN_FLAG_STARTER) {
+        fprintf(stderr, "expected block expression after `then`, found '%s'\n",
+                token_label(peeked));
+        return PARSER_EXPECTED_EXPRESSION;
+      }
+
+      Parser_advance(par);
+      then_branch = Expr_();
+      err = Parser_parse_expr(then_branch, par, 0);
+      if (err)
+        return err;
+    }
+
+    Expr *else_branch = NULL;
+    peeked = Parser_peek(par);
+
+    if (peeked->kind == TOKEN_ELSE) {
+      Parser_advance(par);
+
+      peeked = Parser_peek(par);
+      if (peeked->flags & TOKEN_FLAG_STARTER) {
+        fprintf(stderr, "expected block expression after `else`, found '%s'\n",
+                token_label(peeked));
+        return PARSER_EXPECTED_EXPRESSION;
+      }
+
+      Parser_advance(par);
+      else_branch = Expr_();
+      err = Parser_parse_expr(else_branch, par, 0);
+      if (err)
+        return err;
+    }
+
+    res->kind = EXPR_WHILE;
+    res->while_node.cond = cond;
+    res->while_node.body = body;
+    res->while_node.then_branch = then_branch;
+    res->while_node.else_branch = else_branch;
+    break;
+  case TOKEN_BREAK:
+    res->kind = EXPR_BREAK;
+    break;
+  case TOKEN_CONTINUE:
+    res->kind = EXPR_CONTINUE;
+    break;
   default: UNREACHABLE("token %s\n", token_label(tok));
   }
 
@@ -315,6 +388,8 @@ void Expr_free(Expr *node) {
   case EXPR_LITERAL:
   case EXPR_IDENT:
   case EXPR_PARENT:
+  case EXPR_BREAK:
+  case EXPR_CONTINUE:
     break;
   case EXPR_BINARY:
     Expr_free(node->binary.ls);
@@ -338,8 +413,13 @@ void Expr_free(Expr *node) {
   case EXPR_IF:
     Expr_free(node->if_node.cond);
     Expr_free(node->if_node.then_branch);
-    if (node->if_node.else_branch)
-      Expr_free(node->if_node.else_branch);
+    Expr_free(node->if_node.else_branch);
+    break;
+  case EXPR_WHILE:
+    Expr_free(node->while_node.cond);
+    Expr_free(node->while_node.body);
+    Expr_free(node->while_node.then_branch);
+    Expr_free(node->while_node.else_branch);
     break;
   }
   free(node);

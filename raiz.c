@@ -88,6 +88,9 @@ void print_errs(SemanticError_A *errs) {
     case ERR_SEM_DECL_AFTER_IF_ELSE:
       P(SPEC"'%.*s' declaration after `if-else`\n", DAT, TOK);
       break;
+    case ERR_SEM_DECL_AFTER_WHILE_THEN_ELSE:
+      P(SPEC"'%.*s' declaration after `while-then-else`\n", DAT, TOK);
+      break;
     }
   }
 }

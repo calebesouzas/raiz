@@ -44,7 +44,7 @@ int Program_run(Program *pro) {
 
   value = 0;
   da_for(expr, &pro->code) {
-    value = eval(*expr, pro->sco);
+    value = eval(*expr, pro->sco).value;
   }
 
   return value;
@@ -64,6 +64,8 @@ void Expr_check(Expr *expr, SemanticError_A *errs, Scope *sco) {
   switch (expr->kind) {
   case EXPR_LITERAL:
   case EXPR_UNARY:
+  case EXPR_BREAK:
+  case EXPR_CONTINUE:
     break; // nothing to check?
   case EXPR_BINARY:
     if (expr->binary.op->kind == TOKEN_EQUAL) {
@@ -149,9 +151,28 @@ void Expr_check(Expr *expr, SemanticError_A *errs, Scope *sco) {
     }
     Expr_check(expr->if_node.cond, errs, sco);
     Expr_check(expr->if_node.then_branch, errs, sco);
-    if (expr->if_node.else_branch)
-      Expr_check(expr->if_node.else_branch, errs, sco);
+    Expr_check(expr->if_node.else_branch, errs, sco);
     break;
+  case EXPR_WHILE:
+    if (expr->while_node.body->kind == EXPR_DECL) {
+      add(ERR_SEM_DECL_AFTER_WHILE_THEN_ELSE,
+          expr->while_node.body->decl.tok);
+      return;
+    } else if (expr->while_node.then_branch
+        && expr->while_node.then_branch->kind == EXPR_DECL) {
+      add(ERR_SEM_DECL_AFTER_WHILE_THEN_ELSE,
+          expr->while_node.then_branch->decl.tok);
+      return;
+    } else if (expr->while_node.else_branch
+        && expr->while_node.else_branch->kind == EXPR_DECL) {
+      add(ERR_SEM_DECL_AFTER_WHILE_THEN_ELSE,
+          expr->while_node.else_branch->decl.tok);
+      return;
+    }
+    Expr_check(expr->while_node.cond, errs, sco);
+    Expr_check(expr->while_node.body, errs, sco);
+    Expr_check(expr->while_node.then_branch, errs, sco);
+    Expr_check(expr->while_node.else_branch, errs, sco);
   }
 }
 

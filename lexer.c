@@ -221,6 +221,10 @@ char *token_label(Token *tok) {
   case TOKEN_FALSE: return "false";
   case TOKEN_IF: return "if";
   case TOKEN_ELSE: return "else";
+  case TOKEN_WHILE: return "while";
+  case TOKEN_THEN: return "then";
+  case TOKEN_BREAK: return "break";
+  case TOKEN_CONTINUE: return "continue";
   case TOKEN_EOF: return "EOF";
   }
   fprintf(stderr, "unknown token (id %d)\n", tok->kind); return NULL;
