@@ -11,6 +11,7 @@ enum TokenFlags {
   TOKEN_FLAG_FINISHER = 1 << 6, // can it finish an expression-like statement?
   TOKEN_FLAG_RIGHT    = 1 << 7, // is it a right associative infix operator?
   TOKEN_FLAG_CONST    = 1 << 8, // is it a constant?
+  TOKEN_FLAG_FUNCTION = 1 << 9, // is it a builtin function?
 };
 
 #define TOKEN_X_MACRO\
@@ -54,6 +55,9 @@ enum TokenFlags {
   X(TOKEN_THEN, TOKEN_FLAG_KEYWORD | TOKEN_FLAG_BREAKING)\
   X(TOKEN_BREAK, TOKEN_FLAG_KEYWORD|TOKEN_FLAG_STARTER|TOKEN_FLAG_BREAKING)\
   X(TOKEN_CONTINUE, TOKEN_FLAG_KEYWORD|TOKEN_FLAG_STARTER|TOKEN_FLAG_BREAKING)\
+\
+  X(TOKEN_PRINT, TOKEN_FLAG_KEYWORD|TOKEN_FLAG_FUNCTION)\
+  X(TOKEN_READ, TOKEN_FLAG_KEYWORD|TOKEN_FLAG_FUNCTION)\
 \
   X(TOKEN_NEWLINE, TOKEN_FLAG_BREAKING | TOKEN_FLAG_FINISHER)\
 \
@@ -125,6 +129,8 @@ const struct TokenKeywordTable KEYWORDS[] = {
   {"then", 4, TOKEN_THEN},
   {"break", 5, TOKEN_BREAK},
   {"continue", 8, TOKEN_CONTINUE},
+  {"print", 5, TOKEN_PRINT},
+  {"read", 4, TOKEN_READ},
 };
 
 char Lexer_peek(Lexer *lex);

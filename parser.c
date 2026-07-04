@@ -129,6 +129,18 @@ int Parser_parse_nud(Expr *res, Parser *par) {
     res->if_node.cond = cond;
     res->if_node.then_branch = then_branch;
     res->if_node.else_branch = else_branch;
+  } else if (tok->kind == TOKEN_READ) {
+    res->kind = EXPR_READ;
+  } else if (tok->kind == TOKEN_PRINT) {
+    Parser_advance(par);
+
+    value = Expr_();
+    err = Parser_parse_expr(value, par, 0);
+    if (err)
+      return err;
+
+    res->kind = EXPR_PRINT;
+    res->print.value = value;
   } else {
     fprintf(stderr, "unexpected token: %s\n", token_label(tok));
     return PARSER_UNEXPECTED_TOKEN;
@@ -390,6 +402,7 @@ void Expr_free(Expr *node) {
   case EXPR_PARENT:
   case EXPR_BREAK:
   case EXPR_CONTINUE:
+  case EXPR_READ:
     break;
   case EXPR_BINARY:
     Expr_free(node->binary.ls);
@@ -420,6 +433,9 @@ void Expr_free(Expr *node) {
     Expr_free(node->while_node.body);
     Expr_free(node->while_node.then_branch);
     Expr_free(node->while_node.else_branch);
+    break;
+  case EXPR_PRINT:
+    Expr_free(node->print.value);
     break;
   }
   free(node);

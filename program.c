@@ -66,6 +66,7 @@ void Expr_check(Expr *expr, SemanticError_A *errs, Scope *sco) {
   case EXPR_UNARY:
   case EXPR_BREAK:
   case EXPR_CONTINUE:
+  case EXPR_READ:
     break; // nothing to check?
   case EXPR_BINARY:
     if (expr->binary.op->kind == TOKEN_EQUAL) {
@@ -173,6 +174,10 @@ void Expr_check(Expr *expr, SemanticError_A *errs, Scope *sco) {
     Expr_check(expr->while_node.body, errs, sco);
     Expr_check(expr->while_node.then_branch, errs, sco);
     Expr_check(expr->while_node.else_branch, errs, sco);
+    break;
+  case EXPR_PRINT:
+    Expr_check(expr->print.value, errs, sco);
+    break;
   }
 }
 

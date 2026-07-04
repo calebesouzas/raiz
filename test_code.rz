@@ -1,14 +1,14 @@
-val max = 15
-val point = 10
+val tries = 5
+val correct = 7
 
-var i = 0
-while i < max {
-  if i > point {
+var attempt = 1
+while read != correct {
+  if attempt > tries {
     break
   }
-  i = i + 1
+  print attempt = attempt + 1
 } then {
-  i
+  69
 } else {
   96
 }

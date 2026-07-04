@@ -15,6 +15,8 @@ typedef struct Expr {
     EXPR_WHILE,
     EXPR_BREAK,
     EXPR_CONTINUE,
+    EXPR_PRINT,
+    EXPR_READ,
   } kind;
   union {
     Token *literal;
@@ -50,6 +52,9 @@ typedef struct Expr {
     struct {
       struct Expr *cond, *body, *then_branch, *else_branch;
     } while_node;
+    struct {
+      struct Expr *value;
+    } print;
   };
 } Expr;
 da_make(ExprNode_A, Expr**);

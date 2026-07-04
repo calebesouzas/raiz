@@ -170,6 +170,17 @@ EvalResult eval(Expr *e, Scope *s) {
   case EXPR_CONTINUE:
     res.sig = SIGNAL_CONTINUE;
     break;
+  case EXPR_PRINT:
+    res.value = eval(e->print.value, s).value;
+    printf("%d\n", res.value);
+    break;
+  case EXPR_READ: {
+    char buf[20];
+    fgets(buf, sizeof(buf), stdin);
+    if (sscanf(buf, "%d\n", &res.value) != 1) {
+      PANIC("sscanf() didn't match the required format\n");
+    }
+  } break;
   }
   return res;
 }
