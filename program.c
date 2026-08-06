@@ -38,11 +38,10 @@ int Program_build(Program *pro) {
   return 0;
 }
 
-int Program_run(Program *pro) {
+Value Program_run(Program *pro) {
   Expr **expr;
-  int value;
+  Value value = {0};
 
-  value = 0;
   da_for(expr, &pro->code) {
     value = eval(*expr, pro->sco).value;
   }
@@ -51,7 +50,8 @@ int Program_run(Program *pro) {
 }
 
 #undef add
-#define add(code, token) da_add(errs, ((SemanticError){(code), (token)}))
+#define add(code, token, scope, expr)\
+  da_add(errs, ((SemanticError){(code), (token), (scope), (expr)}))
 void Expr_check(Expr *expr, SemanticError_A *errs, Scope *sco) {
   if (!expr)
     return;
@@ -71,17 +71,18 @@ void Expr_check(Expr *expr, SemanticError_A *errs, Scope *sco) {
   case EXPR_BINARY:
     if (expr->binary.op->kind == TOKEN_EQUAL) {
       if (expr->binary.ls->kind != EXPR_IDENT) {
-        add(ERR_SEM_ASSIGN_TO_RVALUE, NULL); // from where do I get the token?
+        // from where do I get the token?
+        add(ERR_SEM_ASSIGN_TO_RVALUE, NULL, NULL, NULL);
         return;
       }
       ident = expr->binary.ls->ident;
       sym = Scope_search_until_global(sco, ident->lexeme, ident->len);
       if (sym == NULL) {
-        add(ERR_SEM_UNDEFINED_SYMBOL, ident);
+        add(ERR_SEM_UNDEFINED_SYMBOL, ident, NULL, NULL);
         return;
       }
       if (!sym->is_variable) {
-        add(ERR_SEM_ASSIGN_TO_VAL, ident);
+        add(ERR_SEM_ASSIGN_TO_VAL, ident, NULL, expr);
         return;
       }
     }
@@ -95,7 +96,7 @@ void Expr_check(Expr *expr, SemanticError_A *errs, Scope *sco) {
     sym = Scope_search_until_global(sco, expr->ident->lexeme, expr->ident->len);
 
     if (sym == NULL) {
-      add(ERR_SEM_UNDEFINED_SYMBOL, expr->ident);
+      add(ERR_SEM_UNDEFINED_SYMBOL, expr->ident, NULL, NULL);
       return;
     }
     break;
@@ -103,7 +104,7 @@ void Expr_check(Expr *expr, SemanticError_A *errs, Scope *sco) {
     ident = expr->decl.ident;
     sym = Scope_search_single_level(sco, ident->lexeme, ident->len);
     if (sym != NULL) {
-      add(ERR_SEM_ALREADY_DECLARED_SYMBOL, ident);
+      add(ERR_SEM_ALREADY_DECLARED_SYMBOL, ident, sco, NULL);
       return;
     }
 
@@ -111,11 +112,10 @@ void Expr_check(Expr *expr, SemanticError_A *errs, Scope *sco) {
       Expr_check(expr->decl.value, errs, sco);
 
     Symbol new_symbol = {0};
+    new_symbol.ident = ident;
     new_symbol.is_variable = expr->decl.tok->kind == TOKEN_VAR;
-    strncpy(new_symbol.ident, expr->decl.ident->lexeme, expr->decl.ident->len);
-    new_symbol.ident[expr->decl.ident->len] = '\0';
 
-    da_add(&sco->symbols, new_symbol);
+    Scope_insert(sco, new_symbol);
 
     break;
   case EXPR_BLOCK:
@@ -137,17 +137,21 @@ void Expr_check(Expr *expr, SemanticError_A *errs, Scope *sco) {
 
     sym = Scope_search_until_global(target, ident->lexeme, ident->len);
     if (sym == NULL) {
-      add(ERR_SEM_UNDEFINED_SYMBOL, ident);
+      add(ERR_SEM_UNDEFINED_SYMBOL, ident, NULL, NULL);
       return;
     }
     break;
   case EXPR_IF:
     if (expr->if_node.then_branch->kind == EXPR_DECL) {
-      add(ERR_SEM_DECL_AFTER_IF_ELSE, expr->if_node.then_branch->decl.tok);
+      add(ERR_SEM_DECL_AFTER_IF_ELSE,
+          expr->if_node.then_branch->decl.tok,
+          NULL, expr);
       return;
     } else if (expr->if_node.else_branch
         && expr->if_node.else_branch->kind == EXPR_DECL) {
-      add(ERR_SEM_DECL_AFTER_IF_ELSE, expr->if_node.else_branch->decl.tok);
+      add(ERR_SEM_DECL_AFTER_IF_ELSE,
+          expr->if_node.else_branch->decl.tok,
+          NULL, expr);
       return;
     }
     Expr_check(expr->if_node.cond, errs, sco);
@@ -157,17 +161,20 @@ void Expr_check(Expr *expr, SemanticError_A *errs, Scope *sco) {
   case EXPR_WHILE:
     if (expr->while_node.body->kind == EXPR_DECL) {
       add(ERR_SEM_DECL_AFTER_WHILE_THEN_ELSE,
-          expr->while_node.body->decl.tok);
+          expr->while_node.body->decl.tok,
+          NULL, expr);
       return;
     } else if (expr->while_node.then_branch
         && expr->while_node.then_branch->kind == EXPR_DECL) {
       add(ERR_SEM_DECL_AFTER_WHILE_THEN_ELSE,
-          expr->while_node.then_branch->decl.tok);
+          expr->while_node.then_branch->decl.tok,
+          NULL, expr);
       return;
     } else if (expr->while_node.else_branch
         && expr->while_node.else_branch->kind == EXPR_DECL) {
       add(ERR_SEM_DECL_AFTER_WHILE_THEN_ELSE,
-          expr->while_node.else_branch->decl.tok);
+          expr->while_node.else_branch->decl.tok,
+          NULL, expr);
       return;
     }
     Expr_check(expr->while_node.cond, errs, sco);

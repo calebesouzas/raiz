@@ -4,7 +4,8 @@
 EvalResult eval(Expr *e, Scope *s) {
   Symbol *sym, new_symbol;
   Scope *s_in, *target;
-  int value, ls, rs, cond;
+  uint64_t ls, rs, cond;
+  Value value;
   char *ident;
   void *save;
   Expr **line;
@@ -13,19 +14,19 @@ EvalResult eval(Expr *e, Scope *s) {
 
   switch (e->kind) {
   case EXPR_LITERAL:
-    res.value = e->literal->value;
+    res.value.data = e->literal->literal.data;
     break;
   case EXPR_UNARY:
     value = eval(e->unary.in, s).value;
     switch (e->unary.op->kind) {
     case TOKEN_MINUS:
-      res.value = -value;
+      res.value.data = -value.data;
       break;
     case TOKEN_BANG:
-      res.value = !value;
+      res.value.data = !value.data;
       break;
     case TOKEN_TILDE:
-      res.value = ~value;
+      res.value.data = ~value.data;
       break;
     default:
       PANIC("invalid unary operator (token %s)\n", token_label(e->binary.op));
@@ -40,59 +41,59 @@ EvalResult eval(Expr *e, Scope *s) {
       return res;
     }
 
-    ls = eval(e->binary.ls, s).value;
-    rs = eval(e->binary.rs, s).value;
+    ls = eval(e->binary.ls, s).value.data;
+    rs = eval(e->binary.rs, s).value.data;
     switch (e->binary.op->kind) {
     case TOKEN_PLUS:
-      res.value = ls + rs;
+      res.value.data = ls + rs;
       break;
     case TOKEN_MINUS:
-      res.value = ls - rs;
+      res.value.data = ls - rs;
       break;
     case TOKEN_STAR:
-      res.value = ls * rs;
+      res.value.data = ls * rs;
       break;
     case TOKEN_SLASH:
-      res.value = ls / rs;
+      res.value.data = ls / rs;
       break;
     case TOKEN_EQUAL_X2:
-      res.value = ls == rs;
+      res.value.data = ls == rs;
       break;
     case TOKEN_BANG_EQUAL:
-      res.value = ls != rs;
+      res.value.data = ls != rs;
       break;
     case TOKEN_PIPE:
-      res.value = ls | rs;
+      res.value.data = ls | rs;
       break;
     case TOKEN_PIPE_X2:
-      res.value = ls || rs;
+      res.value.data = ls || rs;
       break;
     case TOKEN_AMPER:
-      res.value = ls & rs;
+      res.value.data = ls & rs;
       break;
     case TOKEN_AMPER_X2:
-      res.value = ls && rs;
+      res.value.data = ls && rs;
       break;
     case TOKEN_HAT:
-      res.value = ls ^ rs;
+      res.value.data = ls ^ rs;
       break;
     case TOKEN_LESS:
-      res.value = ls < rs;
+      res.value.data = ls < rs;
       break;
     case TOKEN_LESS_EQUAL:
-      res.value = ls <= rs;
+      res.value.data = ls <= rs;
       break;
     case TOKEN_LESS_X2:
-      res.value = ls << rs;
+      res.value.data = ls << rs;
       break;
     case TOKEN_GREAT:
-      res.value = ls > rs;
+      res.value.data = ls > rs;
       break;
     case TOKEN_GREAT_EQUAL:
-      res.value = ls >= rs;
+      res.value.data = ls >= rs;
       break;
     case TOKEN_GREAT_X2:
-      res.value = ls >> rs;
+      res.value.data = ls >> rs;
       break;
     default:
       PANIC("invalid binary operator (token %s)\n", token_label(e->binary.op));
@@ -109,12 +110,11 @@ EvalResult eval(Expr *e, Scope *s) {
     sym = Scope_search_single_level(
               s, e->decl.ident->lexeme, e->decl.ident->len);
 
-    value = e->decl.value != NULL ? eval(e->decl.value, s).value : 0;
+    value = e->decl.value != NULL ? eval(e->decl.value, s).value : (Value){0};
     new_symbol.value = value;
     new_symbol.is_variable = e->decl.tok->kind == TOKEN_VAR;
-    strncpy(new_symbol.ident, e->decl.ident->lexeme, e->decl.ident->len);
-    new_symbol.ident[e->decl.ident->len] = '\0';
-    da_add(&s->symbols, new_symbol);
+    new_symbol.ident = e->decl.ident;
+    Scope_insert(s, new_symbol);
 
     res.value = new_symbol.value;
     break;
@@ -141,7 +141,7 @@ EvalResult eval(Expr *e, Scope *s) {
     res.value = sym->value;
     break;
   case EXPR_IF:
-    cond = eval(e->if_node.cond, s).value;
+    cond = eval(e->if_node.cond, s).value.data;
     if (cond) {
       res = eval(e->if_node.then_branch, s);
     } else if (e->if_node.else_branch) {
@@ -149,7 +149,7 @@ EvalResult eval(Expr *e, Scope *s) {
     }
     break;
   case EXPR_WHILE:
-    while ((cond = eval(e->while_node.cond, s).value)) {
+    while ((cond = eval(e->while_node.cond, s).value.data)) {
       if (res.sig == SIGNAL_BREAK)
         break;
       if (res.sig == SIGNAL_CONTINUE)
@@ -172,12 +172,12 @@ EvalResult eval(Expr *e, Scope *s) {
     break;
   case EXPR_PRINT:
     res.value = eval(e->print.value, s).value;
-    printf("%d\n", res.value);
+    printf("%llu\n", res.value.data);
     break;
   case EXPR_READ: {
     char buf[20];
     fgets(buf, sizeof(buf), stdin);
-    if (sscanf(buf, "%d\n", &res.value) != 1) {
+    if (sscanf(buf, "%llu\n", &res.value.data) != 1) {
       PANIC("sscanf() didn't match the required format\n");
     }
   } break;

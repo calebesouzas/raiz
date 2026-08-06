@@ -20,4 +20,9 @@ typedef struct {
   uint8_t flags;
 } Value;
 
+#define Value_(k, t, v) ((Value){.kind = k, .data = ((t) v)})
+
+char *Value_string(Value *v);
+char *Value_type(Value *v);
+
 #endif // RAIZ_VALUE_C

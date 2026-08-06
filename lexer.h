@@ -83,7 +83,7 @@ typedef struct {
   int flags;
 
   // data
-  int value; // if it's `TOKEN_NUMBER`
+  Value literal;
   char ident[TOKEN_IDENTIFIER_SIZE]; // if it's `TOKEN_IDENT`
 
   // metadata
@@ -115,14 +115,14 @@ struct TokenKeywordTable {
   char *string;
   size_t len;
   uint32_t kind;
-  int value;
+  Value value;
 };
 
 const struct TokenKeywordTable KEYWORDS[] = {
   {"var", 3, TOKEN_VAR},
   {"val", 3, TOKEN_VAL},
-  {"true", 4, TOKEN_TRUE, 1},
-  {"false", 5, TOKEN_FALSE, 0},
+  {"true", 4, TOKEN_TRUE, Value_(VAL_BOOL, bool, 1)},
+  {"false", 5, TOKEN_FALSE, Value_(VAL_BOOL, bool, 0)},
   {"if", 2, TOKEN_IF},
   {"else", 4, TOKEN_ELSE},
   {"while", 5, TOKEN_WHILE},

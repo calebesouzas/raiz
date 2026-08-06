@@ -2,8 +2,8 @@
 #define RAIZ_SYMBOLS_H
 
 typedef struct {
-  char ident[TOKEN_IDENTIFIER_SIZE];
-  int value;
+  Token *ident;
+  Value value;
   bool is_variable;
 } Symbol;
 

@@ -451,7 +451,7 @@ void Expr_dump(Expr *root, size_t indent, size_t level) {
   }
   switch (root->kind) {
   case EXPR_LITERAL:
-    fprintf(stderr, "literal %d\n", root->literal->value);
+    fprintf(stderr, "literal %llu\n", root->literal->literal.data);
     break;
   case EXPR_BINARY:
     fprintf(stderr, "binary, operator %s\n", token_label(root->binary.op));

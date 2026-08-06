@@ -33,7 +33,7 @@ Symbol *Scope_search_single_level(Scope *sco, char *symbol, size_t len) {
   Symbol *sym;
 
   da_for(sym, &sco->symbols) {
-    if (strncmp(sym->ident, symbol, len) == 0)
+    if (strncmp(sym->ident->lexeme, symbol, len) == 0 && sym->ident->len == len)
       return sym;
   }
 
@@ -53,6 +53,24 @@ Symbol *Scope_search_until_global(Scope *sco, char *symbol, size_t len) {
   } while (cur != NULL);
 
   return NULL;
+}
+
+void Scope_dump(Scope *sco) {
+  Symbol *sym;
+  da_for(sym, &sco->symbols) {
+    fprintf(stderr, "%.*s = %s\n",
+        sym->ident->len, sym->ident->lexeme, Value_string(&sym->value));
+  }
+
+  fprintf(stderr, "// --- //\n");
+
+  if (sco->inner) {
+    Scope_dump(sco->inner);
+  }
+}
+
+void Scope_insert(Scope *sco, Symbol sym) {
+  da_add(&sco->symbols, sym);
 }
 
 void Scope_free(Scope *sco) {

@@ -12,6 +12,7 @@ Scope *Scope_new(Scope *parent);
 Symbol *Scope_search(Scope *sco, char *symbol, size_t len);
 
 void Scope_free(Scope *sco);
+void Scope_dump(Scope *sco);
 
 #endif // RAIZ_SCOPE_H
 

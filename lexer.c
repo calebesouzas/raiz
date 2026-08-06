@@ -84,6 +84,7 @@ int Lexer_tokenize(Lexer *lex) {
       break;
     case '\n':
       lex->columns = 1;
+      lex->lines++;
       while (peek() == '\n') {
         lex->lines++;
         advance();
@@ -100,7 +101,7 @@ int Lexer_tokenize(Lexer *lex) {
             continue;
           num = (num * 10) + (cur() - '0');
         }
-        add(tk(TOKEN_NUMBER, .value = num));
+        add(tk(TOKEN_NUMBER, .literal = Value_(VAL_INT, int, num)));
       } else if (isalpha(cur()) || cur() == '_') {
         Token tok;
 
@@ -168,7 +169,7 @@ bool token_keyword(Token *tok, char *ident, size_t len) {
 
     if (key.len == len && strncmp(ident, key.string, key.len) == 0) {
       tok->kind = key.kind;
-      tok->value = key.value;
+      tok->literal = key.value;
       tok->flags = TOKEN_FLAGS[key.kind];
       return true;
     }
@@ -179,55 +180,47 @@ bool token_keyword(Token *tok, char *ident, size_t len) {
 char *token_label(Token *tok) {
   switch (tok->kind) {
   case TOKEN_INVALID: return "invalid";
-  case TOKEN_NUMBER: {
-    char *buf = malloc(32);
-    snprintf(buf, 32, "number %d", tok->value);
-    return buf;
-  } break;
-  case TOKEN_PLUS: return "+";
-  case TOKEN_MINUS: return "-";
-  case TOKEN_STAR: return "*";
-  case TOKEN_SLASH: return "/";
-  case TOKEN_L_PAREN: return "(";
-  case TOKEN_R_PAREN: return ")";
-  case TOKEN_VAR: return "var";
-  case TOKEN_VAL: return "val";
-  case TOKEN_IDENT: {
-    size_t size = strlen("identifier ") + TOKEN_IDENTIFIER_SIZE;
-    char *buf = malloc(size);
-    snprintf(buf, size, "identifier %s", tok->ident);
-    return buf;
-  } break;
-  case TOKEN_EQUAL: return "=";
-  case TOKEN_EQUAL_X2: return "==";
-  case TOKEN_BANG: return "!";
-  case TOKEN_BANG_EQUAL: return "!=";
-  case TOKEN_AMPER: return "&";
-  case TOKEN_AMPER_X2: return "&&";
-  case TOKEN_PIPE: return "|";
-  case TOKEN_PIPE_X2: return "||";
-  case TOKEN_HAT: return "^";
-  case TOKEN_TILDE: return "~";
-  case TOKEN_NEWLINE: return "new line";
-  case TOKEN_L_CURLY: return "{";
-  case TOKEN_R_CURLY: return "}";
-  case TOKEN_LESS: return "<";
-  case TOKEN_LESS_EQUAL: return "<=";
-  case TOKEN_LESS_X2: return "<<";
-  case TOKEN_GREAT: return ">";
-  case TOKEN_GREAT_EQUAL: return ">=";
-  case TOKEN_GREAT_X2: return ">>";
-  case TOKEN_TRUE: return "true";
-  case TOKEN_FALSE: return "false";
-  case TOKEN_IF: return "if";
-  case TOKEN_ELSE: return "else";
-  case TOKEN_WHILE: return "while";
-  case TOKEN_THEN: return "then";
-  case TOKEN_BREAK: return "break";
-  case TOKEN_CONTINUE: return "continue";
-  case TOKEN_PRINT: return "print";
-  case TOKEN_READ: return "read";
   case TOKEN_EOF: return "EOF";
+  case TOKEN_NEWLINE: return "newline";
+  case TOKEN_NUMBER:
+  case TOKEN_PLUS:
+  case TOKEN_MINUS:
+  case TOKEN_STAR:
+  case TOKEN_SLASH:
+  case TOKEN_L_PAREN:
+  case TOKEN_R_PAREN:
+  case TOKEN_VAR:
+  case TOKEN_VAL:
+  case TOKEN_IDENT:
+  case TOKEN_EQUAL:
+  case TOKEN_EQUAL_X2:
+  case TOKEN_BANG:
+  case TOKEN_BANG_EQUAL:
+  case TOKEN_AMPER:
+  case TOKEN_AMPER_X2:
+  case TOKEN_PIPE:
+  case TOKEN_PIPE_X2:
+  case TOKEN_HAT:
+  case TOKEN_TILDE:
+  case TOKEN_L_CURLY:
+  case TOKEN_R_CURLY:
+  case TOKEN_LESS:
+  case TOKEN_LESS_EQUAL:
+  case TOKEN_LESS_X2:
+  case TOKEN_GREAT:
+  case TOKEN_GREAT_EQUAL:
+  case TOKEN_GREAT_X2:
+  case TOKEN_TRUE:
+  case TOKEN_FALSE:
+  case TOKEN_IF:
+  case TOKEN_ELSE:
+  case TOKEN_WHILE:
+  case TOKEN_THEN:
+  case TOKEN_BREAK:
+  case TOKEN_CONTINUE:
+  case TOKEN_PRINT:
+  case TOKEN_READ:
+    return temp_sprintf("%.*s", tok->len, tok->lexeme);
   }
   fprintf(stderr, "unknown token (id %d)\n", tok->kind); return NULL;
 }
@@ -263,7 +256,7 @@ char *Lexer_point(Lexer *lex) {
   return &lex->source[lex->start];
 }
 size_t Lexer_len(Lexer *lex) {
-  return ((int)lex->i) - lex->start;
+  return lex->i - lex->start;
 }
 
 void Lexer_add(Lexer *lex, Token tok) {
