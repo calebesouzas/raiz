@@ -16,6 +16,9 @@ char code[] = {
   , 0
 };
 
+#include "strings.h"
+#include "value.h"
+
 #include "cast.h"
 #include "macros.h"
 #include "dynamic_arrays.h"
@@ -57,8 +60,8 @@ int main(int argc, char **argv) {
   }
   free(errs.dat);
 
-  int result = Program_run(&pro);
-  printf("%d\n", result);
+  Value result = Program_run(&pro);
+  printf("%llu\n", result.data);
 
   Program_free(&pro);
   return 0;
@@ -77,7 +80,8 @@ void print_errs(SemanticError_A *errs) {
       P(SPEC"undefined symbol '%.*s'\n", DAT, TOK);
       break;
     case ERR_SEM_ALREADY_DECLARED_SYMBOL:
-      P(SPEC"symbol '%.*s' already declared in this scope\n", DAT, TOK);
+      P(SPEC"symbol '%.*s' already declared in this scope:\n", DAT, TOK);
+      Scope_dump(e->scope);
       break;
     case ERR_SEM_ASSIGN_TO_VAL:
       P(SPEC"attempt to reassign to value '%.*s'\n", DAT, TOK);
@@ -98,5 +102,7 @@ void print_errs(SemanticError_A *errs) {
 #include "lexer.c"
 #include "parser.c"
 #include "scope.c"
+#include "strings.c"
+#include "value.c"
 #include "program.c"
 #include "runtime.c"
