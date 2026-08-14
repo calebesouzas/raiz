@@ -195,7 +195,6 @@ int Parser_parse_expr(Expr *ls, Parser *par, uint8_t min_bp) {
 int Parser_parse_line(Expr *res, Parser *par) {
   int err;
   Token *tok, *peeked;
-  char ident[TOKEN_IDENTIFIER_SIZE];
   Expr *value;
 
   tok = Parser_cur(par);
@@ -217,10 +216,18 @@ int Parser_parse_line(Expr *res, Parser *par) {
       fprintf(stderr, "expected identifier, found %s\n", token_label(peeked));
       return PARSER_EXPECTED_IDENTIFIER;
     }
-    strncpy(ident, peeked->ident, sizeof(ident));
     Parser_advance(par); // consume keyword
 
     peeked = Parser_peek(par);
+    Token *type = NULL;
+    bool explicit_type = false;
+
+    if (peeked->kind == TOKEN_TYPE_NAME) {
+      Parser_advance(par); // type
+      type = peeked;
+      explicit_type = true;
+    }
+
     if (peeked->kind == TOKEN_EQUAL) {
       Parser_advance(par); // identifier
       Parser_advance(par); // '='
@@ -232,14 +239,15 @@ int Parser_parse_line(Expr *res, Parser *par) {
 
       res->decl.value = value;
     } else if (tok->kind == TOKEN_VAL) {
-      fprintf(stderr, "expected assignment after '%s', found %s\n",
-              ident, token_label(peeked));
+      fprintf(stderr, "expected assignment after '%.*s', found %s\n",
+              tok->len, tok->lexeme, token_label(peeked));
       return PARSER_EXPECTED_ASSIGNMENT;
     }
 
     res->kind = EXPR_DECL;
     res->decl.tok = tok;
     res->decl.ident = tok + 1;
+
     break; // case VAR or VAL
   case TOKEN_WHILE:
     Parser_advance(par);

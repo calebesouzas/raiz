@@ -6,16 +6,25 @@ typedef struct {
     ERR_SEM_UNDEFINED_SYMBOL, // token
     ERR_SEM_ALREADY_DECLARED_SYMBOL, // token, scope
     ERR_SEM_ASSIGN_TO_VAL, // token
-    ERR_SEM_ASSIGN_TO_RVALUE, // token, expr (assignment)
+    ERR_SEM_ASSIGN_TO_RVALUE, // 2 exprs
     ERR_SEM_DECL_AFTER_IF_ELSE, // token, expr (declaration)
     ERR_SEM_DECL_AFTER_WHILE_THEN_ELSE, // token, expr (declaration)
+    ERR_SEM_INCOMPATIBLE_TYPES, // 2 types, 2 exprs
   } code;
   // context:
   Token *token;
   Scope *scope;
-  Expr *expr;
+  Expr *expr[3];
+  Type *type[2];
 } SemanticError;
 da_make(SemanticError_A, SemanticError*);
+
+typedef struct {
+  bool ok;
+  SemanticError err;
+  Type *type;
+  bool is_lvalue;
+} SemanticContext;
 
 typedef struct {
   Token_A *toks;

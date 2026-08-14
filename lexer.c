@@ -91,6 +91,9 @@ int Lexer_tokenize(Lexer *lex) {
       }
       add(tk(TOKEN_NEWLINE));
       break;
+    case '@':
+      add(Lexer_type(lex));
+      break;
     case ' ': case '\t': case '\r': break;
     default: {
       if (isdigit(cur())) {
@@ -103,25 +106,7 @@ int Lexer_tokenize(Lexer *lex) {
         }
         add(tk(TOKEN_NUMBER, .literal = Value_(VAL_INT, int, num)));
       } else if (isalpha(cur()) || cur() == '_') {
-        Token tok;
-
-        memset(tok.ident, 0, TOKEN_IDENTIFIER_SIZE);
-
-        do {
-          advance();
-        } while (Lexer_len(lex) < TOKEN_IDENTIFIER_SIZE
-            && isalnum(cur()) || cur() == '_');
-
-        if (!token_keyword(&tok, Lexer_point(lex), Lexer_len(lex))) {
-          strncpy(tok.ident, Lexer_point(lex), Lexer_len(lex));
-          tok.kind = TOKEN_IDENT;
-          tok.flags = TOKEN_FLAGS[tok.kind];
-        }
-
-        if (Lexer_len(lex) > 0)
-          lex->i--;
-
-        add(tok);
+        add(Lexer_ident(lex));
       } else {
         fprintf(stderr, "unhandled byte %02x at index %zu\n", lex->c, lex->i);
         return 1;
@@ -136,6 +121,34 @@ int Lexer_tokenize(Lexer *lex) {
   }
   add(tk(TOKEN_EOF));
   return 0;
+}
+
+Token Lexer_ident(Lexer *lex) {
+  Token tok;
+
+  tok.lexeme = Lexer_point(lex);
+
+  do {
+    advance();
+  } while (Lexer_len(lex) < TOKEN_IDENTIFIER_SIZE
+      && isalnum(cur()) || cur() == '_');
+
+  if (!token_keyword(&tok, Lexer_point(lex), Lexer_len(lex))) {
+    tok.kind = TOKEN_IDENT;
+    tok.flags = TOKEN_FLAGS[tok.kind];
+  }
+
+  if (Lexer_len(lex) > 0)
+    lex->i--;
+
+  return tok;
+}
+
+Token Lexer_type(Lexer *lex) {
+  Token tok = Lexer_ident(lex);
+  tok.kind = TOKEN_TYPE_NAME;
+  tok.flags = TOKEN_FLAGS[tok.kind];
+  return tok;
 }
 
 bool skip_comments(Lexer *lex) {
@@ -220,6 +233,7 @@ char *token_label(Token *tok) {
   case TOKEN_CONTINUE:
   case TOKEN_PRINT:
   case TOKEN_READ:
+  case TOKEN_TYPE_NAME:
     return temp_sprintf("%.*s", tok->len, tok->lexeme);
   }
   fprintf(stderr, "unknown token (id %d)\n", tok->kind); return NULL;

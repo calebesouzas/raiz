@@ -18,6 +18,7 @@ enum TokenFlags {
   X(TOKEN_INVALID,  0)\
   X(TOKEN_NUMBER,   TOKEN_FLAG_CONST)\
   X(TOKEN_IDENT,    0)\
+  X(TOKEN_TYPE_NAME, 0)\
 \
   X(TOKEN_EQUAL,      TOKEN_FLAG_OP | TOKEN_FLAG_RIGHT)\
   X(TOKEN_PLUS,       TOKEN_FLAG_OP)\
@@ -84,7 +85,6 @@ typedef struct {
 
   // data
   Value literal;
-  char ident[TOKEN_IDENTIFIER_SIZE]; // if it's `TOKEN_IDENT`
 
   // metadata
   char *lexeme;
@@ -92,12 +92,13 @@ typedef struct {
 } Token;
 da_make(Token_A, Token*);
 
+#define Token_fmt(tok) (tok)->len, (tok)->lexeme
+
 typedef struct {
   Token_A *toks;
   char *source;
   size_t source_len;
 
-  // source iteration
   char c;
   size_t i;
 
@@ -132,6 +133,9 @@ const struct TokenKeywordTable KEYWORDS[] = {
   {"print", 5, TOKEN_PRINT},
   {"read", 4, TOKEN_READ},
 };
+
+Token Lexer_ident(Lexer *lex);
+Token Lexer_type(Lexer *lex);
 
 char Lexer_peek(Lexer *lex);
 char Lexer_next(Lexer *lex);

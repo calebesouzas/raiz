@@ -1,14 +1,7 @@
-val tries = 5
-val correct = 7
+var x @string
 
-var attempt = 1
-while read != correct {
-  if attempt > tries {
-    break
-  }
-  print attempt = attempt + 1
-} then {
-  69
-} else {
-  96
-}
+x = read
+
+print x
+
+0
