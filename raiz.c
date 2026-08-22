@@ -23,6 +23,7 @@ char code[] = {
 #include "macros.h"
 #include "dynamic_arrays.h"
 #include "lexer.h"
+#include "types.h"
 #include "parser.h"
 #include "symbols.h"
 #include "scope.h"
@@ -76,25 +77,7 @@ void print_errs(SemanticError_A *errs) {
   SemanticError *e;
   da_for(e, errs) {
     switch (e->code) {
-    case ERR_SEM_UNDEFINED_SYMBOL:
-      P(SPEC"undefined symbol '%.*s'\n", DAT, TOK);
-      break;
-    case ERR_SEM_ALREADY_DECLARED_SYMBOL:
-      P(SPEC"symbol '%.*s' already declared in this scope:\n", DAT, TOK);
-      Scope_dump(e->scope);
-      break;
-    case ERR_SEM_ASSIGN_TO_VAL:
-      P(SPEC"attempt to reassign to value '%.*s'\n", DAT, TOK);
-      break;
-    case ERR_SEM_ASSIGN_TO_RVALUE:
-      P(SPEC"attempt to assign to rvalue\n", DAT);
-      break;
-    case ERR_SEM_DECL_AFTER_IF_ELSE:
-      P(SPEC"'%.*s' declaration after `if-else`\n", DAT, TOK);
-      break;
-    case ERR_SEM_DECL_AFTER_WHILE_THEN_ELSE:
-      P(SPEC"'%.*s' declaration after `while-then-else`\n", DAT, TOK);
-      break;
+    //@todo print errors!
     }
   }
 }
