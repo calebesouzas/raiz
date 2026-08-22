@@ -50,11 +50,35 @@ Value Program_run(Program *pro) {
 }
 
 #undef add
-#define add(code, token, scope, expr)\
-  da_add(errs, ((SemanticError){(code), (token), (scope), (expr)}))
-void Expr_check(Expr *expr, SemanticError_A *errs, Scope *sco) {
-  if (!expr)
-    return;
+#define add(code, expr)\
+  da_add(errs, ((SemanticError){(code), (expr)}))
+
+#define ctx_success(typefield, lvaluefield, constantfield)\
+  do {\
+    ctx.ok = true;\
+    ctx.type = (typefield);\
+    ctx.is_lvalue = (lvaluefield);\
+    ctx.is_constant = (constantfield);\
+  } while (0)
+
+#define ctx_err(code, expr)\
+  do {\
+    ctx.ok = false;\
+    add(code, expr);\
+    return ctx;\
+  } while (0)
+
+#define ctx_check(c) if (!(c).ok) return c
+
+SemanticContext
+Expr_check(
+    Expr *expr, SemanticError_A *errs, Scope *sco, SemanticContext *out
+) {
+  SemanticContext ctx, ctx_left, ctx_right, ctx_in;
+
+  ctx_propagate_down(out, &ctx);
+
+  assert(expr != NULL);
 
   Symbol *sym;
   Token *ident;
@@ -63,41 +87,41 @@ void Expr_check(Expr *expr, SemanticError_A *errs, Scope *sco) {
 
   switch (expr->kind) {
   case EXPR_LITERAL:
+    ctx_success(expr->literal.value.type, false, true);
+    break;
   case EXPR_UNARY:
+    break;
   case EXPR_BREAK:
   case EXPR_CONTINUE:
+    if (!ctx->data.inside_loop)
+      ctx_err(ERR_SEM_LOOP_KEYWORD_OUTSIDE_LOOP, expr);
+    break;
   case EXPR_READ:
     break; // nothing to check?
   case EXPR_BINARY:
+    ctx_left = Expr_check(expr->binary.ls, errs, sco, &ctx);
+    ctx_check(ctx_left);
+
     if (expr->binary.op->kind == TOKEN_EQUAL) {
-      if (expr->binary.ls->kind != EXPR_IDENT) {
-        // from where do I get the token?
-        add(ERR_SEM_ASSIGN_TO_RVALUE, NULL, NULL, NULL);
-        return;
-      }
-      ident = expr->binary.ls->ident;
-      sym = Scope_search_until_global(sco, ident->lexeme, ident->len);
-      if (sym == NULL) {
-        add(ERR_SEM_UNDEFINED_SYMBOL, ident, NULL, NULL);
-        return;
-      }
-      if (!sym->is_variable) {
-        add(ERR_SEM_ASSIGN_TO_VAL, ident, NULL, expr);
-        return;
+      if (!ctx_left.is_lvalue) {
+        ctx_err(ERR_SEM_ASSIGN_TO_RVALUE, expr->binary.ls);
+      } else if (!ctx_left->is_variable) {
+        ctx_err(ERR_SEM_ASSIGN_TO_VAL, expr);
       }
     }
-    Expr_check(expr->binary.ls, errs, sco);
-    Expr_check(expr->binary.rs, errs, sco);
+
+    ctx_right = Expr_check(expr->binary.rs, errs, sco, &ctx);
+    ctx_check(ctx_right);
     break;
   case EXPR_GROUP:
-    Expr_check(expr->group.in, errs, sco);
+    ctx_in = Expr_check(expr->group.in, errs, sco, &ctx);
     break;
   case EXPR_IDENT:
     sym = Scope_search_until_global(sco, expr->ident->lexeme, expr->ident->len);
 
     if (sym == NULL) {
       add(ERR_SEM_UNDEFINED_SYMBOL, expr->ident, NULL, NULL);
-      return;
+      return ctx;
     }
     break;
   case EXPR_DECL:
@@ -105,11 +129,11 @@ void Expr_check(Expr *expr, SemanticError_A *errs, Scope *sco) {
     sym = Scope_search_single_level(sco, ident->lexeme, ident->len);
     if (sym != NULL) {
       add(ERR_SEM_ALREADY_DECLARED_SYMBOL, ident, sco, NULL);
-      return;
+      return ctx;
     }
 
     if (expr->decl.value)
-      Expr_check(expr->decl.value, errs, sco);
+      ctx_in = Expr_check(expr->decl.value, errs, sco, &ctx);
 
     Symbol new_symbol = {0};
     new_symbol.ident = ident;
@@ -122,7 +146,7 @@ void Expr_check(Expr *expr, SemanticError_A *errs, Scope *sco) {
     inner = Scope_new(sco);
     Expr **line;
     da_for(line, &expr->block) {
-      Expr_check(*line, errs, inner);
+      ctx_in = Expr_check(*line, errs, inner, &ctx);
     }
     free(inner);
     sco->inner = NULL;
@@ -138,7 +162,7 @@ void Expr_check(Expr *expr, SemanticError_A *errs, Scope *sco) {
     sym = Scope_search_until_global(target, ident->lexeme, ident->len);
     if (sym == NULL) {
       add(ERR_SEM_UNDEFINED_SYMBOL, ident, NULL, NULL);
-      return;
+      return ctx;
     }
     break;
   case EXPR_IF:
@@ -146,53 +170,54 @@ void Expr_check(Expr *expr, SemanticError_A *errs, Scope *sco) {
       add(ERR_SEM_DECL_AFTER_IF_ELSE,
           expr->if_node.then_branch->decl.tok,
           NULL, expr);
-      return;
+      return ctx;
     } else if (expr->if_node.else_branch
         && expr->if_node.else_branch->kind == EXPR_DECL) {
       add(ERR_SEM_DECL_AFTER_IF_ELSE,
           expr->if_node.else_branch->decl.tok,
           NULL, expr);
-      return;
+      return ctx;
     }
-    Expr_check(expr->if_node.cond, errs, sco);
-    Expr_check(expr->if_node.then_branch, errs, sco);
-    Expr_check(expr->if_node.else_branch, errs, sco);
+    ctx_in = Expr_check(expr->if_node.cond, errs, sco, &ctx);
+    ctx_in = Expr_check(expr->if_node.then_branch, errs, sco, &ctx);
+    ctx_in = Expr_check(expr->if_node.else_branch, errs, sco, &ctx);
     break;
   case EXPR_WHILE:
     if (expr->while_node.body->kind == EXPR_DECL) {
       add(ERR_SEM_DECL_AFTER_WHILE_THEN_ELSE,
           expr->while_node.body->decl.tok,
           NULL, expr);
-      return;
+      return ctx;
     } else if (expr->while_node.then_branch
         && expr->while_node.then_branch->kind == EXPR_DECL) {
       add(ERR_SEM_DECL_AFTER_WHILE_THEN_ELSE,
           expr->while_node.then_branch->decl.tok,
           NULL, expr);
-      return;
+      return ctx;
     } else if (expr->while_node.else_branch
         && expr->while_node.else_branch->kind == EXPR_DECL) {
       add(ERR_SEM_DECL_AFTER_WHILE_THEN_ELSE,
           expr->while_node.else_branch->decl.tok,
           NULL, expr);
-      return;
+      return ctx;
     }
-    Expr_check(expr->while_node.cond, errs, sco);
-    Expr_check(expr->while_node.body, errs, sco);
-    Expr_check(expr->while_node.then_branch, errs, sco);
-    Expr_check(expr->while_node.else_branch, errs, sco);
+    ctx_in = Expr_check(expr->while_node.cond, errs, sco, &ctx);
+    ctx_in = Expr_check(expr->while_node.body, errs, sco, &ctx);
+    ctx_in = Expr_check(expr->while_node.then_branch, errs, sco, &ctx);
+    ctx_in = Expr_check(expr->while_node.else_branch, errs, sco, &ctx);
     break;
   case EXPR_PRINT:
-    Expr_check(expr->print.value, errs, sco);
+    ctx_in = Expr_check(expr->print.value, errs, sco, &ctx);
     break;
   }
+  return ctx;
 }
 
 void Program_check(Program *pro, SemanticError_A *errs, size_t max_errs) {
   Expr **expr;
   Scope *sco = Scope_copy(pro->sco);
   da_for(expr, &pro->code) {
-    Expr_check(*expr, errs, sco);
+    (void) Expr_check(*expr, errs, sco);
     if (errs->len > max_errs)
       return;
   }
