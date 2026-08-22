@@ -12,18 +12,16 @@ typedef struct {
     ERR_SEM_INCOMPATIBLE_TYPES, // 2 types, 2 exprs
   } code;
   // context:
-  Token *token;
-  Scope *scope;
-  Expr *expr[3];
+  Expr *expr;
   Type *type[2];
 } SemanticError;
 da_make(SemanticError_A, SemanticError*);
 
 typedef struct {
   bool ok;
-  SemanticError err;
   Type *type;
   bool is_lvalue;
+  bool is_constant;
 } SemanticContext;
 
 typedef struct {
