@@ -17,13 +17,13 @@ char code[] = {
 };
 
 #include "strings.h"
-#include "value.h"
 
 #include "cast.h"
 #include "macros.h"
 #include "dynamic_arrays.h"
-#include "lexer.h"
 #include "types.h"
+#include "value.h"
+#include "lexer.h"
 #include "parser.h"
 #include "symbols.h"
 #include "scope.h"
@@ -77,6 +77,30 @@ void print_errs(SemanticError_A *errs) {
   SemanticError *e;
   da_for(e, errs) {
     switch (e->code) {
+    case ERR_SEM_UNDEFINED_SYMBOL:
+      TODO("ERR_SEM_UNDEFINED_SYMBOL");
+      break;
+    case ERR_SEM_ALREADY_DECLARED_SYMBOL:
+      TODO("ERR_SEM_ALREADY_DECLARED_SYMBOL");
+      break;
+    case ERR_SEM_ASSIGN_TO_VAL:
+      TODO("ERR_SEM_ASSIGN_TO_VAL");
+      break;
+    case ERR_SEM_ASSIGN_TO_RVALUE:
+      TODO("ERR_SEM_ASSIGN_TO_RVALUE");
+      break;
+    case ERR_SEM_DECL_AFTER_IF_ELSE:
+      TODO("ERR_SEM_DECL_AFTER_IF_ELSE");
+      break;
+    case ERR_SEM_DECL_AFTER_WHILE_THEN_ELSE:
+      TODO("ERR_SEM_DECL_AFTER_WHILE_THEN_ELSE");
+      break;
+    case ERR_SEM_INCOMPATIBLE_TYPES:
+      TODO("ERR_SEM_INCOMPATIBLE_TYPES");
+      break;
+    case ERR_SEM_LOOP_KEYWORD_OUTSIDE_LOOP:
+      TODO("ERR_SEM_LOOP_KEYWORD_OUTSIDE_LOOP");
+      break;
     //@todo print errors!
     }
   }
@@ -86,6 +110,5 @@ void print_errs(SemanticError_A *errs) {
 #include "parser.c"
 #include "scope.c"
 #include "strings.c"
-#include "value.c"
 #include "program.c"
 #include "runtime.c"
