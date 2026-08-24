@@ -104,7 +104,7 @@ int Lexer_tokenize(Lexer *lex) {
             continue;
           num = (num * 10) + (cur() - '0');
         }
-        add(tk(TOKEN_NUMBER, .literal = Value_(VAL_INT, int, num)));
+        add(tk(TOKEN_NUMBER, .literal = Value_(&g_TYPE_int, int, num)));
       } else if (isalpha(cur()) || cur() == '_') {
         add(Lexer_ident(lex));
       } else {

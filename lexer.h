@@ -122,8 +122,8 @@ struct TokenKeywordTable {
 const struct TokenKeywordTable KEYWORDS[] = {
   {"var", 3, TOKEN_VAR},
   {"val", 3, TOKEN_VAL},
-  {"true", 4, TOKEN_TRUE, Value_(VAL_BOOL, bool, 1)},
-  {"false", 5, TOKEN_FALSE, Value_(VAL_BOOL, bool, 0)},
+  {"true", 4, TOKEN_TRUE, Value_(&g_TYPE_bool, bool, 1)},
+  {"false", 5, TOKEN_FALSE, Value_(&g_TYPE_bool, bool, 0)},
   {"if", 2, TOKEN_IF},
   {"else", 4, TOKEN_ELSE},
   {"while", 5, TOKEN_WHILE},

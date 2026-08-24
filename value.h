@@ -1,28 +1,12 @@
 #ifndef RAIZ_VALUE_H
 #define RAIZ_VALUE_H
 
-typedef enum {
-  VAL_FLAG_PTR = 1<<0,
-} ValueFlags;
-
-typedef enum {
-  VAL_INT,
-  VAL_UINT,
-  VAL_BYTE,
-  VAL_BOOL,
-  VAL_CHAR,
-  VAL_RAW,
-} ValueKind;
-
 typedef struct {
   uint64_t data;
-  ValueKind kind;
-  uint8_t flags;
+  const Type *type;
 } Value;
 
-#define Value_(k, t, v) ((Value){.kind = k, .data = ((t) v)})
-
-char *Value_string(Value *v);
-char *Value_type(Value *v);
+#define Value_(__variant, __type, __value)\
+  ((Value){.type = (__variant), .data = ((__type) __value)})
 
 #endif // RAIZ_VALUE_C
