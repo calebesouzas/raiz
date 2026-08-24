@@ -50,8 +50,8 @@ Value Program_run(Program *pro) {
 }
 
 #undef add
-#define add(code, expr)\
-  da_add(errs, ((SemanticError){(code), (expr)}))
+#define add(code, expr, ...)\
+  da_add(errs, ((SemanticError){(code), (expr), __VA_ARGS__}))
 
 #define ctx_success(typefield, lvaluefield, constantfield)\
   do {\
@@ -61,14 +61,19 @@ Value Program_run(Program *pro) {
     ctx.is_constant = (constantfield);\
   } while (0)
 
-#define ctx_err(code, expr)\
+#define ctx_err(code, expr, ...)\
   do {\
     ctx.ok = false;\
-    add(code, expr);\
+    add(code, expr, __VA_ARGS__);\
     return ctx;\
   } while (0)
 
 #define ctx_check(c) if (!(c).ok) return c
+
+void ctx_propagate_down(SemanticContext *source, SemanticContext *target) {
+  if (source)
+    target->data = source->data;
+}
 
 SemanticContext
 Expr_check(
@@ -87,13 +92,13 @@ Expr_check(
 
   switch (expr->kind) {
   case EXPR_LITERAL:
-    ctx_success(expr->literal.value.type, false, true);
+    ctx_success(expr->literal->literal.type, false, true);
     break;
   case EXPR_UNARY:
     break;
   case EXPR_BREAK:
   case EXPR_CONTINUE:
-    if (!ctx->data.inside_loop)
+    if (!ctx.data.inside_loop)
       ctx_err(ERR_SEM_LOOP_KEYWORD_OUTSIDE_LOOP, expr);
     break;
   case EXPR_READ:
@@ -105,7 +110,7 @@ Expr_check(
     if (expr->binary.op->kind == TOKEN_EQUAL) {
       if (!ctx_left.is_lvalue) {
         ctx_err(ERR_SEM_ASSIGN_TO_RVALUE, expr->binary.ls);
-      } else if (!ctx_left->is_variable) {
+      } else if (!ctx_left.is_variable) {
         ctx_err(ERR_SEM_ASSIGN_TO_VAL, expr);
       }
     }
@@ -115,25 +120,19 @@ Expr_check(
     break;
   case EXPR_GROUP:
     ctx_in = Expr_check(expr->group.in, errs, sco, &ctx);
-    break;
-  case EXPR_IDENT:
-    sym = Scope_search_until_global(sco, expr->ident->lexeme, expr->ident->len);
-
-    if (sym == NULL) {
-      add(ERR_SEM_UNDEFINED_SYMBOL, expr->ident, NULL, NULL);
-      return ctx;
-    }
+    ctx_check(ctx_in);
     break;
   case EXPR_DECL:
     ident = expr->decl.ident;
     sym = Scope_search_single_level(sco, ident->lexeme, ident->len);
     if (sym != NULL) {
-      add(ERR_SEM_ALREADY_DECLARED_SYMBOL, ident, sco, NULL);
-      return ctx;
+      ctx_err(ERR_SEM_ALREADY_DECLARED_SYMBOL, expr);
     }
 
-    if (expr->decl.value)
+    if (expr->decl.value) {
       ctx_in = Expr_check(expr->decl.value, errs, sco, &ctx);
+      ctx_check(ctx_in);
+    }
 
     Symbol new_symbol = {0};
     new_symbol.ident = ident;
@@ -141,73 +140,90 @@ Expr_check(
 
     Scope_insert(sco, new_symbol);
 
+    // ctx.is_lvalue = true; // maybe set as L-value?
     break;
   case EXPR_BLOCK:
     inner = Scope_new(sco);
     Expr **line;
     da_for(line, &expr->block) {
       ctx_in = Expr_check(*line, errs, inner, &ctx);
+      // not sure if we should continue checking the entire block
+      // ctx_check(ctx_in);
     }
     free(inner);
     sco->inner = NULL;
+    break;
+  case EXPR_IDENT:
+    sym = Scope_search_until_global(sco, expr->ident->lexeme, expr->ident->len);
+
+    if (sym == NULL) {
+      ctx_err(ERR_SEM_UNDEFINED_SYMBOL, expr);
+    }
+
+    ctx.is_lvalue = true;
+    ctx.is_variable = sym->is_variable;
     break;
   case EXPR_PARENT:
     ident = expr->parent.ident;
     Scope *target = sco;
     uint32_t level = expr->parent.level;
 
-    for (uint32_t i = 0; target && i < level; i++)
+    size_t count;
+    for (count = 0; target && count < level; count++)
       target = target->parent;
 
     sym = Scope_search_until_global(target, ident->lexeme, ident->len);
     if (sym == NULL) {
-      add(ERR_SEM_UNDEFINED_SYMBOL, ident, NULL, NULL);
-      return ctx;
+      ctx_err(ERR_SEM_UNDEFINED_SYMBOL, expr, .count = count);
     }
+
+    ctx.is_lvalue = true;
     break;
   case EXPR_IF:
     if (expr->if_node.then_branch->kind == EXPR_DECL) {
-      add(ERR_SEM_DECL_AFTER_IF_ELSE,
-          expr->if_node.then_branch->decl.tok,
-          NULL, expr);
-      return ctx;
+      ctx_err(ERR_SEM_DECL_AFTER_IF_ELSE, expr);
     } else if (expr->if_node.else_branch
         && expr->if_node.else_branch->kind == EXPR_DECL) {
-      add(ERR_SEM_DECL_AFTER_IF_ELSE,
-          expr->if_node.else_branch->decl.tok,
-          NULL, expr);
-      return ctx;
+      ctx_err(ERR_SEM_DECL_AFTER_IF_ELSE, expr);
     }
+
     ctx_in = Expr_check(expr->if_node.cond, errs, sco, &ctx);
+    ctx_check(ctx_in);
+
     ctx_in = Expr_check(expr->if_node.then_branch, errs, sco, &ctx);
+    ctx_check(ctx_in);
+
     ctx_in = Expr_check(expr->if_node.else_branch, errs, sco, &ctx);
+    ctx_check(ctx_in);
     break;
   case EXPR_WHILE:
+    ctx.data.inside_loop = true;
+
     if (expr->while_node.body->kind == EXPR_DECL) {
-      add(ERR_SEM_DECL_AFTER_WHILE_THEN_ELSE,
-          expr->while_node.body->decl.tok,
-          NULL, expr);
-      return ctx;
+      ctx_err(ERR_SEM_DECL_AFTER_WHILE_THEN_ELSE, expr);
     } else if (expr->while_node.then_branch
         && expr->while_node.then_branch->kind == EXPR_DECL) {
-      add(ERR_SEM_DECL_AFTER_WHILE_THEN_ELSE,
-          expr->while_node.then_branch->decl.tok,
-          NULL, expr);
-      return ctx;
+      ctx_err(ERR_SEM_DECL_AFTER_WHILE_THEN_ELSE, expr);
     } else if (expr->while_node.else_branch
         && expr->while_node.else_branch->kind == EXPR_DECL) {
-      add(ERR_SEM_DECL_AFTER_WHILE_THEN_ELSE,
-          expr->while_node.else_branch->decl.tok,
-          NULL, expr);
-      return ctx;
+      ctx_err(ERR_SEM_DECL_AFTER_WHILE_THEN_ELSE, expr);
     }
+
     ctx_in = Expr_check(expr->while_node.cond, errs, sco, &ctx);
+    ctx_check(ctx_in);
+
     ctx_in = Expr_check(expr->while_node.body, errs, sco, &ctx);
+    ctx_check(ctx_in);
+
     ctx_in = Expr_check(expr->while_node.then_branch, errs, sco, &ctx);
+    ctx_check(ctx_in);
+
     ctx_in = Expr_check(expr->while_node.else_branch, errs, sco, &ctx);
+    ctx_check(ctx_in);
     break;
   case EXPR_PRINT:
     ctx_in = Expr_check(expr->print.value, errs, sco, &ctx);
+    ctx_check(ctx_in);
     break;
   }
   return ctx;
@@ -217,7 +233,7 @@ void Program_check(Program *pro, SemanticError_A *errs, size_t max_errs) {
   Expr **expr;
   Scope *sco = Scope_copy(pro->sco);
   da_for(expr, &pro->code) {
-    (void) Expr_check(*expr, errs, sco);
+    (void) Expr_check(*expr, errs, sco, NULL);
     if (errs->len > max_errs)
       return;
   }

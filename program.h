@@ -3,25 +3,31 @@
 
 typedef struct {
   enum {
-    ERR_SEM_UNDEFINED_SYMBOL, // token
-    ERR_SEM_ALREADY_DECLARED_SYMBOL, // token, scope
-    ERR_SEM_ASSIGN_TO_VAL, // token
-    ERR_SEM_ASSIGN_TO_RVALUE, // 2 exprs
-    ERR_SEM_DECL_AFTER_IF_ELSE, // token, expr (declaration)
-    ERR_SEM_DECL_AFTER_WHILE_THEN_ELSE, // token, expr (declaration)
-    ERR_SEM_INCOMPATIBLE_TYPES, // 2 types, 2 exprs
+    ERR_SEM_UNDEFINED_SYMBOL,
+    ERR_SEM_ALREADY_DECLARED_SYMBOL,
+    ERR_SEM_ASSIGN_TO_VAL,
+    ERR_SEM_ASSIGN_TO_RVALUE,
+    ERR_SEM_DECL_AFTER_IF_ELSE,
+    ERR_SEM_DECL_AFTER_WHILE_THEN_ELSE,
+    ERR_SEM_INCOMPATIBLE_TYPES,
+    ERR_SEM_LOOP_KEYWORD_OUTSIDE_LOOP,
   } code;
   // context:
   Expr *expr;
-  Type *type[2];
+  const Type *type[2];
+  size_t count;
 } SemanticError;
 da_make(SemanticError_A, SemanticError*);
 
 typedef struct {
   bool ok;
-  Type *type;
+  const Type *type;
   bool is_lvalue;
   bool is_constant;
+  bool is_variable;
+  struct {
+    bool inside_loop;
+  } data;
 } SemanticContext;
 
 typedef struct {
