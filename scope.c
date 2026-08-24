@@ -55,20 +55,6 @@ Symbol *Scope_search_until_global(Scope *sco, char *symbol, size_t len) {
   return NULL;
 }
 
-void Scope_dump(Scope *sco) {
-  Symbol *sym;
-  da_for(sym, &sco->symbols) {
-    fprintf(stderr, "%.*s = %s\n",
-        sym->ident->len, sym->ident->lexeme, Value_string(&sym->value));
-  }
-
-  fprintf(stderr, "// --- //\n");
-
-  if (sco->inner) {
-    Scope_dump(sco->inner);
-  }
-}
-
 void Scope_insert(Scope *sco, Symbol sym) {
   da_add(&sco->symbols, sym);
 }
