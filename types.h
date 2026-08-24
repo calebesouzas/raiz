@@ -3,9 +3,7 @@
 
 #define TYPES_BUILTIN\
   X(int, 4)\
-  X(uint, 4)\
   X(char, 1)\
-  X(byte, 1)\
   X(bool, 1)\
   X(string, 0)
 
