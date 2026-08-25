@@ -73,33 +73,38 @@ void print_errs(SemanticError_A *errs) {
 #define DAT e->token->start, e->token->line, e->token->column
 #define TOK size_t_int(e->token->len, INT_MAX), e->token->lexeme
 #define P(...) fprintf(stderr, __VA_ARGS__)
+#define TYPE0 e->type[0]->name.len, e->type[0]->name.str
+#define TYPE1 e->type[1]->name.len, e->type[1]->name.str
 
   SemanticError *e;
   da_for(e, errs) {
+    if (e->token == NULL)
+      e->token = e->expr->token;
+
     switch (e->code) {
     case ERR_SEM_UNDEFINED_SYMBOL:
-      TODO("ERR_SEM_UNDEFINED_SYMBOL");
+      P(SPEC"undefined symbol '%.*s'\n", DAT, TOK);
       break;
     case ERR_SEM_ALREADY_DECLARED_SYMBOL:
-      TODO("ERR_SEM_ALREADY_DECLARED_SYMBOL");
+      P(SPEC"already declared symbol '%.*s'\n", DAT, TOK);
       break;
     case ERR_SEM_ASSIGN_TO_VAL:
-      TODO("ERR_SEM_ASSIGN_TO_VAL");
+      P(SPEC"assigned to value '%.*s'\n", DAT, TOK);
       break;
     case ERR_SEM_ASSIGN_TO_RVALUE:
-      TODO("ERR_SEM_ASSIGN_TO_RVALUE");
+      P(SPEC"assigned to R-value '%.*s'\n", DAT, TOK);
       break;
     case ERR_SEM_DECL_AFTER_IF_ELSE:
-      TODO("ERR_SEM_DECL_AFTER_IF_ELSE");
+      P(SPEC"declaration after if-else\n", DAT);
       break;
     case ERR_SEM_DECL_AFTER_WHILE_THEN_ELSE:
-      TODO("ERR_SEM_DECL_AFTER_WHILE_THEN_ELSE");
+      P(SPEC"declaration after while-then-else\n", DAT);
       break;
     case ERR_SEM_INCOMPATIBLE_TYPES:
-      TODO("ERR_SEM_INCOMPATIBLE_TYPES");
+      P(SPEC"incompatible types: '%.*s' and '%.*s'\n", DAT, TYPE0, TYPE1);
       break;
     case ERR_SEM_LOOP_KEYWORD_OUTSIDE_LOOP:
-      TODO("ERR_SEM_LOOP_KEYWORD_OUTSIDE_LOOP");
+      P(SPEC"used '%.*s' keyword outside loop\n", DAT, TOK);
       break;
     //@todo print errors!
     }
