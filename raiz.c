@@ -112,3 +112,4 @@ void print_errs(SemanticError_A *errs) {
 #include "strings.c"
 #include "program.c"
 #include "runtime.c"
+#include "types.c"
