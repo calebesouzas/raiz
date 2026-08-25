@@ -239,6 +239,10 @@ char *token_label(Token *tok) {
   fprintf(stderr, "unknown token (id %d)\n", tok->kind); return NULL;
 }
 
+size_t Token_distance(Token *from, Token *to) {
+  return (size_t) ((uintptr_t) to - (uintptr_t) from);
+}
+
 Lexer Lexer_setup(Token_A *toks, char *source) {
   Lexer lex = {0};
   lex.toks = toks;

@@ -111,6 +111,7 @@ int Lexer_tokenize(Lexer *lex);
 
 char *token_label(Token *tok);
 bool token_keyword(Token *tok, char *ident, size_t len);
+size_t Token_distance(Token *from, Token *to);
 
 struct TokenKeywordTable {
   char *string;
