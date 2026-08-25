@@ -111,6 +111,7 @@ EvalResult eval(Expr *e, Scope *s) {
               s, e->decl.ident->lexeme, e->decl.ident->len);
 
     value = e->decl.value != NULL ? eval(e->decl.value, s).value : (Value){0};
+    value.type = e->decl.type;
     new_symbol.value = value;
     new_symbol.is_variable = e->decl.tok->kind == TOKEN_VAR;
     new_symbol.ident = e->decl.ident;
@@ -172,14 +173,26 @@ EvalResult eval(Expr *e, Scope *s) {
     break;
   case EXPR_PRINT:
     res.value = eval(e->print.value, s).value;
-    printf("%llu\n", res.value.data);
+    switch (res.value.type->kind) {
+      case TYPE_int:
+        printf("%d", (int)res.value.data);
+        break;
+      case TYPE_char:
+        printf("%c", (char)res.value.data);
+        break;
+      case TYPE_bool:
+        printf("%s", res.value.data ? "true" : "false");
+        break;
+      case TYPE_string:
+        printf("%s", (char*)(uintptr_t) res.value.data);
+        break;
+    }
     break;
   case EXPR_READ: {
-    char buf[20];
-    fgets(buf, sizeof(buf), stdin);
-    if (sscanf(buf, "%llu\n", &res.value.data) != 1) {
-      PANIC("sscanf() didn't match the required format\n");
-    }
+    char *buf = malloc(1024);
+    fgets(buf, 1024, stdin);
+    res.value.data = (uintptr_t) buf;
+    res.value.type = &g_TYPE_string;
   } break;
   }
   return res;
