@@ -123,13 +123,13 @@ Expr_check(
       }
     }
 
+    ctx_right = Expr_check(expr->binary.rs, errs, sco, &ctx);
+    ctx_check(ctx_right);
+
     if (ctx_left.type != ctx_right.type) {
       ctx_err(ERR_SEM_INCOMPATIBLE_TYPES,
         .type = {ctx_left.type, ctx_right.type});
     }
-
-    ctx_right = Expr_check(expr->binary.rs, errs, sco, &ctx);
-    ctx_check(ctx_right);
 
     ctx_success_with(ctx_left);
   case EXPR_GROUP:
@@ -175,7 +175,8 @@ Expr_check(
       ctx_err(ERR_SEM_UNDEFINED_SYMBOL, .token = expr->ident);
     }
 
-    ctx_success(.is_lvalue = true, .is_variable = sym->is_variable);
+    ctx_success(.type = sym->value.type,
+      .is_lvalue = true, .is_variable = sym->is_variable);
   case EXPR_PARENT:
     ident = expr->parent.ident;
     Scope *target = sco;
