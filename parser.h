@@ -57,6 +57,7 @@ typedef struct Expr {
       struct Expr *value;
     } print;
   };
+  Token *token;
 } Expr;
 da_make(ExprNode_A, Expr**);
 

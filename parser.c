@@ -7,6 +7,8 @@ int Parser_parse_nud(Expr *res, Parser *par) {
   int err;
 
   tok = Parser_cur(par);
+  res->token = tok;
+
   if (tok->kind == TOKEN_INVALID)
     return PARSER_INVALID_TOKEN;
 
@@ -200,6 +202,8 @@ int Parser_parse_line(Expr *res, Parser *par) {
   tok = Parser_cur(par);
   while (tok->flags & TOKEN_FLAG_FINISHER)
     tok = Parser_advance(par);
+
+  res->token = tok;
 
   if (!(tok->flags & TOKEN_FLAG_STARTER)) {
     err = Parser_parse_expr(res, par, 0);

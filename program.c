@@ -50,21 +50,29 @@ Value Program_run(Program *pro) {
 }
 
 #undef add
-#define add(code, expr, ...)\
-  da_add(errs, ((SemanticError){(code), (expr), __VA_ARGS__}))
+#define add(code, ...)\
+  da_add(errs, ((SemanticError){(code), __VA_ARGS__}))
 
-#define ctx_success(typefield, lvaluefield, constantfield)\
+#define ctx_success(...)\
   do {\
-    ctx.ok = true;\
-    ctx.type = (typefield);\
-    ctx.is_lvalue = (lvaluefield);\
-    ctx.is_constant = (constantfield);\
+    ctx = (SemanticContext){\
+      .ok = true,\
+      __VA_ARGS__\
+    };\
+    return ctx;\
   } while (0)
 
-#define ctx_err(code, expr, ...)\
+#define ctx_success_with(other)\
+  do {\
+    ctx = (other);\
+    ctx.ok = true;\
+    return ctx;\
+  } while (0)
+
+#define ctx_err(code, ...)\
   do {\
     ctx.ok = false;\
-    add(code, expr, __VA_ARGS__);\
+    add(code, __VA_ARGS__);\
     return ctx;\
   } while (0)
 
@@ -92,41 +100,48 @@ Expr_check(
 
   switch (expr->kind) {
   case EXPR_LITERAL:
-    ctx_success(expr->literal->literal.type, false, true);
-    break;
+    ctx_success(.type = expr->literal->literal.type, .is_constant = true);
   case EXPR_UNARY:
     break;
   case EXPR_BREAK:
   case EXPR_CONTINUE:
     if (!ctx.data.inside_loop)
-      ctx_err(ERR_SEM_LOOP_KEYWORD_OUTSIDE_LOOP, expr);
-    break;
+      ctx_err(ERR_SEM_LOOP_KEYWORD_OUTSIDE_LOOP, .token = expr->token);
+
+    ctx_success();
   case EXPR_READ:
-    break; // nothing to check?
+    ctx_success(.type = &g_TYPE_string); // nothing to check?
   case EXPR_BINARY:
     ctx_left = Expr_check(expr->binary.ls, errs, sco, &ctx);
     ctx_check(ctx_left);
 
     if (expr->binary.op->kind == TOKEN_EQUAL) {
       if (!ctx_left.is_lvalue) {
-        ctx_err(ERR_SEM_ASSIGN_TO_RVALUE, expr->binary.ls);
+        ctx_err(ERR_SEM_ASSIGN_TO_RVALUE, .expr = expr);
       } else if (!ctx_left.is_variable) {
-        ctx_err(ERR_SEM_ASSIGN_TO_VAL, expr);
+        ctx_err(ERR_SEM_ASSIGN_TO_VAL, .expr = expr);
       }
+    }
+
+    if (ctx_left.type != ctx_right.type) {
+      ctx_err(ERR_SEM_INCOMPATIBLE_TYPES,
+        .type = {ctx_left.type, ctx_right.type});
     }
 
     ctx_right = Expr_check(expr->binary.rs, errs, sco, &ctx);
     ctx_check(ctx_right);
-    break;
+
+    ctx_success_with(ctx_left);
   case EXPR_GROUP:
     ctx_in = Expr_check(expr->group.in, errs, sco, &ctx);
     ctx_check(ctx_in);
-    break;
+
+    ctx_success_with(ctx_in);
   case EXPR_DECL:
     ident = expr->decl.ident;
     sym = Scope_search_single_level(sco, ident->lexeme, ident->len);
     if (sym != NULL) {
-      ctx_err(ERR_SEM_ALREADY_DECLARED_SYMBOL, expr);
+      ctx_err(ERR_SEM_ALREADY_DECLARED_SYMBOL, .token = ident);
     }
 
     if (expr->decl.value) {
@@ -137,32 +152,30 @@ Expr_check(
     Symbol new_symbol = {0};
     new_symbol.ident = ident;
     new_symbol.is_variable = expr->decl.tok->kind == TOKEN_VAR;
+    new_symbol.value.type = expr->decl.type;
 
     Scope_insert(sco, new_symbol);
 
     // ctx.is_lvalue = true; // maybe set as L-value?
-    break;
+    ctx_success(.type = expr->decl.type);
   case EXPR_BLOCK:
     inner = Scope_new(sco);
     Expr **line;
     da_for(line, &expr->block) {
       ctx_in = Expr_check(*line, errs, inner, &ctx);
-      // not sure if we should continue checking the entire block
-      // ctx_check(ctx_in);
     }
     free(inner);
     sco->inner = NULL;
-    break;
+
+    ctx_success_with(ctx_in);
   case EXPR_IDENT:
     sym = Scope_search_until_global(sco, expr->ident->lexeme, expr->ident->len);
 
     if (sym == NULL) {
-      ctx_err(ERR_SEM_UNDEFINED_SYMBOL, expr);
+      ctx_err(ERR_SEM_UNDEFINED_SYMBOL, .token = expr->ident);
     }
 
-    ctx.is_lvalue = true;
-    ctx.is_variable = sym->is_variable;
-    break;
+    ctx_success(.is_lvalue = true, .is_variable = sym->is_variable);
   case EXPR_PARENT:
     ident = expr->parent.ident;
     Scope *target = sco;
@@ -174,17 +187,18 @@ Expr_check(
 
     sym = Scope_search_until_global(target, ident->lexeme, ident->len);
     if (sym == NULL) {
-      ctx_err(ERR_SEM_UNDEFINED_SYMBOL, expr, .count = count);
+      ctx_err(ERR_SEM_UNDEFINED_SYMBOL, .token = ident, .count = count);
     }
 
-    ctx.is_lvalue = true;
-    break;
+    ctx_success(.is_lvalue = true,
+      .is_variable = sym->is_variable,
+      .is_constant = false);
   case EXPR_IF:
     if (expr->if_node.then_branch->kind == EXPR_DECL) {
-      ctx_err(ERR_SEM_DECL_AFTER_IF_ELSE, expr);
+      ctx_err(ERR_SEM_DECL_AFTER_IF_ELSE, .expr = expr->if_node.then_branch);
     } else if (expr->if_node.else_branch
         && expr->if_node.else_branch->kind == EXPR_DECL) {
-      ctx_err(ERR_SEM_DECL_AFTER_IF_ELSE, expr);
+      ctx_err(ERR_SEM_DECL_AFTER_IF_ELSE, .expr = expr->if_node.else_branch);
     }
 
     ctx_in = Expr_check(expr->if_node.cond, errs, sco, &ctx);
@@ -195,18 +209,22 @@ Expr_check(
 
     ctx_in = Expr_check(expr->if_node.else_branch, errs, sco, &ctx);
     ctx_check(ctx_in);
-    break;
+
+    ctx_success();
   case EXPR_WHILE:
     ctx.data.inside_loop = true;
 
     if (expr->while_node.body->kind == EXPR_DECL) {
-      ctx_err(ERR_SEM_DECL_AFTER_WHILE_THEN_ELSE, expr);
+      ctx_err(ERR_SEM_DECL_AFTER_WHILE_THEN_ELSE,
+        .expr = expr->while_node.body);
     } else if (expr->while_node.then_branch
         && expr->while_node.then_branch->kind == EXPR_DECL) {
-      ctx_err(ERR_SEM_DECL_AFTER_WHILE_THEN_ELSE, expr);
+      ctx_err(ERR_SEM_DECL_AFTER_WHILE_THEN_ELSE,
+        .expr = expr->while_node.then_branch);
     } else if (expr->while_node.else_branch
         && expr->while_node.else_branch->kind == EXPR_DECL) {
-      ctx_err(ERR_SEM_DECL_AFTER_WHILE_THEN_ELSE, expr);
+      ctx_err(ERR_SEM_DECL_AFTER_WHILE_THEN_ELSE,
+        .expr = expr->while_node.else_branch);
     }
 
     ctx_in = Expr_check(expr->while_node.cond, errs, sco, &ctx);
@@ -220,11 +238,13 @@ Expr_check(
 
     ctx_in = Expr_check(expr->while_node.else_branch, errs, sco, &ctx);
     ctx_check(ctx_in);
-    break;
+
+    ctx_success();
   case EXPR_PRINT:
     ctx_in = Expr_check(expr->print.value, errs, sco, &ctx);
     ctx_check(ctx_in);
-    break;
+
+    ctx_success(.type = ctx_in.type);
   }
   return ctx;
 }

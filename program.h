@@ -13,6 +13,7 @@ typedef struct {
     ERR_SEM_LOOP_KEYWORD_OUTSIDE_LOOP,
   } code;
   // context:
+  Token *token;
   Expr *expr;
   const Type *type[2];
   size_t count;
