@@ -22,7 +22,7 @@ typedef struct Type {
 
 #define g_TYPE(typename, typesize)\
 const Type g_TYPE_##typename = (Type){\
-  .name = {.str = #typename, .len = sizeof(#typename)},\
+  .name = {.str = #typename, .len = sizeof(#typename) - 1},\
   .kind = TYPE_ ## typename,\
   .size = (typesize),\
 };
@@ -30,6 +30,12 @@ const Type g_TYPE_##typename = (Type){\
 #define X g_TYPE
 TYPES_BUILTIN
 #undef X
+
+const Type *g_TYPES[] = {
+  #define X(typename, typesize) &g_TYPE_ ## typename,
+  TYPES_BUILTIN
+  #undef X
+};
 
 const Type *Type_from_string(char *string, size_t len);
 
