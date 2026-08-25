@@ -31,4 +31,6 @@ const Type g_TYPE_##typename = (Type){\
 TYPES_BUILTIN
 #undef X
 
+const Type *Type_from_string(char *string, size_t len);
+
 #endif // RAIZ_TYPES_H
