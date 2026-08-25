@@ -219,14 +219,14 @@ int Parser_parse_line(Expr *res, Parser *par) {
     Parser_advance(par); // consume keyword
 
     peeked = Parser_peek(par);
-    Token *type = NULL;
-    bool explicit_type = false;
 
-    if (peeked->kind == TOKEN_TYPE_NAME) {
-      Parser_advance(par); // type
-      type = peeked;
-      explicit_type = true;
+    if (peeked->kind != TOKEN_TYPE_NAME) {
+      fprintf(stderr, "expected type, found %s\n", token_label(peeked));
+      return PARSER_EXPECTED_TYPE;
     }
+
+    Parser_advance(par); // type
+    const Type *type = Type_from_string(peeked->lexeme, peeked->len);
 
     if (peeked->kind == TOKEN_EQUAL) {
       Parser_advance(par); // identifier
@@ -247,6 +247,7 @@ int Parser_parse_line(Expr *res, Parser *par) {
     res->kind = EXPR_DECL;
     res->decl.tok = tok;
     res->decl.ident = tok + 1;
+    res->decl.type = type;
 
     break; // case VAR or VAL
   case TOKEN_WHILE:

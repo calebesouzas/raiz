@@ -37,6 +37,7 @@ typedef struct Expr {
       Token *tok;
       Token *ident;
       struct Expr *value;
+      const Type *type;
     } decl;
     struct {
       struct Expr **dat;
@@ -74,6 +75,7 @@ enum ParserError {
   PARSER_EXPECTED_ASSIGNMENT,
   PARSER_EXPECTED_FINISH,
   PARSER_EXPECTED_EXPRESSION,
+  PARSER_EXPECTED_TYPE,
   PARSER_NOT_CLOSED_GROUP,
   PARSER_NOT_CLOSED_BLOCK,
 };
