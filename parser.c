@@ -225,7 +225,8 @@ int Parser_parse_line(Expr *res, Parser *par) {
     peeked = Parser_peek(par);
 
     if (peeked->kind != TOKEN_TYPE_NAME) {
-      fprintf(stderr, "expected type, found %s\n", token_label(peeked));
+      fprintf(stderr, "expected type, found '%s'\n"
+        "note: there is no type inference yet\n", token_label(peeked));
       return PARSER_EXPECTED_TYPE;
     }
 
