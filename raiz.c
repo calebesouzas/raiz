@@ -11,11 +11,6 @@
 But maybe you can find something interesting in here, I really don't know
 */
 
-char code[] = {
-  #embed "test_code.rz"
-  , 0
-};
-
 #include "strings.h"
 
 #include "cast.h"
@@ -32,15 +27,35 @@ char code[] = {
 
 void print_errs(SemanticError_A *errs);
 int main(int argc, char **argv) {
-#if 0
   if (argc <= 1) {
     printf("usage: %s <file>\n", argv[0]);
     printf("<file>: text file containing Raiz code\n");
     return 1;
   }
-#endif
+
+  FILE *file = fopen(argv[1], "r");
+  fseek(file, 0, SEEK_END);
+
+  struct {
+    size_t len, cap;
+    char *dat;
+  } code;
+  code.cap = ftell(file);
+  code.dat = malloc(code.cap);
+
+  fseek(file, 0, SEEK_SET);
+  code.len = fread(code.dat, sizeof(*code.dat), code.cap, file);
+
+  if (feof(file))
+    printf("reached end, read %zu bytes\n", code.len);
+  else if (ferror(file))
+    printf("error ocurred");
+
+  fclose(file);
+  file = NULL;
+
   Token_A toks = {0};
-  Lexer lex = Lexer_setup(&toks, code);
+  Lexer lex = Lexer_setup(&toks, code.dat, code.len);
   int err = Lexer_tokenize(&lex);
   if (err)
     return err;

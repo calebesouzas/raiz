@@ -258,11 +258,11 @@ size_t Token_distance(Token *from, Token *to) {
   return (size_t) ((uintptr_t) to - (uintptr_t) from);
 }
 
-Lexer Lexer_setup(Token_A *toks, char *source) {
+Lexer Lexer_setup(Token_A *toks, char *source, size_t len) {
   Lexer lex = {0};
   lex.toks = toks;
   lex.source = source;
-  lex.source_len = strlen(source);
+  lex.source_len = len > 0 ? len : strlen(source);
   lex.columns = 1;
   lex.lines = 1;
   return lex;

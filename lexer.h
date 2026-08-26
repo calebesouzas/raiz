@@ -107,7 +107,7 @@ typedef struct {
   size_t start, lines, columns;
 } Lexer;
 
-Lexer Lexer_setup(Token_A *toks, char *source);
+Lexer Lexer_setup(Token_A *toks, char *source, size_t len);
 int Lexer_tokenize(Lexer *lex);
 
 char *token_label(Token *tok);
