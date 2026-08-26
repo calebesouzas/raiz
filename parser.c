@@ -232,6 +232,8 @@ int Parser_parse_line(Expr *res, Parser *par) {
     Parser_advance(par); // type
     const Type *type = Type_from_string(peeked->lexeme, peeked->len);
 
+    peeked = Parser_peek(par);
+
     if (peeked->kind == TOKEN_EQUAL) {
       Parser_advance(par); // identifier
       Parser_advance(par); // '='
