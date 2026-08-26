@@ -1,7 +1,3 @@
-var x @string
+print "Hello, World!"
 
-x = read
-
-print x
-
-0
+var x @string = "Ayo, strings!"

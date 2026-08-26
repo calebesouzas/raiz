@@ -112,6 +112,20 @@ int Lexer_tokenize(Lexer *lex) {
         return 1;
       }
     } break;
+    case '"': {
+      bool closed = false;
+      do {
+        closed = advance() == '"';
+      } while (!closed && active());
+
+      if (!(active() && closed)) {
+        fprintf(stderr, "not closed string started at index %zu\n", lex->start);
+        return 1;
+      }
+      add(tk(TOKEN_STRING,
+        .literal = Value_(&g_TYPE_string, size_t,
+          snsave(Lexer_point(lex) + 1, Lexer_len(lex) - 1))));
+    } break;
     case '/':
       if (!skip_comments(lex)) {
         add(tk(TOKEN_SLASH));
@@ -234,6 +248,7 @@ char *token_label(Token *tok) {
   case TOKEN_PRINT:
   case TOKEN_READ:
   case TOKEN_TYPE_NAME:
+  case TOKEN_STRING:
     return temp_sprintf("%.*s", tok->len, tok->lexeme);
   }
   fprintf(stderr, "unknown token (id %d)\n", tok->kind); return NULL;

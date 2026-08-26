@@ -1,6 +1,8 @@
 #ifndef RAIZ_RUNTIME_C
 #define RAIZ_RUNTIME_C
 
+#define READ_BUF_CAP 1024
+
 EvalResult eval(Expr *e, Scope *s) {
   Symbol *sym, new_symbol;
   Scope *s_in, *target;
@@ -14,7 +16,7 @@ EvalResult eval(Expr *e, Scope *s) {
 
   switch (e->kind) {
   case EXPR_LITERAL:
-    res.value.data = e->literal->literal.data;
+    res.value = e->literal->literal;
     break;
   case EXPR_UNARY:
     value = eval(e->unary.in, s).value;
@@ -183,15 +185,16 @@ EvalResult eval(Expr *e, Scope *s) {
       case TYPE_bool:
         printf("%s", res.value.data ? "true" : "false");
         break;
-      case TYPE_string:
-        printf("%s", (char*)(uintptr_t) res.value.data);
-        break;
+      case TYPE_string: {
+        char *s = sget((size_t) res.value.data);
+        printf("%s", s);
+      } break;
     }
     break;
   case EXPR_READ: {
-    char *buf = malloc(1024);
-    fgets(buf, 1024, stdin);
-    res.value.data = (uintptr_t) buf;
+    char buf[READ_BUF_CAP];
+    fgets(buf, READ_BUF_CAP, stdin);
+    res.value.data = ssave(buf);
     res.value.type = &g_TYPE_string;
   } break;
   }

@@ -11,7 +11,17 @@ StringPool String_Pool = {0};
 #define TEMP_BUF_CAP 1024
 char Temp_Buffer[TEMP_BUF_CAP] = {0};
 
-size_t salloc(char *cstr);
+size_t salloc(size_t amount);
+
+size_t sput(char *cstr);
+
+size_t ssave(char *source);
+
+size_t snsave(char *source, size_t size);
+
+void sfree(size_t index);
+
+char *sget(size_t index);
 
 char *temp_vsnprintf(size_t n, const char *f, va_list v)
   __attribute__((format(printf, 2, 0)));
