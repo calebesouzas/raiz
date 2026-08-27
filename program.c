@@ -208,8 +208,10 @@ Expr_check(
     ctx_in = Expr_check(expr->if_node.then_branch, errs, sco, &ctx);
     ctx_check(ctx_in);
 
-    ctx_in = Expr_check(expr->if_node.else_branch, errs, sco, &ctx);
-    ctx_check(ctx_in);
+    if (expr->if_node.else_branch) {
+      ctx_in = Expr_check(expr->if_node.else_branch, errs, sco, &ctx);
+      ctx_check(ctx_in);
+    }
 
     ctx_success();
   case EXPR_WHILE:
@@ -234,11 +236,15 @@ Expr_check(
     ctx_in = Expr_check(expr->while_node.body, errs, sco, &ctx);
     ctx_check(ctx_in);
 
-    ctx_in = Expr_check(expr->while_node.then_branch, errs, sco, &ctx);
-    ctx_check(ctx_in);
+    if (expr->while_node.then_branch) {
+      ctx_in = Expr_check(expr->while_node.then_branch, errs, sco, &ctx);
+      ctx_check(ctx_in);
+    }
 
-    ctx_in = Expr_check(expr->while_node.else_branch, errs, sco, &ctx);
-    ctx_check(ctx_in);
+    if (expr->while_node.else_branch) {
+      ctx_in = Expr_check(expr->while_node.else_branch, errs, sco, &ctx);
+      ctx_check(ctx_in);
+    }
 
     ctx_success();
   case EXPR_PRINT:
