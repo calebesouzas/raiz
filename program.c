@@ -128,6 +128,7 @@ Expr_check(
 
     if (ctx_left.type != ctx_right.type) {
       ctx_err(ERR_SEM_INCOMPATIBLE_TYPES,
+        .expr = expr,
         .type = {ctx_left.type, ctx_right.type});
     }
 
