@@ -1,0 +1,11 @@
+val i @int = read
+
+if i == 16 {
+  print "My age!"
+} else if i > 18 {
+  print "You're an adult."
+} else if i > 12 {
+  print "You're young."
+} else {
+  print "You're a kid."
+}

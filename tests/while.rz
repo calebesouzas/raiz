@@ -1,0 +1,15 @@
+var i @int = 0
+var max @int = 15
+val point @int = 10
+
+while i < max {
+  if i == point {
+    break
+  }
+
+  i = i + 1
+} then {
+  print "Exited loop normally"
+} else {
+  print "Loop broke manually"
+}
