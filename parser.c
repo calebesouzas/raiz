@@ -2,12 +2,12 @@
 #define RAIZ_PARSER_C
 
 int Parser_parse_nud(Expr *res, Parser *par) {
-  Token *tok, *peeked;
+  Token *tok, *peeked, *first;
   Expr *in, *value, *line;
   int err;
 
   tok = Parser_cur(par);
-  res->token = tok;
+  first = tok;
 
   if (tok->kind == TOKEN_INVALID)
     return PARSER_INVALID_TOKEN;
@@ -50,6 +50,7 @@ int Parser_parse_nud(Expr *res, Parser *par) {
   } else if (tok->kind == TOKEN_IDENT) {
     res->kind = EXPR_IDENT;
     res->ident = tok;
+    res->token = first;
   } else if (tok->kind == TOKEN_L_CURLY) {
     Parser_advance(par); // `{`
     do {
@@ -147,16 +148,18 @@ int Parser_parse_nud(Expr *res, Parser *par) {
     fprintf(stderr, "unexpected token: %s\n", token_label(tok));
     return PARSER_UNEXPECTED_TOKEN;
   }
+  res->token = first;
   return 0;
 }
 
 int Parser_parse_expr(Expr *ls, Parser *par, uint8_t min_bp) {
   Expr *rs;
-  Expr *res;
-  Token *op;
+  Expr *res = NULL;
+  Token *op, *first;
   uint8_t bp;
   int err;
 
+  first = Parser_cur(par);
   err = Parser_parse_nud(ls, par);
   if (err)
     return err;
@@ -191,19 +194,21 @@ int Parser_parse_expr(Expr *ls, Parser *par, uint8_t min_bp) {
     memcpy(ls, res, sizeof(*ls));
   }
 
+  ls->token = first;
+  if (res != NULL)
+    res->token = first;
   return 0;
 }
 
 int Parser_parse_line(Expr *res, Parser *par) {
   int err;
-  Token *tok, *peeked;
+  Token *tok, *peeked, *first;
   Expr *value;
 
   tok = Parser_cur(par);
+  first = tok;
   while (tok->flags & TOKEN_FLAG_FINISHER)
     tok = Parser_advance(par);
-
-  res->token = tok;
 
   if (!(tok->flags & TOKEN_FLAG_STARTER)) {
     err = Parser_parse_expr(res, par, 0);
@@ -340,8 +345,8 @@ finish_line:
     return PARSER_EXPECTED_FINISH;
   }
 
-  // Parser_advance(par);
   Parser_advance(par);
+  res->token = first;
   return 0;
 }
 
