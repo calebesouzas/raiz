@@ -116,12 +116,11 @@ void print_errs(SemanticError_A *errs) {
       P(SPEC"declaration after while-then-else\n", DAT);
       break;
     case ERR_SEM_INCOMPATIBLE_TYPES:
-      P(SPEC"incompatible types: '%.*s' and '%.*s'\n", DAT, TYPE0, TYPE1);
+      P(SPEC"incompatible types: '@%.*s' and '@%.*s'\n", DAT, TYPE0, TYPE1);
       break;
     case ERR_SEM_LOOP_KEYWORD_OUTSIDE_LOOP:
       P(SPEC"used '%.*s' keyword outside loop\n", DAT, TOK);
       break;
-    //@todo print errors!
     }
   }
 }
