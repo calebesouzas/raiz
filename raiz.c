@@ -25,7 +25,7 @@ But maybe you can find something interesting in here, I really don't know
 #include "runtime.h"
 #include "program.h"
 
-void print_errs(SemanticError_A *errs);
+void print_errs(SemanticError_A *errs, char *file_path, size_t source_len);
 int main(int argc, char **argv) {
   if (argc <= 1) {
     printf("usage: %s <file>\n", argv[0]);
@@ -71,7 +71,7 @@ int main(int argc, char **argv) {
   SemanticError_A errs = {0};
   Program_check(&pro, &errs, 20);
   if (errs.len > 0) {
-    print_errs(&errs);
+    print_errs(&errs, argv[1], code.len);
     return (int)errs.len;
   }
   free(errs.dat);
@@ -80,18 +80,20 @@ int main(int argc, char **argv) {
   printf("%llu\n", result.data);
 
   Program_free(&pro);
+  free(code.dat);
   return 0;
 }
 
-void print_errs(SemanticError_A *errs) {
-#define SPEC "error at [%zu] (%zu:%zu): "
-#define DAT e->token->start, e->token->line, e->token->column
+void print_errs(SemanticError_A *errs, char *file_path, size_t source_len) {
+#define SPEC "%s: [%zu](%zu:%zu) error:\n"
+#define DAT file_path, e->token->start, e->token->line, e->token->column
 #define TOK size_t_int(e->token->len, INT_MAX), e->token->lexeme
 #define P(...) fprintf(stderr, __VA_ARGS__)
 #define TYPE0 e->type[0]->name.len, e->type[0]->name.str
 #define TYPE1 e->type[1]->name.len, e->type[1]->name.str
 
   SemanticError *e;
+
   da_for(e, errs) {
     if (e->token == NULL)
       e->token = e->expr->token;
@@ -122,6 +124,26 @@ void print_errs(SemanticError_A *errs) {
       P(SPEC"used '%.*s' keyword outside loop\n", DAT, TOK);
       break;
     }
+
+    char *s = e->token->lexeme;
+    // find line beginning
+    if (e->token->line > 1) {
+      while (*s != '\n') s--;
+      s++;
+    } else {
+      s -= e->token->start;
+    }
+
+    // get line length
+    int i = 0;
+    while ((strncmp(s + i, "\r\n", 2) != 0 || s[i] != '\n')
+        && i < source_len - e->token->start) {
+      i++;
+    }
+
+    fprintf(stderr,
+      "%zu | %.*s\n",
+      e->token->line, i, s);
   }
 }
 
