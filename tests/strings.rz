@@ -1,3 +1,7 @@
-var message @string = "Hello, World!"
+var message @string = "Hello, "
+
+if read {
+  message = message + "Calebe!"
+}
 
 print message
