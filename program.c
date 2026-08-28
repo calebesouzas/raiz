@@ -148,6 +148,12 @@ Expr_check(
     if (expr->decl.value) {
       ctx_in = Expr_check(expr->decl.value, errs, sco, &ctx);
       ctx_check(ctx_in);
+
+      if (expr->decl.type != ctx_in.type) {
+        ctx_err(ERR_SEM_INCOMPATIBLE_TYPES,
+          .expr = expr,
+          .type = {expr->decl.type, ctx_in.type});
+      }
     }
 
     Symbol new_symbol = {0};
