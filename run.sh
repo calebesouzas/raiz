@@ -1,2 +1,3 @@
 set -xe
-clear && ./build.sh && ./raiz
+./build.sh
+./raiz $@
