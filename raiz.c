@@ -76,8 +76,7 @@ int main(int argc, char **argv) {
   }
   free(errs.dat);
 
-  Value result = Program_run(&pro);
-  printf("%llu\n", result.data);
+  (void) Program_run(&pro);
 
   Program_free(&pro);
   free(code.dat);
