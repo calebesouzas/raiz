@@ -124,7 +124,7 @@ int Lexer_tokenize(Lexer *lex) {
       }
       add(tk(TOKEN_STRING,
         .literal = Value_(&g_TYPE_string, size_t,
-          snsave(Lexer_point(lex) + 1, Lexer_len(lex) - 1))));
+          sp_nsave(Lexer_point(lex) + 1, Lexer_len(lex) - 1))));
     } break;
     case '/':
       if (!skip_comments(lex)) {

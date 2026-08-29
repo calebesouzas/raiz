@@ -191,15 +191,15 @@ EvalResult eval(Expr *e, Scope *s) {
         printf("%s", res.value.data ? "true" : "false");
         break;
       case TYPE_string: {
-        char *s = sget((size_t) res.value.data);
-        printf("%s", s);
+        sb_t *sb = sp_get((size_t) res.value.data);
+        printf("%.*s", sb->len, sb->ptr);
       } break;
     }
     break;
   case EXPR_READ: {
     char buf[READ_BUF_CAP];
     fgets(buf, READ_BUF_CAP, stdin);
-    res.value.data = ssave(buf);
+    res.value.data = sp_save(buf);
     res.value.type = &g_TYPE_string;
   } break;
   }

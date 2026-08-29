@@ -1,39 +1,68 @@
 #ifndef RAIZ_STRINGS_C
 #define RAIZ_STRINGS_C
 
-size_t salloc(size_t amount) {
+// -- // -- // String Pool // -- // -- //
+size_t sp_alloc(size_t amount) {
   char *s = malloc(amount);
-  return sput(s);
-}
-
-size_t sput(char *cstr) {
-  da_add(&String_Pool, cstr);
+  sb_t sb = {.ptr = s, .len = 0, .cap = amount};
+  da_add(&String_Pool, sb);
   return String_Pool.len - 1;
 }
 
-size_t ssave(char *source) {
-  size_t len = strlen(source);
-  return snsave(source, len);
+size_t sp_put(sb_t sb) {
+  da_add(&String_Pool, sb);
+  return String_Pool.len - 1;
 }
 
-size_t snsave(char *source, size_t size) {
-  size_t index = salloc(size + 1);
-  char *s = sget(index);
+size_t sp_put_cstr(char *cstr) {
+  da_add(&String_Pool, sb_from_cstr(cstr));
+  return String_Pool.len - 1;
+}
 
-  strncpy(s, source, size);
-  s[size] = '\0';
+size_t sp_save(char *source) {
+  size_t len = strlen(source);
+  return sp_nsave(source, len);
+}
+
+size_t sp_nsave(char *source, size_t size) {
+  size_t index = sp_alloc(size + 1);
+  sb_t *sb = sp_get(index);
+
+  strncpy(sb->ptr, source, size);
+  sb->ptr[size] = '\0';
+  sb->len = size;
 
   return index;
 }
 
-void sfree(size_t index) {
-  free(String_Pool.dat[index]);
-  String_Pool.dat[index] = NULL;
+void sp_free(size_t index) {
+  free(String_Pool.dat[index].ptr);
+  String_Pool.dat[index] = (sb_t){0};
 }
 
-char *sget(size_t index) {
-  return String_Pool.dat[index];
+sb_t *sp_get(size_t index) {
+  return &String_Pool.dat[index];
 }
+
+// -- // -- // String View & Builder // -- // -- //
+sv_t sv_make(char *cstr) {
+  return (sv_t){.ptr = cstr, .len = strlen(cstr)};
+}
+
+sb_t sb_make(sv_t sv) {
+  return (sb_t){.ptr = strndup(sv.ptr, sv.len), .len = sv.len, .cap = sv.len};
+}
+
+sb_t sb_from_cstr(char *cstr) {
+  size_t len = strlen(cstr);
+  return (sb_t){.ptr = strdup(cstr), .len = len, .cap = len};
+}
+
+sb_t sb_from_cstr_slice(char *cstr, size_t len) {
+  return (sb_t){.ptr = strndup(cstr, len), .len = len, .cap = len};
+}
+
+// -- // -- // Temp Buffer // -- // -- //
 
 char *temp_vsnprintf(size_t n, const char *f, va_list v) {
   vsnprintf(Temp_Buffer, n, f, v);
