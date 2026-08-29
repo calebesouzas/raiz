@@ -41,6 +41,16 @@ sb_t sb_make(sv_t sv);
 sb_t sb_from_cstr(char *cstr);
 sb_t sb_from_cstr_slice(char *cstr, size_t len);
 
+void sb_reserve(sb_t *sb, size_t amount);
+
+#define SB_EXTRA_CAP 128
+
+void sb_push_sv(sb_t *sb, sv_t sv);
+
+void sb_push_cstr(sb_t *sb, char *cstr);
+
+void sb_push_ncstr(sb_t *sb, char *cstr, size_t amount);
+
 // -- // -- // Temp Buffer // -- // -- //
 #define TEMP_BUF_CAP 1024
 char Temp_Buffer[TEMP_BUF_CAP] = {0};

@@ -1,7 +1,5 @@
 var message @string = "Hello, "
 
-if read {
-  message = message + "Calebe!"
-}
+message = message + read + "!"
 
 print message

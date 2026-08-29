@@ -51,7 +51,14 @@ EvalResult eval(Expr *e, Scope *s) {
     rs = rsv.data;
     switch (e->binary.op->kind) {
     case TOKEN_PLUS:
-      res.value.data = ls + rs;
+      if (lsv.type == &g_TYPE_string) {
+        sb_t *target = sp_get((size_t) ls);
+        sb_t *source = sp_get((size_t) rs);
+        sb_push_sv(target, *(sv_t*)source);
+        res.value.data = ls;
+      } else {
+        res.value.data = ls + rs;
+      }
       break;
     case TOKEN_MINUS:
       res.value.data = ls - rs;

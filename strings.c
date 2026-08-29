@@ -62,6 +62,28 @@ sb_t sb_from_cstr_slice(char *cstr, size_t len) {
   return (sb_t){.ptr = strndup(cstr, len), .len = len, .cap = len};
 }
 
+void sb_reserve(sb_t *sb, size_t amount) {
+  if (amount <= sb->cap)
+    return;
+  sb->ptr = realloc(sb->ptr, amount + SB_EXTRA_CAP);
+}
+
+void sb_push_sv(sb_t *sb, sv_t sv) {
+  sb_reserve(sb, sb->len + sv.len);
+  strncpy(sb->ptr + sb->len, sv.ptr, sv.len);
+  sb->len += sv.len;
+}
+
+void sb_push_cstr(sb_t *sb, char *cstr) {
+  sb_push_sv(sb, sv_make(cstr));
+}
+
+void sb_push_ncstr(sb_t *sb, char *cstr, size_t amount) {
+  sb_reserve(sb, sb->len + amount);
+  strncpy(sb->ptr + sb->len, cstr, amount);
+  sb->len += amount;
+}
+
 // -- // -- // Temp Buffer // -- // -- //
 
 char *temp_vsnprintf(size_t n, const char *f, va_list v) {
