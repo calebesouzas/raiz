@@ -199,7 +199,7 @@ EvalResult eval(Expr *e, Scope *s) {
         break;
       case TYPE_string: {
         sb_t *sb = sp_get((size_t) res.value.data);
-        printf("%.*s", sb->len, sb->ptr);
+        printf("%.*s", size_t_int(sb->len), sb->ptr);
       } break;
     }
     break;

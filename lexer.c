@@ -249,7 +249,7 @@ char *token_label(Token *tok) {
   case TOKEN_READ:
   case TOKEN_TYPE_NAME:
   case TOKEN_STRING:
-    return temp_sprintf("%.*s", tok->len, tok->lexeme);
+    return temp_sprintf("%.*s", size_t_int(tok->len), tok->lexeme);
   }
   fprintf(stderr, "unknown token (id %d)\n", tok->kind); return NULL;
 }

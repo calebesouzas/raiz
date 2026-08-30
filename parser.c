@@ -252,7 +252,7 @@ int Parser_parse_line(Expr *res, Parser *par) {
       res->decl.value = value;
     } else if (tok->kind == TOKEN_VAL) {
       fprintf(stderr, "expected assignment after '%.*s', found %s\n",
-              tok->len, tok->lexeme, token_label(peeked));
+              size_t_int(tok->len), tok->lexeme, token_label(peeked));
       return PARSER_EXPECTED_ASSIGNMENT;
     }
 
@@ -472,7 +472,7 @@ void Expr_dump(Expr *root, size_t indent, size_t level) {
   }
   switch (root->kind) {
   case EXPR_LITERAL:
-    fprintf(stderr, "literal %llu\n", root->literal->literal.data);
+    fprintf(stderr, "literal %lu\n", root->literal->literal.data);
     break;
   case EXPR_BINARY:
     fprintf(stderr, "binary, operator %s\n", token_label(root->binary.op));
@@ -509,7 +509,7 @@ void Expr_dump(Expr *root, size_t indent, size_t level) {
     break;
   case EXPR_IDENT:
     fprintf(stderr, "identifier %.*s\n",
-            size_t_int(root->ident->len, INT_MAX), root->ident->lexeme);
+            size_t_int(root->ident->len), root->ident->lexeme);
     break;
   case EXPR_DECL: {
     fprintf(stderr, "%s declaration\n", token_label(root->decl.tok));
