@@ -132,6 +132,23 @@ Expr_check(
         .type = {ctx_left.type, ctx_right.type});
     }
 
+    if (ctx_left.type == &g_TYPE_string) {
+      switch (expr->binary.op->kind) {
+      case TOKEN_EQUAL:
+      case TOKEN_PLUS:
+      case TOKEN_EQUAL_X2:
+      case TOKEN_BANG_EQUAL:
+      case TOKEN_AMPER_X2:
+      case TOKEN_PIPE_X2:
+        break;
+      default:
+        ctx_err(ERR_SEM_INCOMPATIBLE_OPERATOR,
+          .token = expr->binary.op,
+          .type = {ctx_left.type, NULL});
+        break;
+      }
+    }
+
     ctx_success_with(ctx_left);
   case EXPR_GROUP:
     ctx_in = Expr_check(expr->group.in, errs, sco, &ctx);

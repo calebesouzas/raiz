@@ -11,6 +11,7 @@ typedef struct {
     ERR_SEM_DECL_AFTER_WHILE_THEN_ELSE,
     ERR_SEM_INCOMPATIBLE_TYPES,
     ERR_SEM_LOOP_KEYWORD_OUTSIDE_LOOP,
+    ERR_SEM_INCOMPATIBLE_OPERATOR,
   } code;
   // context:
   Token *token;

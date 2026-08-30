@@ -49,16 +49,42 @@ EvalResult eval(Expr *e, Scope *s) {
 
     Value rsv = eval(e->binary.rs, s).value;
     rs = rsv.data;
+
+    res.value.type = lsv.type;
+
+    if (res.value.type == &g_TYPE_string) {
+      sb_t *lsb = sp_get((size_t) ls);
+      sb_t *rsb = sp_get((size_t) rs);
+      switch (e->binary.op->kind) {
+      case TOKEN_PLUS:
+        sb_push_sv(lsb, *(sv_t*)rsb);
+        res.value.data = ls;
+        break;
+      case TOKEN_EQUAL_X2:
+        res.value.data = lsb->len == rsb->len
+          && strncmp(lsb->ptr, rsb->ptr, lsb->len) == 0;
+        res.value.type = &g_TYPE_bool;
+        break;
+      case TOKEN_BANG_EQUAL:
+        res.value.data = lsb->len != rsb->len
+          && strncmp(lsb->ptr, rsb->ptr, lsb->len) != 0;
+        res.value.type = &g_TYPE_bool;
+        break;
+      case TOKEN_AMPER_X2:
+        res.value.data = lsb->len > 0 && rsb->len > 0;
+        res.value.type = &g_TYPE_bool;
+        break;
+      case TOKEN_PIPE_X2:
+        res.value.data = lsb->len > 0 || rsb->len > 0;
+        res.value.type = &g_TYPE_bool;
+        break;
+      }
+      return res;
+    }
+
     switch (e->binary.op->kind) {
     case TOKEN_PLUS:
-      if (lsv.type == &g_TYPE_string) {
-        sb_t *target = sp_get((size_t) ls);
-        sb_t *source = sp_get((size_t) rs);
-        sb_push_sv(target, *(sv_t*)source);
-        res.value.data = ls;
-      } else {
-        res.value.data = ls + rs;
-      }
+      res.value.data = ls + rs;
       break;
     case TOKEN_MINUS:
       res.value.data = ls - rs;
@@ -111,7 +137,6 @@ EvalResult eval(Expr *e, Scope *s) {
     default:
       PANIC("invalid binary operator (token %s)\n", token_label(e->binary.op));
     }
-    res.value.type = lsv.type;
     break;
   case EXPR_GROUP:
     res.value = eval(e->group.in, s).value;

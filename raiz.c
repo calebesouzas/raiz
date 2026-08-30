@@ -123,6 +123,9 @@ void print_errs(SemanticError_A *errs, char *file_path, size_t source_len) {
     case ERR_SEM_LOOP_KEYWORD_OUTSIDE_LOOP:
       P(SPEC"used '%.*s' keyword outside loop\n", DAT, TOK);
       break;
+    case ERR_SEM_INCOMPATIBLE_OPERATOR:
+      P(SPEC"type '%.*s' doesn't work with '%.*s' operator\n", DAT, TYPE0, TOK);
+      break;
     }
 
     char *s = e->token->lexeme;
