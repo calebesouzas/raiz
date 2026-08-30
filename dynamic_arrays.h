@@ -36,6 +36,9 @@
       (da)->len = (src)->len;\
       (da)->cap = (src)->cap;\
       memcpy((da)->dat, (src)->dat, (da)->len);\
+    } else {\
+      (da)->cap = 0;\
+      (da)->len = 0;\
     }\
   } while (0)
 
