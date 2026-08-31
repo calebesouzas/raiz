@@ -28,6 +28,7 @@ int Lexer_tokenize(Lexer *lex) {
     case '}': add(tk(TOKEN_R_CURLY)); break;
     case '~': add(tk(TOKEN_TILDE)); break;
     case '^': add(tk(TOKEN_HAT)); break;
+    case '%': add(tk(TOKEN_PERCENT)); break;
     case '=':
       if (peek() == '=') {
         advance();
@@ -254,6 +255,7 @@ char *token_label(Token *tok) {
   case TOKEN_READ:
   case TOKEN_TYPE_NAME:
   case TOKEN_STRING:
+  case TOKEN_PERCENT:
     return temp_sprintf("%.*s", size_t_int(tok->len), tok->lexeme);
   }
   fprintf(stderr, "unknown token (id %d)\n", tok->kind); return NULL;

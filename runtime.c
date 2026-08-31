@@ -7,7 +7,7 @@ EvalResult eval(Expr *e, Scope *s) {
   Symbol *sym, new_symbol;
   Scope *s_in, *target;
   uint64_t ls, rs, cond;
-  Value value;
+  Value value, lsv, rsv, condv;
   char *ident;
   void *save;
   Expr **line;
@@ -44,10 +44,10 @@ EvalResult eval(Expr *e, Scope *s) {
       return res;
     }
 
-    Value lsv = eval(e->binary.ls, s).value;
+    lsv = eval(e->binary.ls, s).value;
     ls = lsv.data;
 
-    Value rsv = eval(e->binary.rs, s).value;
+    rsv = eval(e->binary.rs, s).value;
     rs = rsv.data;
 
     res.value.type = lsv.type;
@@ -95,32 +95,41 @@ EvalResult eval(Expr *e, Scope *s) {
     case TOKEN_SLASH:
       res.value.data = ls / rs;
       break;
+    case TOKEN_PERCENT:
+      res.value.data = ls % rs;
+      break;
     case TOKEN_EQUAL_X2:
       res.value.data = ls == rs;
+      res.value.type = &g_TYPE_bool;
       break;
     case TOKEN_BANG_EQUAL:
       res.value.data = ls != rs;
+      res.value.type = &g_TYPE_bool;
       break;
     case TOKEN_PIPE:
       res.value.data = ls | rs;
       break;
     case TOKEN_PIPE_X2:
       res.value.data = ls || rs;
+      res.value.type = &g_TYPE_bool;
       break;
     case TOKEN_AMPER:
       res.value.data = ls & rs;
       break;
     case TOKEN_AMPER_X2:
       res.value.data = ls && rs;
+      res.value.type = &g_TYPE_bool;
       break;
     case TOKEN_HAT:
       res.value.data = ls ^ rs;
       break;
     case TOKEN_LESS:
       res.value.data = ls < rs;
+      res.value.type = &g_TYPE_bool;
       break;
     case TOKEN_LESS_EQUAL:
       res.value.data = ls <= rs;
+      res.value.type = &g_TYPE_bool;
       break;
     case TOKEN_LESS_X2:
       res.value.data = ls << rs;
@@ -130,6 +139,7 @@ EvalResult eval(Expr *e, Scope *s) {
       break;
     case TOKEN_GREAT_EQUAL:
       res.value.data = ls >= rs;
+      res.value.type = &g_TYPE_bool;
       break;
     case TOKEN_GREAT_X2:
       res.value.data = ls >> rs;
@@ -181,7 +191,10 @@ EvalResult eval(Expr *e, Scope *s) {
     res.value = sym->value;
     break;
   case EXPR_IF:
-    cond = eval(e->if_node.cond, s).value.data;
+    condv = eval(e->if_node.cond, s).value;
+    cond = condv.type == &g_TYPE_string?
+      sp_get((size_t) condv.data)->len > 0
+      : condv.data;
     if (cond) {
       res = eval(e->if_node.then_branch, s);
     } else if (e->if_node.else_branch) {
@@ -189,7 +202,11 @@ EvalResult eval(Expr *e, Scope *s) {
     }
     break;
   case EXPR_WHILE:
-    while ((cond = eval(e->while_node.cond, s).value.data)) {
+    for (condv = eval(e->while_node.cond, s).value;
+        (cond = condv.type == &g_TYPE_string?
+          sp_get((size_t) condv.data)->len > 0
+          : condv.data);
+        condv = eval(e->while_node.cond, s).value) {
       if (res.sig == SIGNAL_BREAK)
         break;
       if (res.sig == SIGNAL_CONTINUE)
