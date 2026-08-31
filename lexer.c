@@ -108,7 +108,12 @@ int Lexer_tokenize(Lexer *lex) {
       } else if (isalpha(cur()) || cur() == '_') {
         add(Lexer_ident(lex));
       } else {
-        fprintf(stderr, "unhandled byte %02x at index %zu\n", lex->c, lex->i);
+        fprintf(stderr, "error [%zu](%zu:%zu): unhandled character 0x%02x",
+          lex->i, lex->lines, lex->columns, lex->c);
+        if (isprint(lex->c)) {
+          fprintf(stderr, " (character '%c')", lex->c);
+        }
+        fputc('\n', stderr);
         return 1;
       }
     } break;
