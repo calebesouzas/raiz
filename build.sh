@@ -1,4 +1,5 @@
 set -xe
 
 clear
-clang -o raiz raiz.c -ggdb
+mkdir -p ./build
+clang -o ./build/raiz raiz.c -ggdb

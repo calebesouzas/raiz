@@ -1,3 +1,3 @@
 set -xe
 ./build.sh
-./raiz $@
+./build/raiz $@
