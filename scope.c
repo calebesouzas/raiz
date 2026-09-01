@@ -29,23 +29,23 @@ Scope *Scope_new(Scope *parent) {
   return inner;
 }
 
-Symbol *Scope_search_single_level(Scope *sco, char *symbol, size_t len) {
+Symbol *Scope_search_single_level(Scope *sco, sv_t ident) {
   Symbol *sym;
 
   da_for(sym, &sco->symbols) {
-    if (strncmp(sym->ident->lexeme, symbol, len) == 0 && sym->ident->len == len)
+    if (sv_equals(&sym->ident, &ident))
       return sym;
   }
 
   return NULL;
 }
 
-Symbol *Scope_search_until_global(Scope *sco, char *symbol, size_t len) {
+Symbol *Scope_search_until_global(Scope *sco, sv_t ident) {
   Symbol *sym;
   Scope *cur = sco;
 
   do {
-    sym = Scope_search_single_level(cur, symbol, len);
+    sym = Scope_search_single_level(cur, ident);
     if (sym)
       return sym;
 
@@ -66,4 +66,5 @@ void Scope_free(Scope *sco) {
   da_free(&sco->symbols);
   free(sco);
 }
+
 #endif // RAIZ_SCOPE_C

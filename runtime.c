@@ -38,9 +38,9 @@ EvalResult eval(Expr *e, Scope *s) {
   case EXPR_BINARY:
     if (e->binary.op->kind == TOKEN_EQUAL) {
       ident = e->binary.ls->ident->lexeme;
-      sym = Scope_search_until_global(s, ident, e->binary.ls->ident->len);
-      sym->value = eval(e->binary.rs, s).value;
-      res.value = sym->value;
+      sym = Scope_search_until_global(s, token_sv(e->binary.ls->ident));
+      sym->val = eval(e->binary.rs, s).value;
+      res.value = sym->val;
       return res;
     }
 
@@ -152,21 +152,29 @@ EvalResult eval(Expr *e, Scope *s) {
     res.value = eval(e->group.in, s).value;
     break;
   case EXPR_IDENT:
-    sym = Scope_search_until_global(s, e->ident->lexeme, e->ident->len);
-    res.value = sym->value;
+    sym = Scope_search_until_global(s, token_sv(e->ident));
+    res.value = sym->val;
     break;
   case EXPR_DECL:
-    sym = Scope_search_single_level(
-              s, e->decl.ident->lexeme, e->decl.ident->len);
+    sym = Scope_search_single_level(s, token_sv(e->decl.ident));
 
     value = e->decl.value != NULL ? eval(e->decl.value, s).value : (Value){0};
-    value.type = e->decl.type;
-    new_symbol.value = value;
-    new_symbol.is_variable = e->decl.tok->kind == TOKEN_VAR;
-    new_symbol.ident = e->decl.ident;
+    switch (e->decl.tok->kind) {
+    case TOKEN_VAR:
+      new_symbol.kind = SYM_VAR;
+      break;
+    case TOKEN_VAL:
+      new_symbol.kind = SYM_VAL;
+      break;
+    default:
+      PANIC("unhandled declaration token: %s\n", token_label(e->decl.tok));
+      break;
+    }
+    new_symbol.val = value;
+    new_symbol.ident = token_sv(e->decl.ident);
     Scope_insert(s, new_symbol);
 
-    res.value = new_symbol.value;
+    res.value = new_symbol.val;
     break;
   case EXPR_BLOCK:
     s_in = Scope_new(s);
@@ -186,9 +194,8 @@ EvalResult eval(Expr *e, Scope *s) {
     for (uint32_t i = 0; target && i < level; i++)
       target = target->parent;
 
-    sym = Scope_search_until_global(
-              target, identifier->lexeme, identifier->len);
-    res.value = sym->value;
+    sym = Scope_search_until_global(target, token_sv(identifier));
+    res.value = sym->val;
     break;
   case EXPR_IF:
     condv = eval(e->if_node.cond, s).value;

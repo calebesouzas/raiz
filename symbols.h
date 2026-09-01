@@ -2,9 +2,17 @@
 #define RAIZ_SYMBOLS_H
 
 typedef struct {
-  Token *ident;
-  Value value;
-  bool is_variable;
+  sv_t ident;
+  enum {
+    SYM_VAR,
+    SYM_VAL,
+    SYM_TYPE,
+  } kind;
+  union {
+    Value var;
+    Value val;
+    Type *type;
+  };
 } Symbol;
 
 da_make(Symbol_A, Symbol*);

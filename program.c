@@ -157,7 +157,7 @@ Expr_check(
     ctx_success_with(ctx_in);
   case EXPR_DECL:
     ident = expr->decl.ident;
-    sym = Scope_search_single_level(sco, ident->lexeme, ident->len);
+    sym = Scope_search_single_level(sco, token_sv(ident));
     if (sym != NULL) {
       ctx_err(ERR_SEM_ALREADY_DECLARED_SYMBOL, .token = ident);
     }
@@ -174,9 +174,20 @@ Expr_check(
     }
 
     Symbol new_symbol = {0};
-    new_symbol.ident = ident;
-    new_symbol.is_variable = expr->decl.tok->kind == TOKEN_VAR;
-    new_symbol.value.type = expr->decl.type;
+    new_symbol.ident = token_sv(ident);
+    switch (expr->decl.tok->kind) {
+    case TOKEN_VAR:
+      new_symbol.kind = SYM_VAR;
+      new_symbol.var.type = expr->decl.type;
+      break;
+    case TOKEN_VAL:
+      new_symbol.kind = SYM_VAL;
+      new_symbol.val.type = expr->decl.type;
+      break;
+    default:
+      PANIC("unhandled declaration token: %s\n", token_label(expr->decl.tok));
+      break;
+    }
 
     Scope_insert(sco, new_symbol);
 
@@ -193,14 +204,14 @@ Expr_check(
 
     ctx_success_with(ctx_in);
   case EXPR_IDENT:
-    sym = Scope_search_until_global(sco, expr->ident->lexeme, expr->ident->len);
+    sym = Scope_search_until_global(sco, token_sv(expr->ident));
 
     if (sym == NULL) {
       ctx_err(ERR_SEM_UNDEFINED_SYMBOL, .token = expr->ident);
     }
 
-    ctx_success(.type = sym->value.type,
-      .is_lvalue = true, .is_variable = sym->is_variable);
+    ctx_success(.type = sym->val.type = sym->val.type,
+      .is_lvalue = true, .is_variable = sym->kind == SYM_VAR);
   case EXPR_PARENT:
     ident = expr->parent.ident;
     Scope *target = sco;
@@ -210,13 +221,13 @@ Expr_check(
     for (count = 0; target && count < level; count++)
       target = target->parent;
 
-    sym = Scope_search_until_global(target, ident->lexeme, ident->len);
+    sym = Scope_search_until_global(target, token_sv(ident));
     if (sym == NULL) {
       ctx_err(ERR_SEM_UNDEFINED_SYMBOL, .token = ident, .count = count);
     }
 
     ctx_success(.is_lvalue = true,
-      .is_variable = sym->is_variable,
+      .is_variable = sym->kind == SYM_VAR,
       .is_constant = false);
   case EXPR_IF:
     if (expr->if_node.then_branch->kind == EXPR_DECL) {
