@@ -29,53 +29,46 @@ Scope *Scope_new(Scope *parent) {
   return inner;
 }
 
-Symbol *Scope_search_single_level(Scope *sco, sv_t ident) {
+typedef struct {
+  int search_kind;
+  int ignore_kind;
+} ScopeSearchOpts;
+
+#define Scope_search_single_level(sco, ident, ...)\
+  Scope_search_single_level_opt((sco), (ident),\
+    ((ScopeSearchOpts){__VA_ARGS__}))
+
+#define Scope_search_until_global(sco, ident, ...)\
+  Scope_search_single_level_opt((sco), (ident),\
+    ((ScopeSearchOpts){__VA_ARGS__}))
+
+Symbol *Scope_search_single_level_opt(
+    Scope *sco, sv_t ident, ScopeSearchOpts opts
+) {
   Symbol *sym;
 
   da_for(sym, &sco->symbols) {
-    if (sv_equals(&sym->ident, &ident))
+    if (sv_equals(&sym->ident, &ident)) {
+      if (opts.search_kind != SYM_ANY && sym->kind != opts.search_kind) {
+        continue;
+      } else if (opts.ignore_kind != 0 && sym->kind == opts.ignore_kind) {
+        continue;
+      }
       return sym;
+    }
   }
 
   return NULL;
 }
 
-Symbol *Scope_search_until_global(Scope *sco, sv_t ident) {
-  Symbol *sym;
-  Scope *cur = sco;
-
-  do {
-    sym = Scope_search_single_level(cur, ident);
-    if (sym)
-      return sym;
-
-    cur = cur->parent;
-  } while (cur != NULL);
-
-  return NULL;
-}
-
-Symbol *Scope_search_specific_kind_single_level(
-    Scope *sco, SymbolKind kind, sv_t ident
-) {
-  Symbol *sym;
-
-  da_for(sym, &sco->symbols) {
-    if (sv_equals(&sym->ident, &ident) && sym->kind == kind)
-      return sym;
-  }
-
-  return NULL;
-}
-
-Symbol *Scope_search_specific_kind_until_global(
-    Scope *sco, SymbolKind kind, sv_t ident
+Symbol *Scope_search_until_global_opt(
+    Scope *sco, sv_t ident, ScopeSearchOpts opts
 ) {
   Symbol *sym;
   Scope *cur = sco;
 
   do {
-    sym = Scope_search_specific_kind_single_level(cur, kind, ident);
+    sym = Scope_search_single_level_opt(cur, ident, opts);
     if (sym)
       return sym;
 
@@ -100,6 +93,16 @@ void Scope_insert_builtins(Scope *sco) {
 
   TYPES_BUILTIN
 #undef X
+}
+
+Symbol *Scope_search_or_insert(Scope *sco, sv_t ident, Symbol substitute) {
+  Symbol *sym = Scope_search_until_global(sco, ident);
+  if (sym != NULL) {
+    return sym;
+  }
+
+  Scope_insert(sco, substitute);
+  return &sco->symbols.dat[sco->symbols.len - 1];
 }
 
 void Scope_free(Scope *sco) {

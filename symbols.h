@@ -1,8 +1,10 @@
 #ifndef RAIZ_SYMBOLS_H
 #define RAIZ_SYMBOLS_H
 
+const int SYM_ANY = 0;
+
 typedef enum {
-    SYM_VAR,
+    SYM_VAR = 1,
     SYM_VAL,
     SYM_TYPE,
 } SymbolKind;

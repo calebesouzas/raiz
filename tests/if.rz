@@ -1,6 +1,6 @@
-can_go: val @bool = true
+bool: val @bool = true
 
-i: val @int = if can_go {
+i: val @int = if bool {
   69
 } else {
   96

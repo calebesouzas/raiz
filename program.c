@@ -140,7 +140,8 @@ Expr_check(
     ctx_success_with(ctx_in);
   case EXPR_DECL:
     ident = expr->decl.ident;
-    sym = Scope_search_single_level(sco, token_sv(ident));
+    sym = Scope_search_single_level(sco, token_sv(ident),
+      .ignore_kind = SYM_TYPE);
     if (sym != NULL) {
       ctx_err(ERR_SEM_ALREADY_DECLARED_SYMBOL, .token = ident);
     }
