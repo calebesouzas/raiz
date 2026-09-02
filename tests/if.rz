@@ -1,7 +1,9 @@
-bool: val @bool = true
+can_go: val @bool = true
 
-i: val @int = if bool {
+i: val @int = if can_go {
   69
 } else {
   96
 }
+
+print i
