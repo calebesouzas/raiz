@@ -90,15 +90,16 @@ void Scope_insert(Scope *sco, Symbol sym) {
 }
 
 void Scope_insert_builtins(Scope *sco) {
-  Symbol type_int = (Symbol){.kind = SYM_TYPE, .type = &g_TYPE_int};
-  Symbol type_char = (Symbol){.kind = SYM_TYPE, .type = &g_TYPE_char};
-  Symbol type_bool = (Symbol){.kind = SYM_TYPE, .type = &g_TYPE_bool};
-  Symbol type_byte = (Symbol){.kind = SYM_TYPE, .type = &g_TYPE_byte};
+#define X(__name, __size)\
+  Symbol type_ ## __name = (Symbol){\
+    .kind = SYM_TYPE,\
+    .ident = (g_TYPE_ ## __name).pattern.name,\
+    .type = &g_TYPE_ ## __name,\
+  };\
+  Scope_insert(sco, type_ ## __name);
 
-  Scope_insert(sco, type_int);
-  Scope_insert(sco, type_char);
-  Scope_insert(sco, type_bool);
-  Scope_insert(sco, type_byte);
+  TYPES_BUILTIN
+#undef X
 }
 
 void Scope_free(Scope *sco) {

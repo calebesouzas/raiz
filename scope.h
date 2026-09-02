@@ -9,7 +9,7 @@ typedef struct Scope {
 Scope *Scope_(void);
 Scope *Scope_copy(Scope *parent);
 Scope *Scope_new(Scope *parent);
-Symbol *Scope_search(Scope *sco, char *symbol, size_t len);
+void Scope_insert_builtins(Scope *sco);
 
 void Scope_free(Scope *sco);
 void Scope_dump(Scope *sco);

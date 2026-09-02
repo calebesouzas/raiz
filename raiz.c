@@ -63,6 +63,8 @@ int main(int argc, char **argv) {
 
   Scope *scope = Scope_();
   Parser par = Parser_setup(&toks);
+
+  Scope_insert_builtins(scope);
   Program pro = Program_setup(scope, &par);
 
   err = Program_build(&pro);
