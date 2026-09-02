@@ -234,11 +234,18 @@ Expr_check(
     ctx_check(ctx_in);
 
     if (expr->if_node.else_branch) {
+      const Type *then_type = ctx_in.type;
       ctx_in = Expr_check(expr->if_node.else_branch, errs, sco, &ctx);
       ctx_check(ctx_in);
+
+      if (then_type != ctx_in.type) {
+        ctx_err(ERR_SEM_INCOMPATIBLE_TYPES,
+          .expr = expr,
+          .type = {then_type, ctx_in.type});
+      }
     }
 
-    ctx_success();
+    ctx_success(.type = ctx_in.type);
   case EXPR_WHILE:
     ctx.data.inside_loop = true;
 
