@@ -9,7 +9,7 @@ const Type *Type_find(struct Scope *sco, TypePattern pattern) {
       // hold on!
       if (sym->kind == SYM_TYPE
           && sym->type->pattern.ptr_count == pattern.ptr_count
-          && sv_equals(&sym->type->pattern.name, &pattern.name))
+          && sv_equals(&sym->ident, &pattern.name))
         return sym->type;
     }
     cur = sco->parent;
