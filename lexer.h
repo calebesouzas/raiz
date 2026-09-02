@@ -106,7 +106,7 @@ typedef struct {
 
   // metadata
   char *lexeme;
-  size_t start, line, column, len;
+  size_t start, line, len;
 } Token;
 da_make(Token_A, Token*);
 
@@ -121,7 +121,7 @@ typedef struct {
   size_t i;
 
   // For `Token` metadata
-  size_t start, lines, columns;
+  size_t start, lines;
 } Lexer;
 
 Lexer Lexer_setup(Token_A *toks, char *source, size_t len);

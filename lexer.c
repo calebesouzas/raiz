@@ -17,7 +17,6 @@ int Lexer_tokenize(Lexer *lex) {
 
   for (lex->c = lex->source[0]; Lexer_active(lex); advance()) {
     lex->start = lex->i;
-    lex->columns++;
     switch (lex->c) {
     case '+': add(tk(TOKEN_PLUS)); break;
     case '-': add(tk(TOKEN_MINUS)); break;
@@ -86,7 +85,6 @@ int Lexer_tokenize(Lexer *lex) {
       }
       break;
     case '\n':
-      lex->columns = 1;
       lex->lines++;
       while (peek() == '\n') {
         lex->lines++;
@@ -108,8 +106,8 @@ int Lexer_tokenize(Lexer *lex) {
       } else if (isalpha(cur()) || cur() == '_') {
         add(Lexer_ident(lex));
       } else {
-        fprintf(stderr, "error [%zu](%zu:%zu): unhandled character 0x%02x",
-          lex->i, lex->lines, lex->columns, lex->c);
+        fprintf(stderr, "error [%zu](%zu): unhandled character 0x%02x",
+          lex->i, lex->lines, lex->c);
         if (isprint(lex->c)) {
           fprintf(stderr, " (character '%c')", lex->c);
         }
@@ -153,7 +151,6 @@ bool skip_comments(Lexer *lex) {
   if (peek() == '/') {
     do advance(); while (peek() != '\n' && active());
     lex->lines++;
-    lex->columns = 1;
     return true;
   } else if (peek() == '*') { //@todo suport /* */ comments
     advance();
@@ -207,7 +204,6 @@ Lexer Lexer_setup(Token_A *toks, char *source, size_t len) {
   lex.toks = toks;
   lex.source = source;
   lex.source_len = len > 0 ? len : strlen(source);
-  lex.columns = 1;
   lex.lines = 1;
   return lex;
 }
@@ -241,7 +237,6 @@ void Lexer_add(Lexer *lex, Token tok) {
   tok.len = Lexer_len(lex) + 1;
   tok.start = lex->start;
   tok.line = lex->lines;
-  tok.column = lex->columns+1;
   da_add(lex->toks, tok);
 }
 

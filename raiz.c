@@ -96,8 +96,8 @@ static char *_type_pattern_to_str(TypePattern pattern) {
 }
 
 void print_errs(SemanticError_A *errs, char *file_path, size_t source_len) {
-#define SPEC "%s: [%zu](%zu:%zu) error:\n"
-#define DAT file_path, e->token->start, e->token->line, e->token->column
+#define SPEC "%s: [%zu](%zu) error:\n"
+#define DAT file_path, e->token->start, e->token->line
 #define TOK size_t_int(e->token->len), e->token->lexeme
 #define P(...) fprintf(stderr, __VA_ARGS__)
 #define TYPE0\
