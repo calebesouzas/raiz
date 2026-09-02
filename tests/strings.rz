@@ -1,5 +1,0 @@
-var message @string = "Hello, "
-
-message = message + read + "!"
-
-print message
