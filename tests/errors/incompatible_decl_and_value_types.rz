@@ -1,1 +1,1 @@
-val x @bool = 69
+x: val @bool = 69
