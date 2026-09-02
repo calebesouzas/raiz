@@ -1,6 +1,13 @@
 #ifndef RAIZ_PARSER_C
 #define RAIZ_PARSER_C
 
+#undef expect
+#define expect(__what, __token, __err_variant)\
+  do{\
+    fprintf(stderr, "expected "__what", found %s\n", token_label(__token));\
+    return __err_variant;\
+  } while (0)
+
 int Parser_parse_nud(Expr *res, Parser *par) {
   Token *tok, *peeked, *first;
   Expr *in, *value, *line;
@@ -12,12 +19,12 @@ int Parser_parse_nud(Expr *res, Parser *par) {
   if (tok->kind == TOKEN_INVALID)
     return PARSER_INVALID_TOKEN;
 
-  else if (tok->flags & TOKEN_FLAG_CONST) {
+  else if (tok->flags & TOKEN_FLAG_CONSTANT) {
     res->kind = EXPR_LITERAL;
     res->literal = tok;
   } else if (tok->flags & TOKEN_FLAG_UNARY) {
     uint8_t bp = get_binding_power(tok->kind);
-    if (tok->flags & TOKEN_FLAG_RIGHT)
+    if (tok->flags & TOKEN_FLAG_RIGHT_ASSOCIATIVE)
       bp -= 1;
 
     Parser_advance(par);
@@ -40,8 +47,7 @@ int Parser_parse_nud(Expr *res, Parser *par) {
 
     peeked = Parser_peek(par);
     if (peeked->kind != TOKEN_R_PAREN) {
-      fprintf(stderr, "group not closed after '%s'\n", token_label(tok));
-      return PARSER_NOT_CLOSED_GROUP;
+      expect("closing ')'", peeked, PARSER_NOT_CLOSED_GROUP);
     }
     Parser_advance(par); // consume ')'
 
@@ -66,9 +72,8 @@ int Parser_parse_nud(Expr *res, Parser *par) {
     } while (par->cur < par->toks->len && peeked->kind != TOKEN_R_CURLY);
 
     if (peeked->kind != TOKEN_R_CURLY) {
-      fprintf(stderr, "not closed block\n");
       //@todo print start line when we track line numbers
-      return PARSER_NOT_CLOSED_BLOCK;
+      expect("closing '}'", peeked, PARSER_NOT_CLOSED_BLOCK);
     }
     Parser_advance(par); // before '}'
 
@@ -80,8 +85,7 @@ int Parser_parse_nud(Expr *res, Parser *par) {
       tok = Parser_advance(par);
     } while (Parser_cur(par)->kind == TOKEN_HAT);
     if (tok->kind != TOKEN_IDENT) {
-      fprintf(stderr, "expected identifier, found %s\n", token_label(tok));
-      return PARSER_EXPECTED_IDENTIFIER;
+      expect("identifier", tok, PARSER_EXPECTED_IDENTIFIER);
     }
 
     res->kind = EXPR_PARENT;
@@ -97,9 +101,7 @@ int Parser_parse_nud(Expr *res, Parser *par) {
 
     peeked = Parser_peek(par);
     if (peeked->flags & TOKEN_FLAG_STARTER) {
-      fprintf(stderr, "expected block expression after `if`, found '%s'\n",
-              token_label(peeked));
-      return PARSER_EXPECTED_EXPRESSION;
+      expect("block after `if`", peeked, PARSER_EXPECTED_EXPRESSION);
     }
     Parser_advance(par);
 
@@ -116,9 +118,7 @@ int Parser_parse_nud(Expr *res, Parser *par) {
 
       peeked = Parser_peek(par);
       if (peeked->flags & TOKEN_FLAG_STARTER) {
-        fprintf(stderr, "expected block expression after `if`, found '%s'\n",
-                token_label(peeked));
-        return PARSER_EXPECTED_EXPRESSION;
+        expect("block after `else`", peeked, PARSER_EXPECTED_EXPRESSION);
       }
 
       Parser_advance(par);
@@ -165,13 +165,12 @@ int Parser_parse_expr(Expr *ls, Parser *par, uint8_t min_bp) {
     return err;
 
   while (!((op = Parser_peek(par))->flags & TOKEN_FLAG_BREAKING)) {
-    if (!(op->flags & TOKEN_FLAG_OP)) {
-      fprintf(stderr, "expected operator, found %s\n", token_label(op));
-      return PARSER_EXPECTED_OPERATOR;
+    if (!(op->flags & TOKEN_FLAG_OPERATOR)) {
+      expect("operator", op, PARSER_EXPECTED_OPERATOR);
     }
 
     bp = get_binding_power(op->kind);
-    if (op->flags & TOKEN_FLAG_RIGHT)
+    if (op->flags & TOKEN_FLAG_RIGHT_ASSOCIATIVE)
       bp -= 1;
 
     if (bp < min_bp)
@@ -211,6 +210,7 @@ int Parser_parse_line(Expr *res, Parser *par) {
     tok = Parser_advance(par);
 
   if (!(tok->flags & TOKEN_FLAG_STARTER)) {
+parse_expr:
     err = Parser_parse_expr(res, par, 0);
     if (err)
       return err;
@@ -218,30 +218,30 @@ int Parser_parse_line(Expr *res, Parser *par) {
     goto finish_line;
   }
   switch (tok->kind) {
-  case TOKEN_VAR:
-  case TOKEN_VAL:
+  case TOKEN_IDENT:
     peeked = Parser_peek(par);
-    if (peeked->kind != TOKEN_IDENT) {
-      fprintf(stderr, "expected identifier, found %s\n", token_label(peeked));
-      return PARSER_EXPECTED_IDENTIFIER;
+    if (peeked->kind != TOKEN_COLLON) {
+      expect("collon", peeked, PARSER_EXPECTED_COLLON);
     }
-    Parser_advance(par); // consume keyword
+    Parser_advance(par); // consume identifier
 
-    peeked = Parser_peek(par);
-
-    if (peeked->kind != TOKEN_TYPE_NAME) {
-      fprintf(stderr, "expected type, found '%s'\n"
-        "note: there is no type inference yet\n", token_label(peeked));
-      return PARSER_EXPECTED_TYPE;
+    Token *kind = Parser_peek(par); // declaration kind
+    if (!(kind->flags & TOKEN_FLAG_DECLARATOR)) {
+      expect("declarator", kind, PARSER_EXPECTED_DECLARATOR);
     }
 
-    Parser_advance(par); // type
-    const Type *type = Type_from_string(peeked->lexeme, peeked->len);
+    Parser_advance(par); // consume collon
+    Parser_advance(par); // consume declarator
+
+    TypePattern type = {0};
+    err = Parser_parse_type(&type, par);
+    if (err)
+      return err;
 
     peeked = Parser_peek(par);
 
     if (peeked->kind == TOKEN_EQUAL) {
-      Parser_advance(par); // identifier
+      Parser_advance(par); // type ending
       Parser_advance(par); // '='
 
       value = Expr_();
@@ -250,18 +250,16 @@ int Parser_parse_line(Expr *res, Parser *par) {
         return err;
 
       res->decl.value = value;
-    } else if (tok->kind == TOKEN_VAL) {
-      fprintf(stderr, "expected assignment after '%.*s', found %s\n",
-              size_t_int(tok->len), tok->lexeme, token_label(peeked));
-      return PARSER_EXPECTED_ASSIGNMENT;
+    } else if (kind->kind == TOKEN_VAL) { // bruh
+      expect("assignment", peeked, PARSER_EXPECTED_ASSIGNMENT);
     }
 
     res->kind = EXPR_DECL;
-    res->decl.tok = tok;
-    res->decl.ident = tok + 1;
+    res->decl.kind = kind;
+    res->decl.ident = tok;
     res->decl.type = type;
 
-    break; // case VAR or VAL
+    break; // case IDENT (for declaration)
   case TOKEN_WHILE:
     Parser_advance(par);
 
@@ -272,9 +270,7 @@ int Parser_parse_line(Expr *res, Parser *par) {
 
     peeked = Parser_peek(par);
     if (peeked->flags & TOKEN_FLAG_STARTER) {
-      fprintf(stderr, "expected block expression after `while`, found '%s'\n",
-              token_label(peeked));
-      return PARSER_EXPECTED_EXPRESSION;
+      expect("block after `while`", peeked, PARSER_EXPECTED_EXPRESSION);
     }
     Parser_advance(par);
 
@@ -291,9 +287,7 @@ int Parser_parse_line(Expr *res, Parser *par) {
 
       peeked = Parser_peek(par);
       if (peeked->flags & TOKEN_FLAG_STARTER) {
-        fprintf(stderr, "expected block expression after `then`, found '%s'\n",
-                token_label(peeked));
-        return PARSER_EXPECTED_EXPRESSION;
+        expect("block after `then`", peeked, PARSER_EXPECTED_EXPRESSION);
       }
 
       Parser_advance(par);
@@ -311,9 +305,7 @@ int Parser_parse_line(Expr *res, Parser *par) {
 
       peeked = Parser_peek(par);
       if (peeked->flags & TOKEN_FLAG_STARTER) {
-        fprintf(stderr, "expected block expression after `else`, found '%s'\n",
-                token_label(peeked));
-        return PARSER_EXPECTED_EXPRESSION;
+        expect("block after `else`", peeked, PARSER_EXPECTED_EXPRESSION);
       }
 
       Parser_advance(par);
@@ -340,9 +332,7 @@ int Parser_parse_line(Expr *res, Parser *par) {
 
 finish_line:
   if (!((peeked = Parser_peek(par))->flags & TOKEN_FLAG_FINISHER)) {
-    fprintf(stderr, "expected new line or ';', found %s\n",
-            token_label(peeked));
-    return PARSER_EXPECTED_FINISH;
+    expect("new line or ';'", peeked, PARSER_EXPECTED_FINISH);
   }
 
   Parser_advance(par);
@@ -350,25 +340,28 @@ finish_line:
   return 0;
 }
 
-Parser Parser_setup(Token_A *toks) {
-  return (Parser) {.toks = toks, .cur = 0};
+int Parser_parse_type(TypePattern *res, Parser *par) {
+  Token *tok = Parser_cur(par);
+  if (tok->kind != TOKEN_AT) {
+    expect("'@'", tok, PARSER_EXPECTED_TYPE);
+  }
+  tok = Parser_advance(par);
+
+  while (tok->kind == TOKEN_STAR) {
+    res->ptr_count++;
+    tok = Parser_advance(par);
+  }
+
+  if (tok->kind != TOKEN_IDENT) {
+    expect("type name", tok, PARSER_EXPECTED_TYPE);
+  }
+  res->name = token_sv(tok);
+
+  return 0;
 }
 
-void Parser_debug(Parser *par) {
-  fprintf(stderr, "parser->toks = (%p) {\n", par->ast);
-  Token *tok;
-  da_for(tok, par->toks) {
-    fprintf(stderr, "  %s,", token_label(tok));
-    if (i_tok == par->cur)
-      fprintf(stderr, " // current\n");
-    else
-      fprintf(stderr, "\n");
-  }
-  fprintf(stderr, "}\n// ------ //\n");
-
-  fprintf(stderr, "parser->ast = (%p):\n", par->ast);
-  Expr_dump(par->ast, 2, 0);
-  fprintf(stderr, "// ------ //\n");
+Parser Parser_setup(Token_A *toks) {
+  return (Parser) {.toks = toks, .cur = 0};
 }
 
 uint8_t get_binding_power(enum TokenKind kind) {
@@ -460,68 +453,6 @@ void Expr_free(Expr *node) {
     break;
   }
   free(node);
-}
-
-void Expr_dump(Expr *root, size_t indent, size_t level) {
-  for (size_t i = 0; i < level * indent; i++) {
-    fputc(' ', stderr);
-  }
-  if (!root) {
-    fprintf(stderr, "null expression\n");
-    return;
-  }
-  switch (root->kind) {
-  case EXPR_LITERAL:
-    fprintf(stderr, "literal %lu\n", root->literal->literal.data);
-    break;
-  case EXPR_BINARY:
-    fprintf(stderr, "binary, operator %s\n", token_label(root->binary.op));
-
-    for (size_t i = 0; i < level * indent; i++) {
-      fputc(' ', stderr);
-    }
-    fprintf(stderr, "left side:\n");
-    Expr_dump(root->binary.ls, indent, level + 1);
-
-    for (size_t i = 0; i < level * indent; i++) {
-      fputc(' ', stderr);
-    }
-    fprintf(stderr, "right side:\n");
-    Expr_dump(root->binary.rs, indent, level + 1);
-    break;
-  case EXPR_UNARY:
-    fprintf(stderr, "unary, operator %s\n", token_label(root->binary.op));
-
-    for (size_t i = 0; i < level * indent; i++) {
-      fputc(' ', stderr);
-    }
-    fprintf(stderr, "inner side:\n");
-    Expr_dump(root->unary.in, indent, level + 1);
-    break;
-  case EXPR_GROUP:
-    fprintf(stderr, "group\n");
-
-    for (size_t i = 0; i < level * indent; i++) {
-      fputc(' ', stderr);
-    }
-    fprintf(stderr, "inner side:\n");
-    Expr_dump(root->group.in, indent, level + 1);
-    break;
-  case EXPR_IDENT:
-    fprintf(stderr, "identifier %.*s\n",
-            size_t_int(root->ident->len), root->ident->lexeme);
-    break;
-  case EXPR_DECL: {
-    fprintf(stderr, "%s declaration\n", token_label(root->decl.tok));
-
-    for (size_t i = 0; i < level * indent; i++) {
-      fputc(' ', stderr);
-    }
-    fprintf(stderr, "value:\n");
-    Expr_dump(root->decl.value, indent, level + 1);
-  } break;
-  default: UNREACHABLE("expression kind (%d)\n", root->kind);
-  }
 }
 
 Token *Parser_cur(Parser *par) { return &par->toks->dat[par->cur]; }

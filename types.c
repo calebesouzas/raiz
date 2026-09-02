@@ -1,19 +1,19 @@
 #ifndef RAIZ_TYPES_C
 #define RAIZ_TYPES_C
 
-const Type *Type_from_string(char *string, size_t len) {
-  if ('@' == string[0]) {
-    string++;
-    len--;
-  }
-
-  for (size_t i = 0; i < sizeof(g_TYPES)/sizeof(g_TYPES[0]); i++) {
-    const Type *type = g_TYPES[i];
-    if (type->name.len == len && strncmp(type->name.str, string, len) == 0) {
-      return type;
+const Type *Type_find(struct Scope *sco, TypePattern pattern) {
+  Scope *cur = sco;
+  do {
+    Symbol *sym;
+    da_for(sym, &sco->symbols) {
+      // hold on!
+      if (sym->kind == SYM_TYPE
+          && sym->type->pattern.ptr_count == pattern.ptr_count
+          && sv_equals(&sym->type->pattern.name, &pattern.name))
+        return sym->type;
     }
-  }
-
+    cur = sco->parent;
+  } while (cur != NULL);
   return NULL;
 }
 

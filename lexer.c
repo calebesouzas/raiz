@@ -29,6 +29,8 @@ int Lexer_tokenize(Lexer *lex) {
     case '~': add(tk(TOKEN_TILDE)); break;
     case '^': add(tk(TOKEN_HAT)); break;
     case '%': add(tk(TOKEN_PERCENT)); break;
+    case ':': add(tk(TOKEN_COLLON)); break;
+    case '@': add(tk(TOKEN_AT)); break;
     case '=':
       if (peek() == '=') {
         advance();
@@ -92,9 +94,6 @@ int Lexer_tokenize(Lexer *lex) {
       }
       add(tk(TOKEN_NEWLINE));
       break;
-    case '@':
-      add(Lexer_type(lex));
-      break;
     case ' ': case '\t': case '\r': break;
     default: {
       if (isdigit(cur())) {
@@ -117,20 +116,6 @@ int Lexer_tokenize(Lexer *lex) {
         fputc('\n', stderr);
         return 1;
       }
-    } break;
-    case '"': {
-      bool closed = false;
-      do {
-        closed = advance() == '"';
-      } while (!closed && active());
-
-      if (!(active() && closed)) {
-        fprintf(stderr, "not closed string started at index %zu\n", lex->start);
-        return 1;
-      }
-      add(tk(TOKEN_STRING,
-        .literal = Value_(&g_TYPE_string, size_t,
-          sp_nsave(Lexer_point(lex) + 1, Lexer_len(lex) - 1))));
     } break;
     case '/':
       if (!skip_comments(lex)) {
@@ -161,13 +146,6 @@ Token Lexer_ident(Lexer *lex) {
   if (Lexer_len(lex) > 0)
     lex->i--;
 
-  return tok;
-}
-
-Token Lexer_type(Lexer *lex) {
-  Token tok = Lexer_ident(lex);
-  tok.kind = TOKEN_TYPE_NAME;
-  tok.flags = TOKEN_FLAGS[tok.kind];
   return tok;
 }
 
@@ -215,48 +193,7 @@ char *token_label(Token *tok) {
   case TOKEN_INVALID: return "invalid";
   case TOKEN_EOF: return "EOF";
   case TOKEN_NEWLINE: return "newline";
-  case TOKEN_NUMBER:
-  case TOKEN_PLUS:
-  case TOKEN_MINUS:
-  case TOKEN_STAR:
-  case TOKEN_SLASH:
-  case TOKEN_L_PAREN:
-  case TOKEN_R_PAREN:
-  case TOKEN_VAR:
-  case TOKEN_VAL:
-  case TOKEN_IDENT:
-  case TOKEN_EQUAL:
-  case TOKEN_EQUAL_X2:
-  case TOKEN_BANG:
-  case TOKEN_BANG_EQUAL:
-  case TOKEN_AMPER:
-  case TOKEN_AMPER_X2:
-  case TOKEN_PIPE:
-  case TOKEN_PIPE_X2:
-  case TOKEN_HAT:
-  case TOKEN_TILDE:
-  case TOKEN_L_CURLY:
-  case TOKEN_R_CURLY:
-  case TOKEN_LESS:
-  case TOKEN_LESS_EQUAL:
-  case TOKEN_LESS_X2:
-  case TOKEN_GREAT:
-  case TOKEN_GREAT_EQUAL:
-  case TOKEN_GREAT_X2:
-  case TOKEN_TRUE:
-  case TOKEN_FALSE:
-  case TOKEN_IF:
-  case TOKEN_ELSE:
-  case TOKEN_WHILE:
-  case TOKEN_THEN:
-  case TOKEN_BREAK:
-  case TOKEN_CONTINUE:
-  case TOKEN_PRINT:
-  case TOKEN_READ:
-  case TOKEN_TYPE_NAME:
-  case TOKEN_STRING:
-  case TOKEN_PERCENT:
-    return temp_sprintf("%.*s", size_t_int(tok->len), tok->lexeme);
+  default: return temp_sprintf("%.*s", size_t_int(tok->len), tok->lexeme);
   }
   fprintf(stderr, "unknown token (id %d)\n", tok->kind); return NULL;
 }

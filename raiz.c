@@ -84,13 +84,29 @@ int main(int argc, char **argv) {
   return 0;
 }
 
+static char *_type_pattern_to_str(TypePattern pattern) {
+  size_t i;
+  for (i = 0; i < pattern.ptr_count; i++) {
+    Temp_Buffer[i] = '*';
+  }
+
+  strncpy(Temp_Buffer + i, pattern.name.ptr, pattern.name.len);
+
+  return Temp_Buffer;
+}
+
 void print_errs(SemanticError_A *errs, char *file_path, size_t source_len) {
 #define SPEC "%s: [%zu](%zu:%zu) error:\n"
 #define DAT file_path, e->token->start, e->token->line, e->token->column
 #define TOK size_t_int(e->token->len), e->token->lexeme
 #define P(...) fprintf(stderr, __VA_ARGS__)
-#define TYPE0 size_t_int(e->type[0]->name.len), e->type[0]->name.str
-#define TYPE1 size_t_int(e->type[1]->name.len), e->type[1]->name.str
+#define TYPE0\
+  size_t_int(e->type[0]->pattern.name.len), e->type[0]->pattern.name.ptr
+#define TYPE1\
+  size_t_int(e->type[1]->pattern.name.len), e->type[1]->pattern.name.ptr
+#define TYPE_PAT\
+  (e->type_pattern.ptr_count + e->type_pattern.name.len),\
+  _type_pattern_to_str(e->type_pattern)
 
   SemanticError *e;
 
@@ -126,6 +142,9 @@ void print_errs(SemanticError_A *errs, char *file_path, size_t source_len) {
     case ERR_SEM_INCOMPATIBLE_OPERATOR:
       P(SPEC"type '%.*s' doesn't work with '%.*s' operator\n", DAT, TYPE0, TOK);
       break;
+    case ERR_SEM_UNDEFINED_TYPE:
+      P(SPEC"undefined type '@%.*s'\n", DAT, TYPE_PAT);
+      break;
     }
 
     char *s = e->token->lexeme;
@@ -138,14 +157,11 @@ void print_errs(SemanticError_A *errs, char *file_path, size_t source_len) {
     }
 
     // get line length
-    int i = 0;
-    while ((strncmp(s + i, "\r\n", 2) != 0 || s[i] != '\n')
-        && i < source_len - e->token->start) {
-      i++;
-    }
+    int i = -1;
+    while (s[++i] != '\n' && i < (source_len - e->token->start));
 
     fprintf(stderr,
-      "%zu | %.*s\n",
+      "%zu | %.*s\n\n",
       e->token->line, i, s);
   }
 }

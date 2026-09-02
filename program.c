@@ -110,7 +110,7 @@ Expr_check(
 
     ctx_success();
   case EXPR_READ:
-    ctx_success(.type = &g_TYPE_string); // nothing to check?
+    TODO("check EXPR_READ");
   case EXPR_BINARY:
     ctx_left = Expr_check(expr->binary.ls, errs, sco, &ctx);
     ctx_check(ctx_left);
@@ -132,23 +132,6 @@ Expr_check(
         .type = {ctx_left.type, ctx_right.type});
     }
 
-    if (ctx_left.type == &g_TYPE_string) {
-      switch (expr->binary.op->kind) {
-      case TOKEN_EQUAL:
-      case TOKEN_PLUS:
-      case TOKEN_EQUAL_X2:
-      case TOKEN_BANG_EQUAL:
-      case TOKEN_AMPER_X2:
-      case TOKEN_PIPE_X2:
-        break;
-      default:
-        ctx_err(ERR_SEM_INCOMPATIBLE_OPERATOR,
-          .token = expr->binary.op,
-          .type = {ctx_left.type, NULL});
-        break;
-      }
-    }
-
     ctx_success_with(ctx_left);
   case EXPR_GROUP:
     ctx_in = Expr_check(expr->group.in, errs, sco, &ctx);
@@ -162,37 +145,44 @@ Expr_check(
       ctx_err(ERR_SEM_ALREADY_DECLARED_SYMBOL, .token = ident);
     }
 
+    const Type *type = Type_find(sco, expr->decl.type);
+    if (!type) {
+      ctx_err(ERR_SEM_UNDEFINED_TYPE,
+        .expr = expr,
+        .type_pattern = expr->decl.type);
+    }
+
     if (expr->decl.value) {
       ctx_in = Expr_check(expr->decl.value, errs, sco, &ctx);
       ctx_check(ctx_in);
 
-      if (expr->decl.type != ctx_in.type) {
+      if (type != ctx_in.type) {
         ctx_err(ERR_SEM_INCOMPATIBLE_TYPES,
           .expr = expr,
-          .type = {expr->decl.type, ctx_in.type});
+          .type = {type, ctx_in.type});
       }
     }
 
     Symbol new_symbol = {0};
     new_symbol.ident = token_sv(ident);
-    switch (expr->decl.tok->kind) {
+    switch (expr->decl.kind->kind) {
     case TOKEN_VAR:
       new_symbol.kind = SYM_VAR;
-      new_symbol.var.type = expr->decl.type;
+      new_symbol.var.type = type;
       break;
     case TOKEN_VAL:
       new_symbol.kind = SYM_VAL;
-      new_symbol.val.type = expr->decl.type;
+      new_symbol.val.type = type;
       break;
     default:
-      PANIC("unhandled declaration token: %s\n", token_label(expr->decl.tok));
+      PANIC("unhandled declaration token: %s\n", token_label(expr->decl.kind));
       break;
     }
 
     Scope_insert(sco, new_symbol);
 
     // ctx.is_lvalue = true; // maybe set as L-value?
-    ctx_success(.type = expr->decl.type);
+    ctx_success(.type = type);
   case EXPR_BLOCK:
     inner = Scope_new(sco);
     Expr **line;
@@ -300,23 +290,6 @@ void Program_check(Program *pro, SemanticError_A *errs, size_t max_errs) {
       return;
   }
   Scope_free(sco);
-}
-
-void Program_debug(Program *pro, size_t indent) {
-  Token *tok;
-  Expr **expr;
-
-  fprintf(stderr, "tokens = (%p) {\n", pro->toks);
-  da_for(tok, pro->toks) {
-    fprintf(stderr, " %s,\n", token_label(tok));
-  }
-  fprintf(stderr, "}\n// -------- //\n");
-
-  fprintf(stderr, "program = (%p) {\n", &pro->code);
-  da_for(expr, &pro->code) {
-    Expr_dump(*expr, indent, 1);
-  }
-  fprintf(stderr, "}\n// -------- //\n");
 }
 
 Program Program_setup(Scope *sco, Parser *par) {

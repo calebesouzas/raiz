@@ -34,10 +34,10 @@ typedef struct Expr {
     } group;
     Token *ident;
     struct {
-      Token *tok;
+      Token *kind;
       Token *ident;
       struct Expr *value;
-      const Type *type;
+      TypePattern type;
     } decl;
     struct {
       struct Expr **dat;
@@ -79,6 +79,8 @@ enum ParserError {
   PARSER_EXPECTED_TYPE,
   PARSER_NOT_CLOSED_GROUP,
   PARSER_NOT_CLOSED_BLOCK,
+  PARSER_EXPECTED_DECLARATOR,
+  PARSER_EXPECTED_COLLON,
 };
 
 Expr *Expr_(void);
@@ -95,11 +97,11 @@ Token *Parser_next(Parser *par);
 Token *Parser_advance(Parser *par);
 
 Parser Parser_setup(Token_A *toks);
-void Parser_debug(Parser *par);
 
 int Parser_parse_nud(Expr *res, Parser *par);
 int Parser_parse_expr(Expr *res, Parser *par, uint8_t min_bp);
 int Parser_parse_line(Expr *res, Parser *par);
+int Parser_parse_type(TypePattern *res, Parser *par);
 
 uint8_t get_binding_power(enum TokenKind kind);
 

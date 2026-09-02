@@ -52,36 +52,6 @@ EvalResult eval(Expr *e, Scope *s) {
 
     res.value.type = lsv.type;
 
-    if (res.value.type == &g_TYPE_string) {
-      sb_t *lsb = sp_get((size_t) ls);
-      sb_t *rsb = sp_get((size_t) rs);
-      switch (e->binary.op->kind) {
-      case TOKEN_PLUS:
-        sb_push_sv(lsb, *(sv_t*)rsb);
-        res.value.data = ls;
-        break;
-      case TOKEN_EQUAL_X2:
-        res.value.data = lsb->len == rsb->len
-          && strncmp(lsb->ptr, rsb->ptr, lsb->len) == 0;
-        res.value.type = &g_TYPE_bool;
-        break;
-      case TOKEN_BANG_EQUAL:
-        res.value.data = lsb->len != rsb->len
-          && strncmp(lsb->ptr, rsb->ptr, lsb->len) != 0;
-        res.value.type = &g_TYPE_bool;
-        break;
-      case TOKEN_AMPER_X2:
-        res.value.data = lsb->len > 0 && rsb->len > 0;
-        res.value.type = &g_TYPE_bool;
-        break;
-      case TOKEN_PIPE_X2:
-        res.value.data = lsb->len > 0 || rsb->len > 0;
-        res.value.type = &g_TYPE_bool;
-        break;
-      }
-      return res;
-    }
-
     switch (e->binary.op->kind) {
     case TOKEN_PLUS:
       res.value.data = ls + rs;
@@ -159,7 +129,7 @@ EvalResult eval(Expr *e, Scope *s) {
     sym = Scope_search_single_level(s, token_sv(e->decl.ident));
 
     value = e->decl.value != NULL ? eval(e->decl.value, s).value : (Value){0};
-    switch (e->decl.tok->kind) {
+    switch (e->decl.kind->kind) {
     case TOKEN_VAR:
       new_symbol.kind = SYM_VAR;
       break;
@@ -167,7 +137,7 @@ EvalResult eval(Expr *e, Scope *s) {
       new_symbol.kind = SYM_VAL;
       break;
     default:
-      PANIC("unhandled declaration token: %s\n", token_label(e->decl.tok));
+      PANIC("unhandled declaration token: %s\n", token_label(e->decl.kind));
       break;
     }
     new_symbol.val = value;
@@ -198,10 +168,7 @@ EvalResult eval(Expr *e, Scope *s) {
     res.value = sym->val;
     break;
   case EXPR_IF:
-    condv = eval(e->if_node.cond, s).value;
-    cond = condv.type == &g_TYPE_string?
-      sp_get((size_t) condv.data)->len > 0
-      : condv.data;
+    cond = eval(e->if_node.cond, s).value.data;
     if (cond) {
       res = eval(e->if_node.then_branch, s);
     } else if (e->if_node.else_branch) {
@@ -209,11 +176,7 @@ EvalResult eval(Expr *e, Scope *s) {
     }
     break;
   case EXPR_WHILE:
-    for (condv = eval(e->while_node.cond, s).value;
-        (cond = condv.type == &g_TYPE_string?
-          sp_get((size_t) condv.data)->len > 0
-          : condv.data);
-        condv = eval(e->while_node.cond, s).value) {
+    while ((cond = eval(e->while_node.cond, s).value.data)) {
       if (res.sig == SIGNAL_BREAK)
         break;
       if (res.sig == SIGNAL_CONTINUE)
@@ -237,26 +200,28 @@ EvalResult eval(Expr *e, Scope *s) {
   case EXPR_PRINT:
     res.value = eval(e->print.value, s).value;
     switch (res.value.type->kind) {
-      case TYPE_int:
-        printf("%d", (int)res.value.data);
-        break;
-      case TYPE_char:
-        printf("%c", (char)res.value.data);
-        break;
-      case TYPE_bool:
-        printf("%s", res.value.data ? "true" : "false");
-        break;
-      case TYPE_string: {
-        sb_t *sb = sp_get((size_t) res.value.data);
-        printf("%.*s", size_t_int(sb->len), sb->ptr);
-      } break;
+    case TYPE_int:
+      printf("%d", (int)res.value.data);
+      break;
+    case TYPE_char:
+      printf("%c", (char)res.value.data);
+      break;
+    case TYPE_bool:
+      printf("%s", res.value.data ? "true" : "false");
+      break;
+    case TYPE_byte:
+      printf("%02x", (unsigned char)res.value.data);
+      break;
     }
     break;
   case EXPR_READ: {
+    TODO("implement EXPR_READ runtime");
+#if 0
     char buf[READ_BUF_CAP];
     fgets(buf, READ_BUF_CAP, stdin);
     res.value.data = sp_save(buf);
     res.value.type = &g_TYPE_string;
+#endif
   } break;
   }
   return res;

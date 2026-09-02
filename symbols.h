@@ -1,17 +1,19 @@
 #ifndef RAIZ_SYMBOLS_H
 #define RAIZ_SYMBOLS_H
 
-typedef struct {
-  sv_t ident;
-  enum {
+typedef enum {
     SYM_VAR,
     SYM_VAL,
     SYM_TYPE,
-  } kind;
+} SymbolKind;
+
+typedef struct Symbol {
+  sv_t ident;
+  SymbolKind kind;
   union {
     Value var;
     Value val;
-    Type *type;
+    const Type *type;
   };
 } Symbol;
 

@@ -4,6 +4,7 @@
 typedef struct {
   enum {
     ERR_SEM_UNDEFINED_SYMBOL,
+    ERR_SEM_UNDEFINED_TYPE,
     ERR_SEM_ALREADY_DECLARED_SYMBOL,
     ERR_SEM_ASSIGN_TO_VAL,
     ERR_SEM_ASSIGN_TO_RVALUE,
@@ -17,6 +18,7 @@ typedef struct {
   Token *token;
   Expr *expr;
   const Type *type[2];
+  TypePattern type_pattern;
   size_t count;
 } SemanticError;
 da_make(SemanticError_A, SemanticError*);
@@ -40,7 +42,6 @@ typedef struct {
 } Program;
 
 Program Program_setup(Scope *sco, Parser *par);
-void Program_debug(Program *pro, size_t indent);
 void Program_free(Program *pro);
 int Program_build(Program *pro);
 Value Program_run(Program *pro);

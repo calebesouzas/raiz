@@ -55,8 +55,50 @@ Symbol *Scope_search_until_global(Scope *sco, sv_t ident) {
   return NULL;
 }
 
+Symbol *Scope_search_specific_kind_single_level(
+    Scope *sco, SymbolKind kind, sv_t ident
+) {
+  Symbol *sym;
+
+  da_for(sym, &sco->symbols) {
+    if (sv_equals(&sym->ident, &ident) && sym->kind == kind)
+      return sym;
+  }
+
+  return NULL;
+}
+
+Symbol *Scope_search_specific_kind_until_global(
+    Scope *sco, SymbolKind kind, sv_t ident
+) {
+  Symbol *sym;
+  Scope *cur = sco;
+
+  do {
+    sym = Scope_search_specific_kind_single_level(cur, kind, ident);
+    if (sym)
+      return sym;
+
+    cur = cur->parent;
+  } while (cur != NULL);
+
+  return NULL;
+}
+
 void Scope_insert(Scope *sco, Symbol sym) {
   da_add(&sco->symbols, sym);
+}
+
+void Scope_insert_builtins(Scope *sco) {
+  Symbol type_int = (Symbol){.kind = SYM_TYPE, .type = &g_TYPE_int};
+  Symbol type_char = (Symbol){.kind = SYM_TYPE, .type = &g_TYPE_char};
+  Symbol type_bool = (Symbol){.kind = SYM_TYPE, .type = &g_TYPE_bool};
+  Symbol type_byte = (Symbol){.kind = SYM_TYPE, .type = &g_TYPE_byte};
+
+  Scope_insert(sco, type_int);
+  Scope_insert(sco, type_char);
+  Scope_insert(sco, type_bool);
+  Scope_insert(sco, type_byte);
 }
 
 void Scope_free(Scope *sco) {
