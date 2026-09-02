@@ -52,7 +52,7 @@ void sb_push_cstr(sb_t *sb, char *cstr);
 void sb_push_ncstr(sb_t *sb, char *cstr, size_t amount);
 
 #define sv_equals(a, b)\
-  ((a)->len == (b)->len && strncmp((a)->ptr, (b)->ptr, (a)->len))
+  ((a)->len == (b)->len && strncmp((a)->ptr, (b)->ptr, (a)->len) == 0)
 
 // -- // -- // Temp Buffer // -- // -- //
 #define TEMP_BUF_CAP 1024
