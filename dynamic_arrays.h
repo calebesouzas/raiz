@@ -35,7 +35,9 @@
     if ((da)->dat != NULL) {\
       (da)->len = (src)->len;\
       (da)->cap = (src)->cap;\
-      memcpy((da)->dat, (src)->dat, (da)->len);\
+      for (size_t __i = 0; __i < (da)->len; __i++) {\
+        memcpy(&(da)->dat[__i], &(src)->dat[__i], sizeof((da)->dat[0]));\
+      }\
     } else {\
       (da)->cap = 0;\
       (da)->len = 0;\
