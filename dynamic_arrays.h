@@ -52,4 +52,6 @@
     (da)->cap = 0;\
   } while (0)
 
+#define da_last(da) (&(da)->dat[(da)->len - 1])
+
 #endif // RAIZ_DYNAMIC_ARRAYS_H
