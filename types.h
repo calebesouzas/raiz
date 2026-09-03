@@ -22,6 +22,7 @@ typedef struct Type {
     #define X(typename, typesize) TYPE_ ## typename,
     TYPES_BUILTIN
     #undef X
+    TYPE_custom,
   } kind;
   size_t size; // 0 for unknown
   TypePattern pattern;
@@ -50,5 +51,11 @@ const Type *g_TYPES[] = {
 const Type *Type_from_pattern(TypePattern pattern);
 
 const Type *Type_find(struct Scope *sco, TypePattern pattern);
+
+bool Type_is_ptr(const Type *type);
+
+#define Type_equals(a, b)\
+  ((a)->pattern.ptr_count == (b)->pattern.ptr_count\
+    && sv_equals(&(a)->pattern.name, &(b)->pattern.name))
 
 #endif // RAIZ_TYPES_H

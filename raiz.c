@@ -170,6 +170,7 @@ void print_errs(SemanticError_A *errs, char *file_path, size_t source_len) {
 
 #include "lexer.c"
 #include "parser.c"
+#include "value.c"
 #include "scope.c"
 #include "strings.c"
 #include "program.c"

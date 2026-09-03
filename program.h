@@ -13,6 +13,7 @@ typedef struct {
     ERR_SEM_INCOMPATIBLE_TYPES,
     ERR_SEM_LOOP_KEYWORD_OUTSIDE_LOOP,
     ERR_SEM_INCOMPATIBLE_OPERATOR,
+    ERR_SEM_DEREF_NON_POINTER,
   } code;
   // context:
   Token *token;

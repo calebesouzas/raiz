@@ -97,12 +97,45 @@ Expr_check(
   Token *ident;
   Scope *inner;
   void *save;
+  Type *type;
 
   switch (expr->kind) {
   case EXPR_LITERAL:
     ctx_success(.type = expr->literal->literal.type, .is_constant = true);
   case EXPR_UNARY:
-    break;
+    ctx_in = Expr_check(expr->unary.in, errs, sco, &ctx);
+    ctx_check(ctx_in);
+
+    type = ctx_in.type;
+
+    switch (expr->unary.op->kind) {
+    case TOKEN_MINUS:
+      break;
+    case TOKEN_TILDE:
+      break;
+    case TOKEN_BANG:
+      type = &g_TYPE_bool;
+      break;
+    case TOKEN_AMPER:
+      type = Type_find(sco, (TypePattern){
+        .name = ctx_in.type->pattern.name,
+        .ptr_count = ctx_in.type->pattern.ptr_count + 1});
+      break;
+    case TOKEN_STAR:
+      if (ctx_in.type->pattern.ptr_count == 0) {
+        ctx_err(ERR_SEM_DEREF_NON_POINTER,
+          .token = expr->unary.op,
+          .type_pattern = ctx_in.type->pattern,
+          .type = {ctx_in.type, NULL});
+      }
+      type = Type_find(sco, (TypePattern){
+        .name = ctx_in.type->pattern.name,
+        .ptr_count = ctx_in.type->pattern.ptr_count + 1});
+      break;
+    default: UNREACHABLE("not an unary operator");
+    }
+
+    ctx_success(.type = type);
   case EXPR_BREAK:
   case EXPR_CONTINUE:
     if (!ctx.data.inside_loop)
@@ -146,7 +179,7 @@ Expr_check(
       ctx_err(ERR_SEM_ALREADY_DECLARED_SYMBOL, .token = ident);
     }
 
-    const Type *type = Type_find(sco, expr->decl.type);
+    type = Type_find(sco, expr->decl.type);
     if (!type) {
       ctx_err(ERR_SEM_UNDEFINED_TYPE,
         .expr = expr,
@@ -157,7 +190,7 @@ Expr_check(
       ctx_in = Expr_check(expr->decl.value, errs, sco, &ctx);
       ctx_check(ctx_in);
 
-      if (type != ctx_in.type) {
+      if (!Type_equals(type, ctx_in.type)) {
         ctx_err(ERR_SEM_INCOMPATIBLE_TYPES,
           .expr = expr,
           .type = {type, ctx_in.type});

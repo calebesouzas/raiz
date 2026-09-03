@@ -30,6 +30,12 @@ EvalResult eval(Expr *e, Scope *s) {
     case TOKEN_TILDE:
       res.value.data = ~value.data;
       break;
+    case TOKEN_AMPER:
+      res.value.data = (uintptr_t)Value_alloc(value);
+      break;
+    case TOKEN_STAR:
+      res.value.data = ((Value*)value.data)->data;
+      break;
     default:
       PANIC("invalid unary operator (token %s)\n", token_label(e->binary.op));
     }

@@ -32,6 +32,7 @@ Scope *Scope_new(Scope *parent) {
 typedef struct {
   int search_kind;
   int ignore_kind;
+  size_t type_indirection;
 } ScopeSearchOpts;
 
 #define Scope_search_single_level(sco, ident, ...)\
@@ -51,7 +52,13 @@ Symbol *Scope_search_single_level_opt(
     if (sv_equals(&sym->ident, &ident)) {
       if (opts.search_kind != SYM_ANY && sym->kind != opts.search_kind) {
         continue;
-      } else if (opts.ignore_kind != 0 && sym->kind == opts.ignore_kind) {
+      } else if (opts.ignore_kind != SYM_ANY && sym->kind == opts.ignore_kind) {
+        continue;
+      }
+      if (opts.search_kind == SYM_TYPE && sym->kind == opts.search_kind) {
+        if (sym->type->pattern.ptr_count == opts.type_indirection) {
+          return sym;
+        }
         continue;
       }
       return sym;
@@ -103,6 +110,12 @@ Symbol *Scope_search_or_insert(Scope *sco, sv_t ident, Symbol substitute) {
 
   Scope_insert(sco, substitute);
   return &sco->symbols.dat[sco->symbols.len - 1];
+}
+
+Scope *Scope_find_global(Scope *sco) {
+  Scope *cur;
+  for (cur = sco; cur->parent != NULL; cur = sco->parent);
+  return cur;
 }
 
 void Scope_free(Scope *sco) {
