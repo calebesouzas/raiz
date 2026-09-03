@@ -1,0 +1,7 @@
+x: var @int = 32
+
+p: var @*int = &x
+
+*p = 16
+
+print x

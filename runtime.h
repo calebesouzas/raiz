@@ -8,7 +8,7 @@ typedef enum {
 } ControlSignal;
 
 typedef struct {
-  Value value;
+  Value *value;
   ControlSignal sig;
 } EvalResult;
 

@@ -3,11 +3,38 @@
 
 #define READ_BUF_CAP 1024
 
+Value *eval_lvalue(Expr *e, Scope *s) {
+  if (e->kind == EXPR_UNARY && e->unary.op->kind == TOKEN_STAR) {
+    return eval_lvalue(e->unary.in, s);
+  }
+  switch (e->kind) {
+  case EXPR_GROUP:
+    return eval_lvalue(e->group.in, s);
+  case EXPR_IDENT: {
+    Symbol *sym = Scope_search_until_global(s, token_sv(e->ident));
+    return sym->val;
+  } break;
+  case EXPR_PARENT: {
+    Scope *target = s;
+    uint32_t level = e->parent.level;
+    Token *identifier = e->parent.ident;
+
+    for (uint32_t i = 0; target && i < level; i++)
+      target = target->parent;
+
+    Symbol *sym = Scope_search_until_global(target, token_sv(identifier));
+    return sym->val;
+  } break;
+  default: UNREACHABLE("maybe not lvalue? (expr kind %d)", e->kind);
+  }
+  return NULL;
+}
+
 EvalResult eval(Expr *e, Scope *s) {
   Symbol *sym, new_symbol;
   Scope *s_in, *target;
   uint64_t ls, rs, cond;
-  Value value, lsv, rsv, condv;
+  Value *value, *lsv, *rsv;
   char *ident;
   void *save;
   Expr **line;
@@ -16,109 +43,109 @@ EvalResult eval(Expr *e, Scope *s) {
 
   switch (e->kind) {
   case EXPR_LITERAL:
-    res.value = e->literal->literal;
+    res.value = Value_alloc(e->literal->literal);
     break;
   case EXPR_UNARY:
     value = eval(e->unary.in, s).value;
     switch (e->unary.op->kind) {
     case TOKEN_MINUS:
-      res.value.data = -value.data;
+      res.value->data = -value->data;
       break;
     case TOKEN_BANG:
-      res.value.data = !value.data;
+      res.value->data = !value->data;
       break;
     case TOKEN_TILDE:
-      res.value.data = ~value.data;
+      res.value->data = ~value->data;
       break;
     case TOKEN_AMPER:
-      res.value.data = (uintptr_t)Value_alloc(value);
+      res.value->data = (uintptr_t)value;
       break;
     case TOKEN_STAR:
-      res.value.data = ((Value*)value.data)->data;
+      res.value->data = ((Value*)value->data)->data;
       break;
     default:
       PANIC("invalid unary operator (token %s)\n", token_label(e->binary.op));
     }
-    res.value.type = value.type;
+    res.value->type = value->type;
     break;
   case EXPR_BINARY:
     if (e->binary.op->kind == TOKEN_EQUAL) {
       ident = e->binary.ls->ident->lexeme;
-      sym = Scope_search_until_global(s, token_sv(e->binary.ls->ident));
-      sym->val = eval(e->binary.rs, s).value;
-      res.value = sym->val;
+      Value *valp = eval_lvalue(e->binary.ls, s);
+      *valp = *eval(e->binary.rs, s).value;
+      res.value = valp;
       return res;
     }
 
     lsv = eval(e->binary.ls, s).value;
-    ls = lsv.data;
+    ls = lsv->data;
 
     rsv = eval(e->binary.rs, s).value;
-    rs = rsv.data;
+    rs = rsv->data;
 
-    res.value.type = lsv.type;
+    res.value->type = lsv->type;
 
     switch (e->binary.op->kind) {
     case TOKEN_PLUS:
-      res.value.data = ls + rs;
+      res.value->data = ls + rs;
       break;
     case TOKEN_MINUS:
-      res.value.data = ls - rs;
+      res.value->data = ls - rs;
       break;
     case TOKEN_STAR:
-      res.value.data = ls * rs;
+      res.value->data = ls * rs;
       break;
     case TOKEN_SLASH:
-      res.value.data = ls / rs;
+      res.value->data = ls / rs;
       break;
     case TOKEN_PERCENT:
-      res.value.data = ls % rs;
+      res.value->data = ls % rs;
       break;
     case TOKEN_EQUAL_X2:
-      res.value.data = ls == rs;
-      res.value.type = &g_TYPE_bool;
+      res.value->data = ls == rs;
+      res.value->type = &g_TYPE_bool;
       break;
     case TOKEN_BANG_EQUAL:
-      res.value.data = ls != rs;
-      res.value.type = &g_TYPE_bool;
+      res.value->data = ls != rs;
+      res.value->type = &g_TYPE_bool;
       break;
     case TOKEN_PIPE:
-      res.value.data = ls | rs;
+      res.value->data = ls | rs;
       break;
     case TOKEN_PIPE_X2:
-      res.value.data = ls || rs;
-      res.value.type = &g_TYPE_bool;
+      res.value->data = ls || rs;
+      res.value->type = &g_TYPE_bool;
       break;
     case TOKEN_AMPER:
-      res.value.data = ls & rs;
+      res.value->data = ls & rs;
       break;
     case TOKEN_AMPER_X2:
-      res.value.data = ls && rs;
-      res.value.type = &g_TYPE_bool;
+      res.value->data = ls && rs;
+      res.value->type = &g_TYPE_bool;
       break;
     case TOKEN_HAT:
-      res.value.data = ls ^ rs;
+      res.value->data = ls ^ rs;
       break;
     case TOKEN_LESS:
-      res.value.data = ls < rs;
-      res.value.type = &g_TYPE_bool;
+      res.value->data = ls < rs;
+      res.value->type = &g_TYPE_bool;
       break;
     case TOKEN_LESS_EQUAL:
-      res.value.data = ls <= rs;
-      res.value.type = &g_TYPE_bool;
+      res.value->data = ls <= rs;
+      res.value->type = &g_TYPE_bool;
       break;
     case TOKEN_LESS_X2:
-      res.value.data = ls << rs;
+      res.value->data = ls << rs;
       break;
     case TOKEN_GREAT:
-      res.value.data = ls > rs;
+      res.value->data = ls > rs;
       break;
     case TOKEN_GREAT_EQUAL:
-      res.value.data = ls >= rs;
-      res.value.type = &g_TYPE_bool;
+      res.value->data = ls >= rs;
+      res.value->type = &g_TYPE_bool;
       break;
     case TOKEN_GREAT_X2:
-      res.value.data = ls >> rs;
+      res.value->data = ls >> rs;
       break;
     default:
       PANIC("invalid binary operator (token %s)\n", token_label(e->binary.op));
@@ -134,7 +161,7 @@ EvalResult eval(Expr *e, Scope *s) {
   case EXPR_DECL:
     sym = Scope_search_single_level(s, token_sv(e->decl.ident));
 
-    value = e->decl.value != NULL ? eval(e->decl.value, s).value : (Value){0};
+    value = e->decl.value != NULL ? eval(e->decl.value, s).value : NULL;
     switch (e->decl.kind->kind) {
     case TOKEN_VAR:
       new_symbol.kind = SYM_VAR;
@@ -174,7 +201,7 @@ EvalResult eval(Expr *e, Scope *s) {
     res.value = sym->val;
     break;
   case EXPR_IF:
-    cond = eval(e->if_node.cond, s).value.data;
+    cond = eval(e->if_node.cond, s).value->data;
     if (cond) {
       res = eval(e->if_node.then_branch, s);
     } else if (e->if_node.else_branch) {
@@ -182,7 +209,7 @@ EvalResult eval(Expr *e, Scope *s) {
     }
     break;
   case EXPR_WHILE:
-    while ((cond = eval(e->while_node.cond, s).value.data)) {
+    while ((cond = eval(e->while_node.cond, s).value->data)) {
       if (res.sig == SIGNAL_BREAK)
         break;
       if (res.sig == SIGNAL_CONTINUE)
@@ -205,18 +232,18 @@ EvalResult eval(Expr *e, Scope *s) {
     break;
   case EXPR_PRINT:
     res.value = eval(e->print.value, s).value;
-    switch (res.value.type->kind) {
+    switch (res.value->type->kind) {
     case TYPE_int:
-      printf("%d", (int)res.value.data);
+      printf("%d", (int)res.value->data);
       break;
     case TYPE_char:
-      printf("%c", (char)res.value.data);
+      printf("%c", (char)res.value->data);
       break;
     case TYPE_bool:
-      printf("%s", res.value.data ? "true" : "false");
+      printf("%s", res.value->data ? "true" : "false");
       break;
     case TYPE_byte:
-      printf("%02x", (unsigned char)res.value.data);
+      printf("%02x", (unsigned char)res.value->data);
       break;
     }
     break;
@@ -225,8 +252,8 @@ EvalResult eval(Expr *e, Scope *s) {
 #if 0
     char buf[READ_BUF_CAP];
     fgets(buf, READ_BUF_CAP, stdin);
-    res.value.data = sp_save(buf);
-    res.value.type = &g_TYPE_string;
+    res.value->data = sp_save(buf);
+    res.value->type = &g_TYPE_string;
 #endif
   } break;
   }
