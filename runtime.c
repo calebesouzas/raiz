@@ -245,6 +245,9 @@ EvalResult eval(Expr *e, Scope *s) {
     case TYPE_byte:
       printf("%02x", (unsigned char)res.value.data);
       break;
+    case TYPE_ptr:
+      printf("%p", (void*)res.value.data);
+      break;
     }
     break;
   case EXPR_READ: {
