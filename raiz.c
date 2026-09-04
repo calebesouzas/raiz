@@ -147,6 +147,10 @@ void print_errs(SemanticError_A *errs, char *file_path, size_t source_len) {
     case ERR_SEM_UNDEFINED_TYPE:
       P(SPEC"undefined type '@%.*s'\n", DAT, TYPE_PAT);
       break;
+    case ERR_SEM_DEREF_NON_POINTER:
+      P(SPEC"attempt to dereference type '@%.*s' which is not a pointer\n",
+        DAT, TYPE0);
+      break;
     }
 
     char *s = e->token->lexeme;
