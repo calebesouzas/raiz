@@ -9,7 +9,7 @@ struct {
 Type *Type_alloc(TypePattern pattern) {
   Type *type = malloc(sizeof(Type));
   assert(type != NULL && "buy more RAM lol");
-  *type = (Type){.kind = TYPE_custom, .pattern = pattern};
+  *type = (Type){.kind = TYPE_ptr, .pattern = pattern};
   da_add(&Type_Pool, type);
   return Type_Pool.dat[Type_Pool.len - 1];
 }

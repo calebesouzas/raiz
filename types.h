@@ -7,7 +7,8 @@ struct Scope;
   X(int, 4)\
   X(char, 1)\
   X(byte, 1)\
-  X(bool, 1)
+  X(bool, 1)\
+  X(ptr, sizeof(void*))
 
 typedef struct {
   size_t ptr_count;
@@ -22,7 +23,6 @@ typedef struct Type {
     #define X(typename, typesize) TYPE_ ## typename,
     TYPES_BUILTIN
     #undef X
-    TYPE_custom,
   } kind;
   size_t size; // 0 for unknown
   TypePattern pattern;
