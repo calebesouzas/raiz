@@ -29,7 +29,7 @@ typedef struct Type {
 } Type;
 
 #define g_TYPE(typename, typesize)\
-const Type g_TYPE_##typename = (Type){\
+Type g_TYPE_##typename = (Type){\
   .pattern = {\
     .name = {.ptr = #typename, .len = sizeof(#typename) - 1},\
     .ptr_count = 0,\
@@ -42,17 +42,17 @@ const Type g_TYPE_##typename = (Type){\
 TYPES_BUILTIN
 #undef X
 
-const Type *g_TYPES[] = {
+Type *g_TYPES[] = {
   #define X(typename, typesize) &g_TYPE_ ## typename,
   TYPES_BUILTIN
   #undef X
 };
 
-const Type *Type_from_pattern(TypePattern pattern);
+Type *Type_from_pattern(TypePattern pattern);
 
-const Type *Type_find(struct Scope *sco, TypePattern pattern);
+Type *Type_find(struct Scope *sco, TypePattern pattern);
 
-bool Type_is_ptr(const Type *type);
+bool Type_is_ptr(Type *type);
 
 #define Type_equals(a, b)\
   ((a)->pattern.ptr_count == (b)->pattern.ptr_count\

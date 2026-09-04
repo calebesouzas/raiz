@@ -269,7 +269,7 @@ Expr_check(
     ctx_check(ctx_in);
 
     if (expr->if_node.else_branch) {
-      const Type *then_type = ctx_in.type;
+      Type *then_type = ctx_in.type;
       ctx_in = Expr_check(expr->if_node.else_branch, errs, sco, &ctx);
       ctx_check(ctx_in);
 

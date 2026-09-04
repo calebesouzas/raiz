@@ -15,7 +15,7 @@ typedef struct Symbol {
   union {
     Value var;
     Value val;
-    const Type *type;
+    Type *type;
   };
 } Symbol;
 

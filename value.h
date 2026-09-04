@@ -3,7 +3,7 @@
 
 typedef struct {
   uint64_t data;
-  const Type *type;
+  Type *type;
 } Value;
 
 #define Value_(__variant, __type, __value)\

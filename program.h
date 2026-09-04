@@ -18,7 +18,7 @@ typedef struct {
   // context:
   Token *token;
   Expr *expr;
-  const Type *type[2];
+  Type *type[2];
   TypePattern type_pattern;
   size_t count;
 } SemanticError;
@@ -26,7 +26,7 @@ da_make(SemanticError_A, SemanticError*);
 
 typedef struct {
   bool ok;
-  const Type *type;
+  Type *type;
   bool is_lvalue;
   bool is_constant;
   bool is_variable;
