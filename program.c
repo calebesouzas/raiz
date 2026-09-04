@@ -38,9 +38,9 @@ int Program_build(Program *pro) {
   return 0;
 }
 
-Value *Program_run(Program *pro) {
+Value Program_run(Program *pro) {
   Expr **expr;
-  Value *value;
+  Value value;
 
   da_for(expr, &pro->code) {
     value = eval(*expr, pro->sco).value;
@@ -203,11 +203,11 @@ Expr_check(
     switch (expr->decl.kind->kind) {
     case TOKEN_VAR:
       new_symbol.kind = SYM_VAR;
-      new_symbol.var->type = type;
+      new_symbol.var.type = type;
       break;
     case TOKEN_VAL:
       new_symbol.kind = SYM_VAL;
-      new_symbol.val->type = type;
+      new_symbol.val.type = type;
       break;
     default:
       PANIC("unhandled declaration token: %s\n", token_label(expr->decl.kind));
@@ -235,7 +235,7 @@ Expr_check(
       ctx_err(ERR_SEM_UNDEFINED_SYMBOL, .token = expr->ident);
     }
 
-    ctx_success(.type = sym->val->type,
+    ctx_success(.type = sym->val.type,
       .is_lvalue = true, .is_variable = sym->kind == SYM_VAR);
   case EXPR_PARENT:
     ident = expr->parent.ident;

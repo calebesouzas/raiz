@@ -13,8 +13,8 @@ typedef struct Symbol {
   sv_t ident;
   SymbolKind kind;
   union {
-    Value *var;
-    Value *val;
+    Value var;
+    Value val;
     const Type *type;
   };
 } Symbol;
