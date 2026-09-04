@@ -42,4 +42,12 @@ Type *Type_find(struct Scope *sco, TypePattern pattern) {
   return NULL;
 }
 
+Type *Type_ptr_to(struct Scope *sco, Type *in) {
+  TypePattern pattern = (TypePattern){
+    .name = in->pattern.name,
+    .ptr_count = in->pattern.ptr_count + 1};
+
+  return Type_find(sco, pattern);
+}
+
 #endif /* RAIZ_TYPES_C */

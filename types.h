@@ -54,6 +54,8 @@ Type *Type_find(struct Scope *sco, TypePattern pattern);
 
 bool Type_is_ptr(Type *type);
 
+Type *Type_ptr_to(struct Scope *sco, Type *in);
+
 #define Type_equals(a, b)\
   ((a)->pattern.ptr_count == (b)->pattern.ptr_count\
     && sv_equals(&(a)->pattern.name, &(b)->pattern.name))

@@ -5,7 +5,8 @@
 
 Value *eval_lvalue(Expr *e, Scope *s) {
   if (e->kind == EXPR_UNARY && e->unary.op->kind == TOKEN_STAR) {
-    return eval_lvalue(e->unary.in, s);
+    Value referenced = eval(e->unary.in, s).value;
+    return (Value*)referenced.data;
   }
   switch (e->kind) {
   case EXPR_GROUP:
@@ -34,7 +35,7 @@ EvalResult eval(Expr *e, Scope *s) {
   Symbol *sym, new_symbol;
   Scope *s_in, *target;
   uint64_t ls, rs, cond;
-  Value value, lsv, rsv, *value_p;
+  Value value, lsv, rsv;
   char *ident;
   void *save;
   Expr **line;
@@ -46,27 +47,30 @@ EvalResult eval(Expr *e, Scope *s) {
     res.value = *Value_alloc(e->literal->literal);
     break;
   case EXPR_UNARY:
-    value_p = eval_lvalue(e->unary.in, s);
+    if (e->unary.op->kind == TOKEN_AMPER) {
+      Value *valp = eval_lvalue(e->unary.in, s);
+      res.value.data = (uintptr_t)valp;
+      res.value.type = Type_ptr_to(s, valp->type);
+      goto end;
+    }
+    value = eval(e->unary.in, s).value;
     switch (e->unary.op->kind) {
     case TOKEN_MINUS:
-      res.value.data = -value_p->data;
+      res.value.data = -value.data;
       break;
     case TOKEN_BANG:
-      res.value.data = !value_p->data;
+      res.value.data = !value.data;
       break;
     case TOKEN_TILDE:
-      res.value.data = ~value_p->data;
-      break;
-    case TOKEN_AMPER:
-      res.value.data = (uintptr_t)value_p;
+      res.value.data = ~value.data;
       break;
     case TOKEN_STAR:
-      res.value.data = value_p->data;
+      res.value.data = value.data;
       break;
     default:
       PANIC("invalid unary operator (token %s)\n", token_label(e->binary.op));
     }
-    res.value.type = value_p->type;
+    res.value.type = value.type;
     break;
   case EXPR_BINARY:
     if (e->binary.op->kind == TOKEN_EQUAL) {
@@ -260,6 +264,7 @@ EvalResult eval(Expr *e, Scope *s) {
 #endif
   } break;
   }
+end:
   return res;
 }
 
