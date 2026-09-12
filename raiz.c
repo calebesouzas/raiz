@@ -123,8 +123,8 @@ void print_errs(SemanticError_A *errs, char *file_path, size_t source_len) {
     case ERR_SEM_ALREADY_DECLARED_SYMBOL:
       P(SPEC"already declared symbol '%.*s'\n", DAT, TOK);
       break;
-    case ERR_SEM_ASSIGN_TO_VAL:
-      P(SPEC"assigned to value '%.*s'\n", DAT, TOK);
+    case ERR_SEM_ASSIGN_TO_FIX:
+      P(SPEC"assigned to fixed variable '%.*s'\n", DAT, TOK);
       break;
     case ERR_SEM_ASSIGN_TO_RVALUE:
       P(SPEC"assigned to R-value '%.*s'\n", DAT, TOK);

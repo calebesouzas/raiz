@@ -1,6 +1,6 @@
 i: var @int = 0
-max: val @int = 15
-point: val @int = 10
+max: fix @int = 15
+point: fix @int = 10
 
 while i < max {
   if i == point {

@@ -250,7 +250,7 @@ parse_expr:
         return err;
 
       res->decl.value = value;
-    } else if (kind->kind == TOKEN_VAL) { // bruh
+    } else if (kind->kind == TOKEN_FIX) { // bruh
       expect("assignment", peeked, PARSER_EXPECTED_ASSIGNMENT);
     }
 

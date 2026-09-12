@@ -5,7 +5,7 @@ const int SYM_ANY = 0;
 
 typedef enum {
     SYM_VAR = 1,
-    SYM_VAL,
+    SYM_FIX,
     SYM_TYPE,
 } SymbolKind;
 

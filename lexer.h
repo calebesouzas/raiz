@@ -64,7 +64,7 @@ enum TokenFlags {
   X(TOKEN_COLLON, 0)\
 \
   X(TOKEN_VAR, TOKEN_FLAG_KEYWORD|TOKEN_FLAG_DECLARATOR)\
-  X(TOKEN_VAL, TOKEN_FLAG_KEYWORD|TOKEN_FLAG_DECLARATOR)\
+  X(TOKEN_FIX, TOKEN_FLAG_KEYWORD|TOKEN_FLAG_DECLARATOR)\
 \
   X(TOKEN_TRUE,     TOKEN_FLAG_KEYWORD|TOKEN_FLAG_CONSTANT)\
   X(TOKEN_FALSE,    TOKEN_FLAG_KEYWORD|TOKEN_FLAG_CONSTANT)\
@@ -141,7 +141,7 @@ struct TokenKeywordTable {
 
 const struct TokenKeywordTable KEYWORDS[] = {
   {"var", 3, TOKEN_VAR},
-  {"val", 3, TOKEN_VAL},
+  {"fix", 3, TOKEN_FIX},
   {"true", 4, TOKEN_TRUE, Value_(&g_TYPE_bool, bool, 1)},
   {"false", 5, TOKEN_FALSE, Value_(&g_TYPE_bool, bool, 0)},
   {"if", 2, TOKEN_IF},

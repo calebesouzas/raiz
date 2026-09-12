@@ -1,5 +1,5 @@
 x: var @int = 69
 
-ptr: val @*int = &x
+ptr: fix @*int = &x
 
 print *ptr

@@ -153,7 +153,7 @@ Expr_check(
       if (!ctx_left.is_lvalue) {
         ctx_err(ERR_SEM_ASSIGN_TO_RVALUE, .expr = expr);
       } else if (!ctx_left.is_variable) {
-        ctx_err(ERR_SEM_ASSIGN_TO_VAL, .expr = expr);
+        ctx_err(ERR_SEM_ASSIGN_TO_FIX, .expr = expr);
       }
     }
 
@@ -205,8 +205,8 @@ Expr_check(
       new_symbol.kind = SYM_VAR;
       new_symbol.var.type = type;
       break;
-    case TOKEN_VAL:
-      new_symbol.kind = SYM_VAL;
+    case TOKEN_FIX:
+      new_symbol.kind = SYM_FIX;
       new_symbol.val.type = type;
       break;
     default:

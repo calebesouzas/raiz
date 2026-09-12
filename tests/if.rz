@@ -1,6 +1,6 @@
-bool: val @bool = true
+bool: fix @bool = true
 
-i: val @int = if bool {
+i: fix @int = if bool {
   69
 } else {
   96

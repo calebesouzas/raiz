@@ -170,8 +170,8 @@ EvalResult eval(Expr *e, Scope *s) {
     case TOKEN_VAR:
       new_symbol.kind = SYM_VAR;
       break;
-    case TOKEN_VAL:
-      new_symbol.kind = SYM_VAL;
+    case TOKEN_FIX:
+      new_symbol.kind = SYM_FIX;
       break;
     default:
       PANIC("unhandled declaration token: %s\n", token_label(e->decl.kind));

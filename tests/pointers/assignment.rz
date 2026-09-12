@@ -1,6 +1,6 @@
-x: var @int = 32
+x: fix @int = 32
 
-p: var @*int = &x
+p: fix @*int = &x
 
 *p = x * 2
 
