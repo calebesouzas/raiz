@@ -30,6 +30,7 @@ typedef struct {
   bool is_lvalue;
   bool is_constant;
   bool is_variable;
+  uint32_t deref_count;
   struct {
     bool inside_loop;
   } data;

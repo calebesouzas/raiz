@@ -131,7 +131,9 @@ Expr_check(
       type = Type_find(sco, (TypePattern){
         .name = ctx_in.type->pattern.name,
         .ptr_count = ctx_in.type->pattern.ptr_count - 1});
-      ctx_success(.type = type, .is_lvalue = true, .is_variable = true);
+      ctx_success(.type = type, .is_lvalue = true,
+        .is_variable = ctx_in.is_variable,
+        .deref_count = ctx_in.deref_count + 1);
       break;
     default: UNREACHABLE("not an unary operator");
     }
@@ -153,7 +155,8 @@ Expr_check(
       if (!ctx_left.is_lvalue) {
         ctx_err(ERR_SEM_ASSIGN_TO_RVALUE, .expr = expr);
       } else if (!ctx_left.is_variable) {
-        ctx_err(ERR_SEM_ASSIGN_TO_FIX, .expr = expr);
+        ctx_err(ERR_SEM_ASSIGN_TO_FIX, .expr = expr,
+          .token = expr->token + ctx_left.deref_count);
       }
     }
 
