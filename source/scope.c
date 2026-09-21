@@ -40,7 +40,7 @@ typedef struct {
     ((ScopeSearchOpts){__VA_ARGS__}))
 
 #define Scope_search_until_global(sco, ident, ...)\
-  Scope_search_single_level_opt((sco), (ident),\
+  Scope_search_until_global_opt((sco), (ident),\
     ((ScopeSearchOpts){__VA_ARGS__}))
 
 Symbol *Scope_search_single_level_opt(
