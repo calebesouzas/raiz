@@ -93,6 +93,16 @@ int Lexer_tokenize(Lexer *lex) {
       add(tk(TOKEN_NEWLINE));
       break;
     case ' ': case '\t': case '\r': break;
+    case '\'':
+      advance();
+      char character = cur();
+      if (peek() != '\'') {
+        fprintf(stderr, "error [%zu](%zu): not closed character literal\n",
+          lex->i, lex->lines);
+      }
+      advance();
+      add(tk(TOKEN_CHAR, .literal = Value_(&g_TYPE_char, char, character)));
+      break;
     default: {
       if (isdigit(cur())) {
         int num = cur() - '0';
