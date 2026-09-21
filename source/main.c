@@ -167,8 +167,16 @@ void print_errs(SemanticError_A *errs, char *file_path, size_t source_len) {
     while (s[++i] != '\n' && i < (source_len - e->token->start));
 
     fprintf(stderr,
-      "%zu | %.*s\n\n",
-      e->token->line, i, s);
+      "%.*s\n",
+      i, s);
+
+    for (char *sp = s; sp != e->token->lexeme; sp++) {
+      fputc(' ', stderr);
+    }
+    for (size_t n = 0; n < e->token->len; n++) {
+      fputc('^', stderr);
+    }
+    fputc('\n', stderr);
   }
 }
 
