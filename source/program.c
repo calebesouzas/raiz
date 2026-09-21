@@ -217,7 +217,8 @@ Expr_check(
 
     ctx_success_with(ctx_in);
   case EXPR_IDENT:
-    sym = Scope_search_until_global(sco, token_sv(expr->ident));
+    sym = Scope_search_until_global(sco, token_sv(expr->ident),
+      .search_kind = SYM_VAR);
 
     if (sym == NULL) {
       ctx_err(ERR_SEM_UNDEFINED_SYMBOL, .token = expr->ident);
@@ -234,7 +235,8 @@ Expr_check(
     for (count = 0; target && count < level; count++)
       target = target->parent;
 
-    sym = Scope_search_until_global(target, token_sv(ident));
+    sym = Scope_search_until_global(target, token_sv(ident),
+      .search_kind = SYM_VAR);
     if (sym == NULL) {
       ctx_err(ERR_SEM_UNDEFINED_SYMBOL, .token = ident, .count = count);
     }
