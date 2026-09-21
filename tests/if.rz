@@ -1,6 +1,6 @@
-bool @bool = true
+@bool bool = true
 
-i @int = if bool {
+@int i = if bool {
   69
 } else {
   96
