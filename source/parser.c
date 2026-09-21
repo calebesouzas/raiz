@@ -334,17 +334,19 @@ int Parser_parse_type(TypePattern *res, Parser *par) {
   if (tok->kind != TOKEN_AT) {
     expect("'@'", tok, PARSER_EXPECTED_TYPE);
   }
+
   tok = Parser_advance(par);
-
-  while (tok->kind == TOKEN_STAR) {
-    res->ptr_count++;
-    tok = Parser_advance(par);
-  }
-
   if (tok->kind != TOKEN_IDENT) {
     expect("type name", tok, PARSER_EXPECTED_TYPE);
   }
   res->name = token_sv(tok);
+
+  Token *peeked = Parser_peek(par);
+  while (peeked->kind == TOKEN_STAR) {
+    res->ptr_count++;
+    Parser_advance(par);
+    peeked = Parser_peek(par);
+  }
 
   return 0;
 }
