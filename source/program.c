@@ -132,7 +132,6 @@ Expr_check(
         .name = ctx_in.type->pattern.name,
         .ptr_count = ctx_in.type->pattern.ptr_count - 1});
       ctx_success(.type = type, .is_lvalue = true,
-        .is_variable = ctx_in.is_variable,
         .deref_count = ctx_in.deref_count + 1);
       break;
     default: UNREACHABLE("not an unary operator");
@@ -154,9 +153,6 @@ Expr_check(
     if (expr->binary.op->kind == TOKEN_EQUAL) {
       if (!ctx_left.is_lvalue) {
         ctx_err(ERR_SEM_ASSIGN_TO_RVALUE, .expr = expr);
-      } else if (!ctx_left.is_variable) {
-        ctx_err(ERR_SEM_ASSIGN_TO_FIX, .expr = expr,
-          .token = expr->token + ctx_left.deref_count);
       }
     }
 
@@ -203,19 +199,8 @@ Expr_check(
 
     Symbol new_symbol = {0};
     new_symbol.ident = token_sv(ident);
-    switch (expr->decl.kind->kind) {
-    case TOKEN_VAR:
-      new_symbol.kind = SYM_VAR;
-      new_symbol.var.type = type;
-      break;
-    case TOKEN_FIX:
-      new_symbol.kind = SYM_FIX;
-      new_symbol.val.type = type;
-      break;
-    default:
-      PANIC("unhandled declaration token: %s\n", token_label(expr->decl.kind));
-      break;
-    }
+    new_symbol.kind = SYM_VAR;
+    new_symbol.var.type = type;
 
     Scope_insert(sco, new_symbol);
 
@@ -238,8 +223,8 @@ Expr_check(
       ctx_err(ERR_SEM_UNDEFINED_SYMBOL, .token = expr->ident);
     }
 
-    ctx_success(.type = sym->val.type,
-      .is_lvalue = true, .is_variable = sym->kind == SYM_VAR);
+    ctx_success(.type = sym->var.type,
+      .is_lvalue = true);
   case EXPR_PARENT:
     ident = expr->parent.ident;
     Scope *target = sco;
@@ -255,7 +240,6 @@ Expr_check(
     }
 
     ctx_success(.is_lvalue = true,
-      .is_variable = sym->kind == SYM_VAR,
       .is_constant = false);
   case EXPR_IF:
     if (expr->if_node.then_branch->kind == EXPR_DECL) {

@@ -1,6 +1,6 @@
-bool: fix @bool = true
+bool @bool = true
 
-i: fix @int = if bool {
+i @int = if bool {
   69
 } else {
   96

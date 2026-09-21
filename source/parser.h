@@ -34,7 +34,6 @@ typedef struct Expr {
     } group;
     Token *ident;
     struct {
-      Token *kind;
       Token *ident;
       struct Expr *value;
       TypePattern type;

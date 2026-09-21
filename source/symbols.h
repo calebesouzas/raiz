@@ -5,7 +5,6 @@ const int SYM_ANY = 0;
 
 typedef enum {
     SYM_VAR = 1,
-    SYM_FIX,
     SYM_TYPE,
 } SymbolKind;
 
@@ -14,7 +13,6 @@ typedef struct Symbol {
   SymbolKind kind;
   union {
     Value var;
-    Value val;
     Type *type;
   };
 } Symbol;

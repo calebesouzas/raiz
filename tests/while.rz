@@ -1,6 +1,6 @@
-i: var @int = 0
-max: fix @int = 15
-point: fix @int = 10
+i @int = 0
+max @int = 15
+point @int = 10
 
 while i < max {
   if i == point {

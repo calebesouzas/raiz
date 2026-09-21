@@ -219,19 +219,7 @@ parse_expr:
   }
   switch (tok->kind) {
   case TOKEN_IDENT:
-    peeked = Parser_peek(par);
-    if (peeked->kind != TOKEN_COLLON) {
-      expect("collon", peeked, PARSER_EXPECTED_COLLON);
-    }
     Parser_advance(par); // consume identifier
-
-    Token *kind = Parser_peek(par); // declaration kind
-    if (!(kind->flags & TOKEN_FLAG_DECLARATOR)) {
-      expect("declarator", kind, PARSER_EXPECTED_DECLARATOR);
-    }
-
-    Parser_advance(par); // consume collon
-    Parser_advance(par); // consume declarator
 
     TypePattern type = {0};
     err = Parser_parse_type(&type, par);
@@ -250,12 +238,9 @@ parse_expr:
         return err;
 
       res->decl.value = value;
-    } else if (kind->kind == TOKEN_FIX) { // bruh
-      expect("assignment", peeked, PARSER_EXPECTED_ASSIGNMENT);
     }
 
     res->kind = EXPR_DECL;
-    res->decl.kind = kind;
     res->decl.ident = tok;
     res->decl.type = type;
 

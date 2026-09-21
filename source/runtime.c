@@ -13,7 +13,7 @@ Value *eval_lvalue(Expr *e, Scope *s) {
     return eval_lvalue(e->group.in, s);
   case EXPR_IDENT: {
     Symbol *sym = Scope_search_until_global(s, token_sv(e->ident));
-    return &sym->val;
+    return &sym->var;
   } break;
   case EXPR_PARENT: {
     Scope *target = s;
@@ -24,7 +24,7 @@ Value *eval_lvalue(Expr *e, Scope *s) {
       target = target->parent;
 
     Symbol *sym = Scope_search_until_global(target, token_sv(identifier));
-    return &sym->val;
+    return &sym->var;
   } break;
   default: UNREACHABLE("maybe not lvalue? (expr kind %d)", e->kind);
   }
@@ -160,28 +160,18 @@ EvalResult eval(Expr *e, Scope *s) {
     break;
   case EXPR_IDENT:
     sym = Scope_search_until_global(s, token_sv(e->ident));
-    res.value = sym->val;
+    res.value = sym->var;
     break;
   case EXPR_DECL:
     sym = Scope_search_single_level(s, token_sv(e->decl.ident));
 
     value = e->decl.value != NULL ? eval(e->decl.value, s).value : (Value){0};
-    switch (e->decl.kind->kind) {
-    case TOKEN_VAR:
-      new_symbol.kind = SYM_VAR;
-      break;
-    case TOKEN_FIX:
-      new_symbol.kind = SYM_FIX;
-      break;
-    default:
-      PANIC("unhandled declaration token: %s\n", token_label(e->decl.kind));
-      break;
-    }
-    new_symbol.val = value;
+    new_symbol.kind = SYM_VAR;
+    new_symbol.var = value;
     new_symbol.ident = token_sv(e->decl.ident);
     Scope_insert(s, new_symbol);
 
-    res.value = new_symbol.val;
+    res.value = new_symbol.var;
     break;
   case EXPR_BLOCK:
     s_in = Scope_new(s);
@@ -202,7 +192,7 @@ EvalResult eval(Expr *e, Scope *s) {
       target = target->parent;
 
     sym = Scope_search_until_global(target, token_sv(identifier));
-    res.value = sym->val;
+    res.value = sym->var;
     break;
   case EXPR_IF:
     cond = eval(e->if_node.cond, s).value.data;
