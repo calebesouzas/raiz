@@ -1,6 +1,6 @@
-i @int = 0
-max @int = 15
-point @int = 10
+@int i = 0
+@int max = 15
+@int point = 18
 
 while i < max {
   if i == point {

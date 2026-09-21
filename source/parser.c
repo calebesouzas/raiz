@@ -218,9 +218,7 @@ parse_expr:
     goto finish_line;
   }
   switch (tok->kind) {
-  case TOKEN_IDENT:
-    Parser_advance(par); // consume identifier
-
+  case TOKEN_AT: {
     TypePattern type = {0};
     err = Parser_parse_type(&type, par);
     if (err)
@@ -228,8 +226,14 @@ parse_expr:
 
     peeked = Parser_peek(par);
 
+    if (peeked->kind != TOKEN_IDENT) {
+      expect("identifier", peeked, PARSER_EXPECTED_IDENTIFIER);
+    }
+
+    tok = Parser_advance(par); // rest of type
+    peeked = Parser_peek(par);
     if (peeked->kind == TOKEN_EQUAL) {
-      Parser_advance(par); // type ending
+      Parser_advance(par); // identifier
       Parser_advance(par); // '='
 
       value = Expr_();
@@ -244,7 +248,7 @@ parse_expr:
     res->decl.ident = tok;
     res->decl.type = type;
 
-    break; // case IDENT (for declaration)
+  } break; // case AT (variable declaration)
   case TOKEN_WHILE:
     Parser_advance(par);
 
