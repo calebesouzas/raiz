@@ -1,64 +1,7 @@
 #ifndef RAIZ_PARSER_H
 #define RAIZ_PARSER_H
 
-typedef struct Expr {
-  enum {
-    EXPR_LITERAL,
-    EXPR_BINARY,
-    EXPR_UNARY,
-    EXPR_GROUP,
-    EXPR_IDENT,
-    EXPR_DECL,
-    EXPR_BLOCK,
-    EXPR_PARENT,
-    EXPR_IF,
-    EXPR_WHILE,
-    EXPR_BREAK,
-    EXPR_CONTINUE,
-    EXPR_PRINT,
-    EXPR_READ,
-  } kind;
-  union {
-    Token *literal;
-    struct {
-      Token *op;
-      struct Expr *ls;
-      struct Expr *rs;
-    } binary;
-    struct {
-      Token *op;
-      struct Expr *in;
-    } unary;
-    struct {
-      struct Expr *in;
-    } group;
-    Token *ident;
-    struct {
-      Token *ident;
-      struct Expr *value;
-      TypePattern type;
-    } decl;
-    struct {
-      struct Expr **dat;
-      size_t len, cap;
-    } block;
-    struct {
-      uint32_t level;
-      Token *ident;
-    } parent;
-    struct {
-      struct Expr *cond, *then_branch, *else_branch;
-    } if_node;
-    struct {
-      struct Expr *cond, *body, *then_branch, *else_branch;
-    } while_node;
-    struct {
-      struct Expr *value;
-    } print;
-  };
-  Token *token;
-} Expr;
-da_make(ExprNode_A, Expr**);
+#include "expr.h"
 
 typedef struct {
   Expr *ast;

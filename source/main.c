@@ -24,6 +24,7 @@ But maybe you can find something interesting in here, I really don't know
 #include "symbols.h"
 #include "scope.h"
 #include "runtime.h"
+#include "semantics.h"
 #include "program.h"
 
 void print_errs(SemanticError_A *errs, char *file_path, size_t source_len);
@@ -184,6 +185,7 @@ void print_errs(SemanticError_A *errs, char *file_path, size_t source_len) {
 #include "parser.c"
 #include "value.c"
 #include "scope.c"
+#include "semantics.c"
 #include "strings.c"
 #include "program.c"
 #include "runtime.c"
