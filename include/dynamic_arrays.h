@@ -17,6 +17,11 @@
        (i_##item < (da)->len) && ((item) = &(da)->dat[i_##item]);\
        i_##item++)
 
+#define da_iter(item, da)\
+  for (typeof((da)->dat) item = (da)->dat;\
+      item < ((da)->dat + (da)->len);\
+      item++)
+
 #define da_add(da, val)\
   do{\
     if ((da)->cap == 0) (da)->cap = DEFAULT_DA_CAP;\
