@@ -1,0 +1,59 @@
+// Definitions
+function :: fun (param1 @type1, param2 @type2) @return { }
+
+Structure :: struct { }
+
+// optional type after `enum`
+Enumerator :: enum { }
+
+// same as an union in C, even though it should not be used. Tagunion is safer!
+Union :: union { }
+
+TaggedUnion :: tagunion
+{
+  // struct containing enum and union, allows variants to contain more data!
+  // but the tag (enum field) is hidden from the user and there is no free 
+  // access to the union fields (at least not easelly).
+}
+
+// Declarations
+variable: @type // optional assignment
+infered := value // assignment is required
+
+// Control Flow
+if condition
+{
+  // then
+}
+else if other_condition
+{
+  // second then
+}
+else
+{
+  // else
+}
+
+while condition
+{
+  // body
+}
+then
+{
+  // if broke normally (condition naturally being false)
+}
+else
+{
+  // if broke manually and explicitly
+}
+
+add :: fun (a, b @int) @int
+{
+  return a + b
+}
+
+result := add(3, 5)
+
+print if result == 8 "yoo!" else "noo..."
+
+macro_call#
