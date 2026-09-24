@@ -1,0 +1,3 @@
+hello :: fun {
+  print '!'
+}
