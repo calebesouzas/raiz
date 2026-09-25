@@ -174,6 +174,7 @@ EvalResult eval(Expr *e, Scope *s) {
   case EXPR_DEF:
     new_symbol.kind = SYM_FUN;
     new_symbol.fun = e->def.fun;
+    new_symbol.ident = token_sv(e->def.ident);
     Scope_insert(s, new_symbol);
     break;
   case EXPR_BLOCK:
