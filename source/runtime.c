@@ -224,35 +224,8 @@ EvalResult eval(Expr *e, Scope *s) {
   case EXPR_CONTINUE:
     res.sig = SIGNAL_CONTINUE;
     break;
-  case EXPR_PRINT:
-    res.value = eval(e->print.value, s).value;
-    switch (res.value.type->kind) {
-    case TYPE_int:
-      printf("%d", (int)res.value.data);
-      break;
-    case TYPE_char:
-      printf("%c", (char)res.value.data);
-      break;
-    case TYPE_bool:
-      printf("%s", res.value.data ? "true" : "false");
-      break;
-    case TYPE_byte:
-      printf("%02x", (unsigned char)res.value.data);
-      break;
-    case TYPE_ptr:
-      printf("%p", (void*)res.value.data);
-      break;
-    }
-    break;
-  case EXPR_READ: {
-    TODO("implement EXPR_READ runtime");
-#if 0
-    char buf[READ_BUF_CAP];
-    fgets(buf, READ_BUF_CAP, stdin);
-    res.value.data = sp_save(buf);
-    res.value.type = &g_TYPE_string;
-#endif
-  } break;
+  case EXPR_ERROR:
+    UNREACHABLE("error expression at runtime?\n");
   }
 end:
   return res;

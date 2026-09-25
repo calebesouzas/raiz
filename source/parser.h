@@ -4,25 +4,16 @@
 #include "expr.h"
 
 typedef struct {
-  Expr *ast;
+  ExprNode_A ast;
   Token_A *toks;
   size_t cur;
+  ExprNode_A errs;
 } Parser;
 
 enum ParserError {
-  PARSER_EXPECTED_OPERATOR = 1,
   PARSER_INVALID_TOKEN,
   PARSER_UNEXPECTED_TOKEN,
-  PARSER_TRAILING_PARENTHESES,
-  PARSER_EXPECTED_IDENTIFIER,
-  PARSER_EXPECTED_ASSIGNMENT,
-  PARSER_EXPECTED_FINISH,
-  PARSER_EXPECTED_EXPRESSION,
-  PARSER_EXPECTED_TYPE,
-  PARSER_NOT_CLOSED_GROUP,
-  PARSER_NOT_CLOSED_BLOCK,
-  PARSER_EXPECTED_DECLARATOR,
-  PARSER_EXPECTED_COLLON,
+  PARSER_EXPECTATION_FAILED,
 };
 
 Expr *Expr_(void);
@@ -33,7 +24,7 @@ void Expr_free(Expr *node);
 
 void Expr_dump(Expr *root, size_t indent, size_t level);
 
-Token *Parser_cur(Parser *par);
+Token *Parser_current(Parser *par);
 Token *Parser_peek(Parser *par);
 Token *Parser_next(Parser *par);
 Token *Parser_advance(Parser *par);

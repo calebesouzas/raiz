@@ -302,17 +302,6 @@ SemanticContext Expr_check_break_or_continue(
   ctx_success();
 }
 
-SemanticContext Expr_check_print(
-    Expr *expr, SemanticError_A *errs, Scope *sco, SemanticContext *out
-) {
-  assert(expr->kind == EXPR_PRINT);
-
-  SemanticContext ctx_in = Expr_check(expr->print.value, errs, sco, out);
-  ctx_check(ctx_in);
-
-  ctx_success(.type = ctx_in.type);
-}
-
 SemanticContext Expr_check(
     Expr *expr, SemanticError_A *errs, Scope *sco, SemanticContext *out
 ) {
@@ -329,8 +318,6 @@ SemanticContext Expr_check(
   case EXPR_BREAK:
   case EXPR_CONTINUE:
     return Expr_check_break_or_continue(expr, errs, sco, &ctx);
-  case EXPR_READ:
-    TODO("check EXPR_READ");
   case EXPR_BINARY:
     return Expr_check_binary(expr, errs, sco, &ctx);
   case EXPR_GROUP:
@@ -347,8 +334,6 @@ SemanticContext Expr_check(
     return Expr_check_if(expr, errs, sco, &ctx);
   case EXPR_WHILE:
     return Expr_check_while(expr, errs, sco, &ctx);
-  case EXPR_PRINT:
-    return Expr_check_print(expr, errs, sco, &ctx);
   default: UNREACHABLE("expression kind id %d\n", expr->kind);
   }
 }

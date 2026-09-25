@@ -16,8 +16,7 @@ typedef enum {
   EXPR_WHILE,
   EXPR_BREAK,
   EXPR_CONTINUE,
-  EXPR_PRINT,
-  EXPR_READ,
+  EXPR_ERROR,
 } ExprKind;
 
 typedef struct {
@@ -60,8 +59,9 @@ typedef struct {
 } Expr_While_node;
 
 typedef struct {
-  struct Expr *value;
-} Expr_Print;
+  Token *tok;
+  int code;
+} Expr_Error;
 
 typedef struct Expr {
   ExprKind kind;
@@ -76,7 +76,7 @@ typedef struct Expr {
     Expr_Parent parent;
     Expr_If_node if_node;
     Expr_While_node while_node;
-    Expr_Print print;
+    Expr_Error error;
   };
   Token *token;
 } Expr;

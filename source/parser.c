@@ -1,175 +1,335 @@
 #ifndef RAIZ_PARSER_C
 #define RAIZ_PARSER_C
 
+int parse_literal(Token *tok, Expr *res, Parser *par);
+int parse_unary(Token *tok, Expr *res, Parser *par);
+int parse_group(Token *tok, Expr *res, Parser *par);
+int parse_ident(Token *tok, Expr *res, Parser *par);
+int parse_block(Token *tok, Expr *res, Parser *par);
+int parse_parent_access(Token *tok, Expr *res, Parser *par);
+int parse_if(Token *tok, Expr *res, Parser *par);
+int parse_definition(Token *tok, Expr *res, Parser *par);
+int parse_while(Token *tok, Expr *res, Parser *par);
+int parse_type_pattern(TypePattern *res, Parser *par);
+int parse_nud(Expr *res, Parser *par);
+int parse_expr(Expr *res, Parser *par, uint8_t min_bp);
+int parse_line(Expr *res, Parser *par);
+
+#undef current
+#undef peek
+#undef advance
+#undef error
 #undef expect
-#define expect(__what, __token, __err_variant)\
-  do{\
-    fprintf(stderr, "expected "__what", found %s\n", token_label(__token));\
-    return __err_variant;\
-  } while (0)
+#undef expect_flag
+#undef expect_block
 
-int Parser_parse_nud(Expr *res, Parser *par) {
-  Token *tok, *peeked, *first;
-  Expr *in, *value, *line;
-  int err;
 
-  tok = Parser_cur(par);
-  first = tok;
+#define peek() Parser_peek(par)
+#define current() Parser_current(par)
+#define advance() Parser_advance(par)
 
-  if (tok->kind == TOKEN_INVALID)
-    return PARSER_INVALID_TOKEN;
+#define error(__code, __token, ...)\
+do {\
+  Expr *err_expr = Expr_();\
+  err_expr->kind = EXPR_ERROR;\
+  err_expr->error.tok = __token;\
+  err_expr->error.code = __code;\
+  da_add(&par->errs, err_expr);\
+  return __code;\
+} while (0)
 
-  else if (tok->flags & TOKEN_FLAG_CONSTANT) {
-    res->kind = EXPR_LITERAL;
-    res->literal = tok;
-  } else if (tok->flags & TOKEN_FLAG_UNARY) {
-    uint8_t bp = get_binding_power(tok->kind);
-    if (tok->flags & TOKEN_FLAG_RIGHT_ASSOCIATIVE)
-      bp -= 1;
+#define expect(__token, __kind, ...)\
+do {\
+  if ((__token)->kind != (__kind)) {\
+    error(PARSER_EXPECTATION_FAILED, __token, __VA_ARGS__);\
+  }\
+} while (0)
 
-    Parser_advance(par);
+#define expect_block(__token, __after_what)\
+expect(__token, TOKEN_L_CURLY, "after `"__after_what"`")
 
-    in = Expr_();
-    err = Parser_parse_expr(in, par, bp);
-    if (err)
-      return err;
+#define expect_flag(__token, __flag, ...)\
+do {\
+  if (!((__token)->flags & (__flag))) {\
+    error(PARSER_EXPECTATION_FAILED, __token, __VA_ARGS__);\
+  }\
+} while (0)
 
-    res->kind = EXPR_UNARY;
-    res->unary.op = tok;
-    res->unary.in = in;
-  } else if (tok->kind == TOKEN_L_PAREN) {
-    Parser_advance(par);
+#define consume(__token, __kind)\
+do {\
+  expect(__token, __kind, "expected '%s', found '%s'\n",\
+    token_name(__kind), token_string(__token));\
+  advance();\
+} while (0)
 
-    in = Expr_();
-    err = Parser_parse_expr(in, par, 0);
-    if (err)
-      return err;
-
-    peeked = Parser_peek(par);
-    if (peeked->kind != TOKEN_R_PAREN) {
-      expect("closing ')'", peeked, PARSER_NOT_CLOSED_GROUP);
-    }
-    Parser_advance(par); // consume ')'
-
-    res->kind = EXPR_GROUP;
-    res->group.in = in;
-  } else if (tok->kind == TOKEN_IDENT) {
-    res->kind = EXPR_IDENT;
-    res->ident = tok;
-    res->token = first;
-  } else if (tok->kind == TOKEN_L_CURLY) {
-    Parser_advance(par); // `{`
-    do {
-      line = Expr_();
-
-      err = Parser_parse_line(line, par);
-      if (err)
-        return err;
-
-      peeked = Parser_peek(par);
-
-      da_add(&res->block, line);
-    } while (par->cur < par->toks->len && peeked->kind != TOKEN_R_CURLY);
-
-    if (peeked->kind != TOKEN_R_CURLY) {
-      //@todo print start line when we track line numbers
-      expect("closing '}'", peeked, PARSER_NOT_CLOSED_BLOCK);
-    }
-    Parser_advance(par); // before '}'
-
-    res->kind = EXPR_BLOCK;
-  } else if (tok->kind == TOKEN_HAT) {
-    uint32_t level = 0;
-    do {
-      level++;
-      tok = Parser_advance(par);
-    } while (Parser_cur(par)->kind == TOKEN_HAT);
-    if (tok->kind != TOKEN_IDENT) {
-      expect("identifier", tok, PARSER_EXPECTED_IDENTIFIER);
-    }
-
-    res->kind = EXPR_PARENT;
-    res->parent.level = level;
-    res->parent.ident = tok;
-  } else if (tok->kind == TOKEN_IF) {
-    Parser_advance(par);
-
-    Expr *cond = Expr_();
-    err = Parser_parse_expr(cond, par, 0);
-    if (err)
-      return err;
-
-    peeked = Parser_peek(par);
-    if (peeked->flags & TOKEN_FLAG_STARTER) {
-      expect("block after `if`", peeked, PARSER_EXPECTED_EXPRESSION);
-    }
-    Parser_advance(par);
-
-    Expr *then_branch = Expr_();
-    err = Parser_parse_expr(then_branch, par, 0);
-    if (err)
-      return err;
-
-    Expr *else_branch = NULL;
-    peeked = Parser_peek(par);
-
-    if (peeked->kind == TOKEN_ELSE) {
-      Parser_advance(par);
-
-      peeked = Parser_peek(par);
-      if (peeked->flags & TOKEN_FLAG_STARTER) {
-        expect("block after `else`", peeked, PARSER_EXPECTED_EXPRESSION);
-      }
-
-      Parser_advance(par);
-      else_branch = Expr_();
-      err = Parser_parse_expr(else_branch, par, 0);
-      if (err)
-        return err;
-    }
-
-    res->kind = EXPR_IF;
-    res->if_node.cond = cond;
-    res->if_node.then_branch = then_branch;
-    res->if_node.else_branch = else_branch;
-  } else if (tok->kind == TOKEN_READ) {
-    res->kind = EXPR_READ;
-  } else if (tok->kind == TOKEN_PRINT) {
-    Parser_advance(par);
-
-    value = Expr_();
-    err = Parser_parse_expr(value, par, 0);
-    if (err)
-      return err;
-
-    res->kind = EXPR_PRINT;
-    res->print.value = value;
-  } else {
-    fprintf(stderr, "unexpected token: %s\n", token_label(tok));
-    return PARSER_UNEXPECTED_TOKEN;
-  }
-  res->token = first;
+int parse_literal(Token *tok, Expr *res, Parser *par) {
+  res->kind = EXPR_LITERAL;
+  res->literal = tok;
   return 0;
 }
 
-int Parser_parse_expr(Expr *ls, Parser *par, uint8_t min_bp) {
-  Expr *rs;
-  Expr *res = NULL;
-  Token *op, *first;
-  uint8_t bp;
-  int err;
+int parse_unary(Token *tok, Expr *res, Parser *par) {
+  uint8_t bp = get_binding_power(tok->kind);
+  if (tok->flags & TOKEN_FLAG_RIGHT_ASSOCIATIVE)
+    bp -= 1;
 
-  first = Parser_cur(par);
-  err = Parser_parse_nud(ls, par);
+  advance();
+
+  Expr *in = Expr_();
+  int err = parse_expr(in, par, bp);
   if (err)
     return err;
 
-  while (!((op = Parser_peek(par))->flags & TOKEN_FLAG_BREAKING)) {
-    if (!(op->flags & TOKEN_FLAG_OPERATOR)) {
-      expect("operator", op, PARSER_EXPECTED_OPERATOR);
-    }
+  res->kind = EXPR_UNARY;
+  res->unary.op = tok;
+  res->unary.in = in;
+  return 0;
+}
 
-    bp = get_binding_power(op->kind);
+int parse_group(Token *tok, Expr *res, Parser *par) {
+  advance();
+
+  Expr *in = Expr_();
+  int err = parse_expr(in, par, 0);
+  if (err)
+    return err;
+
+  Token *peeked = peek();
+  expect(peeked, TOKEN_R_PAREN, "closing ')'");
+  advance();
+
+  res->kind = EXPR_GROUP;
+  res->group.in = in;
+  return 0;
+}
+
+int parse_ident(Token *tok, Expr *res, Parser *par) {
+  res->kind = EXPR_IDENT;
+  res->ident = tok;
+  return 0;
+}
+
+int parse_block(Token *tok, Expr *res, Parser *par) {
+  // consume(tok, TOKEN_L_CURLY);
+  advance();
+
+  do {
+    Expr *line = Expr_();
+
+    int err = parse_line(line, par);
+    if (err)
+      return err;
+
+    // local pointer!
+    tok = peek();
+
+    da_add(&res->block, line);
+  } while (par->cur < par->toks->len && tok->kind != TOKEN_R_CURLY);
+
+  expect(tok, TOKEN_R_CURLY, "closing '}'");
+  advance();
+
+  res->kind = EXPR_BLOCK;
+  return 0;
+}
+
+int parse_parent_access(Token *tok, Expr *res, Parser *par) {
+  uint32_t level = 0;
+  do {
+    level++;
+    tok = advance();
+  } while (current()->kind == TOKEN_HAT);
+
+  expect(tok, TOKEN_IDENT, "identifier");
+
+  res->kind = EXPR_PARENT;
+  res->parent.level = level;
+  res->parent.ident = tok;
+  return 0;
+}
+
+int parse_if(Token *tok, Expr *res, Parser *par) {
+  consume(tok, TOKEN_IF);
+
+  Expr *cond = Expr_();
+  int err = parse_expr(cond, par, 0);
+  if (err)
+    return err;
+
+  Token *peeked = peek();
+  expect_block(peeked, "if");
+  advance();
+
+  Expr *then_branch = Expr_();
+  err = parse_block(peeked, then_branch, par);
+  if (err)
+    return err;
+
+  Expr *else_branch = NULL;
+  peeked = peek();
+
+  if (peeked->kind == TOKEN_ELSE) {
+    advance();
+
+    peeked = peek();
+    expect_block(peeked, "else");
+    advance();
+
+    else_branch = Expr_();
+    err = parse_block(peeked, else_branch, par);
+    if (err)
+      return err;
+  }
+
+  res->kind = EXPR_IF;
+  res->if_node.cond = cond;
+  res->if_node.then_branch = then_branch;
+  res->if_node.else_branch = else_branch;
+  return 0;
+}
+
+int parse_definition(Token *tok, Expr *res, Parser *par) {
+  TODO("parse correct syntax: Symbol :: kind { body } or var: @type = value");
+  TypePattern type = {0};
+  int err = parse_type_pattern(&type, par);
+  if (err)
+    return err;
+
+  Token *peeked = peek();
+
+  expect(peeked, TOKEN_IDENT, "identifier");
+  tok = advance(); // rest of type
+
+  peeked = peek();
+  if (peeked->kind == TOKEN_EQUAL) {
+    consume(tok, TOKEN_IDENT);
+    consume(peeked, TOKEN_EQUAL);
+
+    Expr *value = Expr_();
+    err = parse_expr(value, par, 0);
+    if (err)
+      return err;
+
+    res->decl.value = value;
+  }
+
+  res->kind = EXPR_DECL;
+  res->decl.ident = tok;
+  res->decl.type = type;
+  return 0;
+}
+
+int parse_while(Token *tok, Expr *res, Parser *par) {
+  advance();
+
+  Expr *cond = Expr_();
+  int err = parse_expr(cond, par, 0);
+  if (err)
+    return err;
+
+  Token *peeked = peek();
+  expect_block(peeked, "while");
+  advance();
+
+  Expr *body = Expr_();
+  err = parse_block(peeked, body, par);
+  if (err)
+    return err;
+
+  Expr *then_branch = NULL;
+  if (peek()->kind == TOKEN_THEN) {
+    advance();
+
+    peeked = peek();
+    expect_block(peeked, "then");
+    advance();
+
+    then_branch = Expr_();
+    err = parse_block(peeked, then_branch, par);
+    if (err)
+      return err;
+  }
+
+  Expr *else_branch = NULL;
+  if (peek()->kind == TOKEN_ELSE) {
+    advance();
+
+    peeked = peek();
+    expect_block(peeked, "else");
+    advance();
+
+    else_branch = Expr_();
+    err = parse_block(peeked, else_branch, par);
+    if (err)
+      return err;
+  }
+
+  res->kind = EXPR_WHILE;
+  res->while_node.cond = cond;
+  res->while_node.body = body;
+  res->while_node.then_branch = then_branch;
+  res->while_node.else_branch = else_branch;
+  return 0;
+}
+
+int parse_type_pattern(TypePattern *res, Parser *par) {
+  Token *tok = current();
+  expect(tok, TOKEN_AT, "'@'");
+
+  tok = advance();
+  expect(tok, TOKEN_IDENT, "type identifier");
+  res->name = token_sv(tok);
+
+  Token *peeked = peek();
+  while (peeked->kind == TOKEN_STAR) {
+    res->ptr_count++;
+    advance();
+    peeked = peek();
+  }
+
+  return 0;
+}
+
+int parse_nud(Expr *res, Parser *par) {
+  Token *tok = current();
+  res->token = tok;
+
+  if (tok->kind == TOKEN_INVALID)
+    error(PARSER_INVALID_TOKEN, tok, "invalid token: %s", token_label(tok));
+
+  else if (tok->flags & TOKEN_FLAG_CONSTANT) {
+    return parse_literal(tok, res, par);
+  } else if (tok->flags & TOKEN_FLAG_UNARY) {
+    return parse_unary(tok, res, par);
+  } else if (tok->kind == TOKEN_L_PAREN) {
+    return parse_group(tok, res, par);
+  } else if (tok->kind == TOKEN_IDENT) {
+    return parse_ident(tok, res, par);
+  } else if (tok->kind == TOKEN_L_CURLY) {
+    return parse_block(tok, res, par);
+  } else if (tok->kind == TOKEN_HAT) {
+    return parse_parent_access(tok, res, par);
+  } else if (tok->kind == TOKEN_IF) {
+    return parse_if(tok, res, par);
+  } else {
+    error(PARSER_UNEXPECTED_TOKEN, tok,
+      "unexpected token: %s\n", token_label(tok));
+  }
+  return 0;
+}
+
+int parse_expr(Expr *ls, Parser *par, uint8_t min_bp) {
+  Token *first = current();
+  int err = parse_nud(ls, par);
+  if (err)
+    return err;
+
+  Expr *res = NULL;
+  Token *op;
+  while (!((op = peek())->flags & TOKEN_FLAG_BREAKING)) {
+    expect_flag(op, TOKEN_FLAG_OPERATOR, "expected operator");
+
+    uint8_t bp = get_binding_power(op->kind);
     if (op->flags & TOKEN_FLAG_RIGHT_ASSOCIATIVE)
       bp -= 1;
 
@@ -177,11 +337,11 @@ int Parser_parse_expr(Expr *ls, Parser *par, uint8_t min_bp) {
       break;
 
     // to figure out: why do we need two advances?
-    Parser_advance(par);
-    Parser_advance(par);
+    advance();
+    advance();
 
-    rs = Expr_();
-    err = Parser_parse_expr(rs, par, bp);
+    Expr *rs = Expr_();
+    err = parse_expr(rs, par, bp);
     if (err)
       return err;
 
@@ -199,117 +359,34 @@ int Parser_parse_expr(Expr *ls, Parser *par, uint8_t min_bp) {
   return 0;
 }
 
-int Parser_parse_line(Expr *res, Parser *par) {
-  int err;
-  Token *tok, *peeked, *first;
-  Expr *value;
-
-  tok = Parser_cur(par);
-  first = tok;
+// a line is like a statement, expression and then a TOKEN_NEWLINE
+int parse_line(Expr *res, Parser *par) {
+  Token *tok = current();
   while (tok->flags & TOKEN_FLAG_FINISHER)
-    tok = Parser_advance(par);
+    tok = advance();
 
+  int err = 0;
+  Token *first = tok;
   if (!(tok->flags & TOKEN_FLAG_STARTER)) {
-parse_expr:
-    err = Parser_parse_expr(res, par, 0);
+    err = parse_expr(res, par, 0);
     if (err)
       return err;
 
     goto finish_line;
   }
   switch (tok->kind) {
-  case TOKEN_AT: {
-    TypePattern type = {0};
-    err = Parser_parse_type(&type, par);
-    if (err)
-      return err;
-
-    peeked = Parser_peek(par);
-
-    if (peeked->kind != TOKEN_IDENT) {
-      expect("identifier", peeked, PARSER_EXPECTED_IDENTIFIER);
-    }
-
-    tok = Parser_advance(par); // rest of type
-    peeked = Parser_peek(par);
-    if (peeked->kind == TOKEN_EQUAL) {
-      Parser_advance(par); // identifier
-      Parser_advance(par); // '='
-
-      value = Expr_();
-      err = Parser_parse_expr(value, par, 0);
+  case TOKEN_IDENT: {
+    Token *peeked = peek();
+    if (peeked->kind != TOKEN_COLLON_X2) {
+      err = parse_expr(res, par, 0);
       if (err)
-        return err;
-
-      res->decl.value = value;
+        TODO("find safe spot!\n");
+      goto finish_line;
     }
-
-    res->kind = EXPR_DECL;
-    res->decl.ident = tok;
-    res->decl.type = type;
-
-  } break; // case AT (variable declaration)
+    return parse_definition(tok, res, par);
+  } break;
   case TOKEN_WHILE:
-    Parser_advance(par);
-
-    Expr *cond = Expr_();
-    err = Parser_parse_expr(cond, par, 0);
-    if (err)
-      return err;
-
-    peeked = Parser_peek(par);
-    if (peeked->flags & TOKEN_FLAG_STARTER) {
-      expect("block after `while`", peeked, PARSER_EXPECTED_EXPRESSION);
-    }
-    Parser_advance(par);
-
-    Expr *body = Expr_();
-    err = Parser_parse_expr(body, par, 0);
-    if (err)
-      return err;
-
-    Expr *then_branch = NULL;
-    peeked = Parser_peek(par);
-
-    if (peeked->kind == TOKEN_THEN) {
-      Parser_advance(par);
-
-      peeked = Parser_peek(par);
-      if (peeked->flags & TOKEN_FLAG_STARTER) {
-        expect("block after `then`", peeked, PARSER_EXPECTED_EXPRESSION);
-      }
-
-      Parser_advance(par);
-      then_branch = Expr_();
-      err = Parser_parse_expr(then_branch, par, 0);
-      if (err)
-        return err;
-    }
-
-    Expr *else_branch = NULL;
-    peeked = Parser_peek(par);
-
-    if (peeked->kind == TOKEN_ELSE) {
-      Parser_advance(par);
-
-      peeked = Parser_peek(par);
-      if (peeked->flags & TOKEN_FLAG_STARTER) {
-        expect("block after `else`", peeked, PARSER_EXPECTED_EXPRESSION);
-      }
-
-      Parser_advance(par);
-      else_branch = Expr_();
-      err = Parser_parse_expr(else_branch, par, 0);
-      if (err)
-        return err;
-    }
-
-    res->kind = EXPR_WHILE;
-    res->while_node.cond = cond;
-    res->while_node.body = body;
-    res->while_node.then_branch = then_branch;
-    res->while_node.else_branch = else_branch;
-    break;
+    return parse_while(tok, res, par);
   case TOKEN_BREAK:
     res->kind = EXPR_BREAK;
     break;
@@ -320,34 +397,34 @@ parse_expr:
   }
 
 finish_line:
-  if (!((peeked = Parser_peek(par))->flags & TOKEN_FLAG_FINISHER)) {
-    expect("new line or ';'", peeked, PARSER_EXPECTED_FINISH);
-  }
-
-  Parser_advance(par);
+  expect_flag(peek(), TOKEN_FLAG_FINISHER, "new line or ';'");
+  advance();
   res->token = first;
   return 0;
 }
 
-int Parser_parse_type(TypePattern *res, Parser *par) {
-  Token *tok = Parser_cur(par);
-  if (tok->kind != TOKEN_AT) {
-    expect("'@'", tok, PARSER_EXPECTED_TYPE);
-  }
+int parse_program(Parser *par) {
+  Token *tok = NULL;
+  while ((tok = current())->kind != TOKEN_EOF) {
+    Expr *node = Expr_();
 
-  tok = Parser_advance(par);
-  if (tok->kind != TOKEN_IDENT) {
-    expect("type name", tok, PARSER_EXPECTED_TYPE);
-  }
-  res->name = token_sv(tok);
+    int err = parse_line(node, par);
+    if (err > 0) {
+      Token *t;
+      da_for(t, par->toks) {
+        fprintf(stderr, "token #%zu: %s,", i_t+1, token_label(t));
+        if (i_t == par->cur)
+          fprintf(stderr, " // current\n");
+        else
+          fprintf(stderr, "\n");
+      }
+      return err;
+    } else if (err < 0)
+      break;
 
-  Token *peeked = Parser_peek(par);
-  while (peeked->kind == TOKEN_STAR) {
-    res->ptr_count++;
-    Parser_advance(par);
-    peeked = Parser_peek(par);
+    da_add(&par->ast, node);
+    advance();
   }
-
   return 0;
 }
 
@@ -407,8 +484,6 @@ void Expr_free(Expr *node) {
   case EXPR_PARENT:
   case EXPR_BREAK:
   case EXPR_CONTINUE:
-  case EXPR_READ:
-    break;
   case EXPR_BINARY:
     Expr_free(node->binary.ls);
     Expr_free(node->binary.rs);
@@ -439,17 +514,24 @@ void Expr_free(Expr *node) {
     Expr_free(node->while_node.then_branch);
     Expr_free(node->while_node.else_branch);
     break;
-  case EXPR_PRINT:
-    Expr_free(node->print.value);
+  case EXPR_ERROR:
+    // nothing to free here...
     break;
   }
   free(node);
 }
 
-Token *Parser_cur(Parser *par) { return &par->toks->dat[par->cur]; }
+Token *Parser_current(Parser *par) { return &par->toks->dat[par->cur]; }
 Token *Parser_peek(Parser *par) { return &par->toks->dat[par->cur+1]; }
-Token *Parser_next(Parser *par) { return &par->toks->dat[par->cur++]; }
+// bruh, `next()` is never used!
+// Token *Parser_next(Parser *par) { return &par->toks->dat[par->cur++]; }
 Token *Parser_advance(Parser *par) { return &par->toks->dat[++par->cur]; }
 
-#endif // RAIZ_PARSER_C
+#undef current
+#undef peek
+#undef advance
+#undef expect
+#undef expect_flag
+#undef expect_block
 
+#endif // RAIZ_PARSER_C
