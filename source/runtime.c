@@ -68,7 +68,7 @@ EvalResult eval(Expr *e, Scope *s) {
       res.value.data = value.data;
       break;
     default:
-      PANIC("invalid unary operator (token %s)\n", token_label(e->binary.op));
+      PANIC("invalid unary operator (token %s)\n", token_string(e->binary.op));
     }
     res.value.type = value.type;
     break;
@@ -152,7 +152,7 @@ EvalResult eval(Expr *e, Scope *s) {
       res.value.data = ls >> rs;
       break;
     default:
-      PANIC("invalid binary operator (token %s)\n", token_label(e->binary.op));
+      PANIC("invalid binary operator (%s)\n", token_name(e->binary.op->kind));
     }
     break;
   case EXPR_GROUP:
