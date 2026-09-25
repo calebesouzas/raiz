@@ -108,7 +108,7 @@ void print_errs(SemanticError_A *errs, char *file_path, size_t source_len) {
 #define TYPE1\
   size_t_int(e->type[1]->pattern.name.len), e->type[1]->pattern.name.ptr
 #define TYPE_PAT\
-  (e->type_pattern.ptr_count + e->type_pattern.name.len),\
+  size_t_int(e->type_pattern.ptr_count + e->type_pattern.name.len),\
   _type_pattern_to_str(e->type_pattern)
 
   SemanticError *e;
