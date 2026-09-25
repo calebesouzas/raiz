@@ -76,9 +76,6 @@ enum TokenFlags {
   X(TOKEN_BREAK,    TOKEN_FLAG_KEYWORD|TOKEN_FLAG_STARTER|TOKEN_FLAG_BREAKING)\
   X(TOKEN_CONTINUE, TOKEN_FLAG_KEYWORD|TOKEN_FLAG_STARTER|TOKEN_FLAG_BREAKING)\
 \
-  X(TOKEN_PRINT, TOKEN_FLAG_KEYWORD|TOKEN_FLAG_FUNCTION)\
-  X(TOKEN_READ,  TOKEN_FLAG_KEYWORD|TOKEN_FLAG_FUNCTION)\
-\
   X(TOKEN_NEWLINE, TOKEN_FLAG_BREAKING|TOKEN_FLAG_FINISHER)\
 \
   X(TOKEN_EOF, TOKEN_FLAG_BREAKING)
@@ -107,7 +104,7 @@ typedef struct {
 
   // metadata
   char *lexeme;
-  size_t start, line, len;
+  size_t start, line, column, len;
 } Token;
 da_make(Token_A, Token*);
 
@@ -118,17 +115,19 @@ typedef struct {
   char *source;
   size_t source_len;
 
-  char c;
+  char *line_start;
+  char *c;
   size_t i;
 
   // For `Token` metadata
-  size_t start, lines;
+  size_t start, lines, columns;
 } Lexer;
 
 Lexer Lexer_setup(Token_A *toks, char *source, size_t len);
 int Lexer_tokenize(Lexer *lex);
 
-char *token_label(Token *tok);
+char *token_string(Token *tok);
+char *token_name(enum TokenKind kind);
 bool token_keyword(Token *tok, char *ident, size_t len);
 size_t Token_distance(Token *from, Token *to);
 #define token_sv(tok) ((sv_t){.ptr = (tok)->lexeme, .len = (tok)->len})
@@ -149,8 +148,6 @@ const struct TokenKeywordTable KEYWORDS[] = {
   {"then", 4, TOKEN_THEN},
   {"break", 5, TOKEN_BREAK},
   {"continue", 8, TOKEN_CONTINUE},
-  {"print", 5, TOKEN_PRINT},
-  {"read", 4, TOKEN_READ},
   {"fun", 3, TOKEN_FUN},
 };
 

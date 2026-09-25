@@ -15,9 +15,9 @@ static bool skip_comments(Lexer *lex);
 int Lexer_tokenize(Lexer *lex) {
   Token_A *toks = lex->toks;
 
-  for (lex->c = lex->source[0]; Lexer_active(lex); advance()) {
+  for (lex->c = &lex->source[0]; Lexer_active(lex); advance()) {
     lex->start = lex->i;
-    switch (lex->c) {
+    switch (*lex->c) {
     case '+': add(tk(TOKEN_PLUS)); break;
     case '-': add(tk(TOKEN_MINUS)); break;
     case '*': add(tk(TOKEN_STAR)); break;
@@ -117,9 +117,9 @@ int Lexer_tokenize(Lexer *lex) {
         add(Lexer_ident(lex));
       } else {
         fprintf(stderr, "error [%zu](%zu): unhandled character 0x%02x",
-          lex->i, lex->lines, lex->c);
-        if (isprint(lex->c)) {
-          fprintf(stderr, " (character '%c')", lex->c);
+          lex->i, lex->lines, *lex->c);
+        if (isprint(*lex->c)) {
+          fprintf(stderr, " (character '%c')", *lex->c);
         }
         fputc('\n', stderr);
         return 1;
@@ -195,7 +195,7 @@ bool token_keyword(Token *tok, char *ident, size_t len) {
   return false;
 }
 
-char *token_label(Token *tok) {
+char *token_string(Token *tok) {
   switch (tok->kind) {
   case TOKEN_INVALID: return "invalid";
   case TOKEN_EOF: return "EOF";
@@ -205,16 +205,66 @@ char *token_label(Token *tok) {
   fprintf(stderr, "unknown token (id %d)\n", tok->kind); return NULL;
 }
 
+char *token_name(enum TokenKind kind) {
+  switch (kind) {
+  case TOKEN_INVALID: return "invalid";
+  case TOKEN_NUMBER: return "number";
+  case TOKEN_CHAR: return "character";
+  case TOKEN_IDENT: return "identifier";
+  case TOKEN_EQUAL: return "=";
+  case TOKEN_PLUS: return "+";
+  case TOKEN_MINUS: return "-";
+  case TOKEN_STAR: return "*";
+  case TOKEN_SLASH: return "/";
+  case TOKEN_EQUAL_X2: return "==";
+  case TOKEN_BANG: return "!";
+  case TOKEN_BANG_EQUAL: return "!=";
+  case TOKEN_AMPER: return "&";
+  case TOKEN_AMPER_X2: return "&&";
+  case TOKEN_PIPE: return "|";
+  case TOKEN_PIPE_X2: return "||";
+  case TOKEN_HAT: return "^";
+  case TOKEN_TILDE: return "~";
+  case TOKEN_LESS: return "<";
+  case TOKEN_LESS_X2: return "<<";
+  case TOKEN_LESS_EQUAL: return "<=";
+  case TOKEN_GREAT: return ">";
+  case TOKEN_GREAT_X2: return ">>";
+  case TOKEN_GREAT_EQUAL: return ">=";
+  case TOKEN_PERCENT: return "%";
+  case TOKEN_L_PAREN: return "(";
+  case TOKEN_R_PAREN: return ")";
+  case TOKEN_L_CURLY: return "{";
+  case TOKEN_R_CURLY: return "}";
+  case TOKEN_AT: return "@";
+  case TOKEN_COLLON: return ":";
+  case TOKEN_COLLON_X2: return "::";
+  case TOKEN_FUN: return "fun";
+  case TOKEN_TRUE: return "true";
+  case TOKEN_FALSE: return "false";
+  case TOKEN_IF: return "if";
+  case TOKEN_ELSE: return "else";
+  case TOKEN_THEN: return "then";
+  case TOKEN_WHILE: return "while";
+  case TOKEN_BREAK: return "break";
+  case TOKEN_CONTINUE: return "continue";
+  case TOKEN_NEWLINE: return "newline";
+  case TOKEN_EOF: return "eof";
+  }
+}
+
 size_t Token_distance(Token *from, Token *to) {
   return (size_t) ((uintptr_t) to - (uintptr_t) from);
 }
 
 Lexer Lexer_setup(Token_A *toks, char *source, size_t len) {
   Lexer lex = {0};
+  lex.line_start = source;
   lex.toks = toks;
   lex.source = source;
   lex.source_len = len > 0 ? len : strlen(source);
   lex.lines = 1;
+  lex.columns = 1;
   return lex;
 }
 
@@ -222,15 +272,18 @@ char Lexer_peek(Lexer *lex) {
   return lex->source[lex->i+1];
 }
 char Lexer_next(Lexer *lex) {
-  lex->c = lex->source[lex->i++];
-  return lex->c;
+  lex->c = &lex->source[lex->i++];
+  return *lex->c;
 }
 char Lexer_advance(Lexer *lex) {
-  lex->c = lex->source[++lex->i];
-  return lex->c;
+  lex->c = &lex->source[++lex->i];
+  if (*lex->c == '\n')
+    lex->line_start = lex->c;
+  lex->columns = (uintptr_t) (lex->c - lex->line_start) + 1;
+  return *lex->c;
 }
 char Lexer_cur(Lexer *lex) {
-  return lex->c;
+  return *lex->c;
 }
 bool Lexer_active(Lexer *lex) {
   return lex->i < lex->source_len;
@@ -247,6 +300,7 @@ void Lexer_add(Lexer *lex, Token tok) {
   tok.len = Lexer_len(lex) + 1;
   tok.start = lex->start;
   tok.line = lex->lines;
+  tok.column = lex->columns;
   da_add(lex->toks, tok);
 }
 
