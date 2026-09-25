@@ -16,6 +16,7 @@ But maybe you can find something interesting in here, I really don't know
 
 #include "cast.h"
 #include "macros.h"
+#include "debug.h"
 #include "dynamic_arrays.h"
 #include "types.h"
 #include "value.h"
