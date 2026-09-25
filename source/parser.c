@@ -9,6 +9,7 @@ int parse_block(Token *tok, Expr *res, Parser *par);
 int parse_parent_access(Token *tok, Expr *res, Parser *par);
 int parse_if(Token *tok, Expr *res, Parser *par);
 int parse_definition(Token *tok, Expr *res, Parser *par);
+int parse_function_definition(Token *tok, Expr *res, Parser *par);
 int parse_declaration(Token *tok, Expr *res, Parser *par);
 int parse_while(Token *tok, Expr *res, Parser *par);
 int parse_type_pattern(TypePattern *res, Parser *par);
@@ -45,7 +46,9 @@ do {\
 #define expect(__token, __kind, ...)\
 do {\
   if ((__token)->kind != (__kind)) {\
-    error(PARSER_EXPECTATION_FAILED, __token, __VA_ARGS__);\
+    error(PARSER_EXPECTATION_FAILED, __token,\
+      "expected '%s', found '%s'\n",\
+      token_name(__kind), token_string(__token));\
   }\
 } while (0)
 
@@ -61,8 +64,7 @@ do {\
 
 #define consume(__token, __kind)\
 do {\
-  expect(__token, __kind, "expected '%s', found '%s'\n",\
-    token_name(__kind), token_string(__token));\
+  expect(__token, __kind);\
   advance();\
 } while (0)
 
@@ -192,8 +194,45 @@ int parse_if(Token *tok, Expr *res, Parser *par) {
   return 0;
 }
 
+int parse_function_definition(Token *tok, Expr *res, Parser *par) {
+  expect(tok, TOKEN_IDENT, "identifier");
+
+  Token *peeked = peek();
+  advance();
+
+  expect_block(peeked, "fun");
+  advance();
+
+  Expr *body = Expr_();
+  int err = parse_block(peeked, body, par);
+  if (err)
+    return err;
+
+  res->def.kind = DEF_FUN;
+  res->def.fun.body = body;
+  return 0;
+}
+
 int parse_definition(Token *tok, Expr *res, Parser *par) {
-  TODO("parse definition");
+  expect(tok, TOKEN_IDENT, "identifier");
+  res->kind = EXPR_DEF;
+  res->ident = tok;
+
+  Token *peeked = peek();
+  expect(peeked, TOKEN_COLLON_X2, "'::'");
+  // no consume since they were checked
+  advance(); // identifier
+  advance(); // '::'
+
+  Token *variant = current();
+  expect_flag(variant, TOKEN_FLAG_DECLARATOR, "declarator");
+  switch (variant->kind) {
+  case TOKEN_FUN:
+    return parse_function_definition(tok, res, par);
+  default:
+    UNREACHABLE("should '%s' be a declarator?\n", token_string(variant));
+    break;
+  }
   return 0;
 }
 
@@ -431,7 +470,7 @@ int parse_program(Parser *par) {
         Expr_Error *err = &(*expr)->error;
         fprintf(stderr, "parser error [%zu](%zu:%zu): ",
           err->tok->start, err->tok->line, err->tok->column);
-        fprintf(stderr, "ID(%d): %s\n", err->code, err->msg);
+        fprintf(stderr, "%s\n", err->msg);
       }
       // Token *t;
       // da_for(t, par->toks) {
@@ -496,8 +535,6 @@ Expr *Expr_copy(Expr *src) {
 }
 
 void Expr_free(Expr *node) {
-  Expr **expr;
-
   if (node == NULL)
     return;
 
@@ -521,9 +558,16 @@ void Expr_free(Expr *node) {
     if (node->decl.value != NULL)
       Expr_free(node->decl.value);
     break;
+  case EXPR_DEF:
+    switch (node->def.kind) {
+    case DEF_FUN:
+      Expr_free(node->def.fun.body);
+      break;
+    }
+    break;
   case EXPR_BLOCK:
-    da_for(expr, &node->block) {
-      Expr_free(*expr);
+    da_iter(line, &node->block) {
+      Expr_free(*line);
     }
     break;
   case EXPR_IF:

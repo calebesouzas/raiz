@@ -28,9 +28,16 @@ int Lexer_tokenize(Lexer *lex) {
     case '~': add(tk(TOKEN_TILDE)); break;
     case '^': add(tk(TOKEN_HAT)); break;
     case '%': add(tk(TOKEN_PERCENT)); break;
-    case ':': add(tk(TOKEN_COLLON)); break;
     case '@': add(tk(TOKEN_AT)); break;
     case '#': add(tk(TOKEN_HASH)); break;
+    case ':':
+      if (peek() == ':') {
+        advance();
+        add(tk(TOKEN_COLLON_X2));
+      } else {
+        add(tk(TOKEN_COLLON));
+      }
+      break;
     case '=':
       if (peek() == '=') {
         advance();

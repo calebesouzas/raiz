@@ -2,7 +2,11 @@
 #define RAIZ_PROGRAM_C
 
 int Program_build(Program *pro) {
-  return parse_program(pro->par);
+  int err = parse_program(pro->par);
+  if (err)
+    return err;
+  pro->code = pro->par->ast;
+  return 0;
 }
 
 Value Program_run(Program *pro) {
@@ -17,13 +21,8 @@ Value Program_run(Program *pro) {
 }
 
 void Program_check(Program *pro, SemanticError_A *errs, size_t max_errs) {
-  Expr **expr;
   Scope *sco = Scope_copy(pro->sco);
-  da_for(expr, &pro->code) {
-    (void) Expr_check(*expr, errs, sco, NULL);
-    if (errs->len > max_errs)
-      return;
-  }
+  Semantics_check(&pro->code, sco, errs, max_errs);
   Scope_free(sco);
 }
 

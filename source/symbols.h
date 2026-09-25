@@ -6,6 +6,7 @@ const int SYM_ANY = 0;
 typedef enum {
     SYM_VAR = 1,
     SYM_TYPE,
+    SYM_FUN,
 } SymbolKind;
 
 typedef struct Symbol {
@@ -14,6 +15,7 @@ typedef struct Symbol {
   union {
     Value var;
     Type *type;
+    Fun fun;
   };
 } Symbol;
 

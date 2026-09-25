@@ -28,7 +28,6 @@ But maybe you can find something interesting in here, I really don't know
 #include "semantics.h"
 #include "program.h"
 
-void print_errs(SemanticError_A *errs, char *file_path, size_t source_len);
 int main(int argc, char **argv) {
   if (argc <= 1) {
     printf("usage: %s <file>\n", argv[0]);
@@ -76,7 +75,7 @@ int main(int argc, char **argv) {
   SemanticError_A errs = {0};
   Program_check(&pro, &errs, 20);
   if (errs.len > 0) {
-    print_errs(&errs, argv[1], code.len);
+    Semantics_print_errs(&errs, argv[1], code.len);
     return (int)errs.len;
   }
   free(errs.dat);
@@ -97,89 +96,6 @@ static char *_type_pattern_to_str(TypePattern pattern) {
   strncpy(Temp_Buffer + i, pattern.name.ptr, pattern.name.len);
 
   return Temp_Buffer;
-}
-
-void print_errs(SemanticError_A *errs, char *file_path, size_t source_len) {
-#define SPEC "%s: [%zu](%zu) error:\n"
-#define DAT file_path, e->token->start, e->token->line
-#define TOK size_t_int(e->token->len), e->token->lexeme
-#define P(...) fprintf(stderr, __VA_ARGS__)
-#define TYPE0\
-  size_t_int(e->type[0]->pattern.name.len), e->type[0]->pattern.name.ptr
-#define TYPE1\
-  size_t_int(e->type[1]->pattern.name.len), e->type[1]->pattern.name.ptr
-#define TYPE_PAT\
-  size_t_int(e->type_pattern.ptr_count + e->type_pattern.name.len),\
-  _type_pattern_to_str(e->type_pattern)
-
-  SemanticError *e;
-
-  da_for(e, errs) {
-    if (e->token == NULL)
-      e->token = e->expr->token;
-
-    switch (e->code) {
-    case ERR_SEM_UNDEFINED_SYMBOL:
-      P(SPEC"undefined symbol '%.*s'\n", DAT, TOK);
-      break;
-    case ERR_SEM_ALREADY_DECLARED_SYMBOL:
-      P(SPEC"already declared symbol '%.*s'\n", DAT, TOK);
-      break;
-    case ERR_SEM_ASSIGN_TO_FIX:
-      P(SPEC"assigned to fixed variable '%.*s'\n", DAT, TOK);
-      break;
-    case ERR_SEM_ASSIGN_TO_RVALUE:
-      P(SPEC"assigned to R-value '%.*s'\n", DAT, TOK);
-      break;
-    case ERR_SEM_DECL_AFTER_IF_ELSE:
-      P(SPEC"declaration after if-else\n", DAT);
-      break;
-    case ERR_SEM_DECL_AFTER_WHILE_THEN_ELSE:
-      P(SPEC"declaration after while-then-else\n", DAT);
-      break;
-    case ERR_SEM_INCOMPATIBLE_TYPES:
-      P(SPEC"incompatible types: '@%.*s' and '@%.*s'\n", DAT, TYPE0, TYPE1);
-      break;
-    case ERR_SEM_LOOP_KEYWORD_OUTSIDE_LOOP:
-      P(SPEC"used '%.*s' keyword outside loop\n", DAT, TOK);
-      break;
-    case ERR_SEM_INCOMPATIBLE_OPERATOR:
-      P(SPEC"type '%.*s' doesn't work with '%.*s' operator\n", DAT, TYPE0, TOK);
-      break;
-    case ERR_SEM_UNDEFINED_TYPE:
-      P(SPEC"undefined type '@%.*s'\n", DAT, TYPE_PAT);
-      break;
-    case ERR_SEM_DEREF_NON_POINTER:
-      P(SPEC"attempt to dereference type '@%.*s' which is not a pointer\n",
-        DAT, TYPE0);
-      break;
-    }
-
-    char *s = e->token->lexeme;
-    // find line beginning
-    if (e->token->line > 1) {
-      while (*s != '\n') s--;
-      s++;
-    } else {
-      s -= e->token->start;
-    }
-
-    // get line length
-    int i = -1;
-    while (s[++i] != '\n' && i < (source_len - e->token->start));
-
-    fprintf(stderr,
-      "%.*s\n",
-      i, s);
-
-    for (char *sp = s; sp != e->token->lexeme; sp++) {
-      fputc(' ', stderr);
-    }
-    for (size_t n = 0; n < e->token->len; n++) {
-      fputc('^', stderr);
-    }
-    fputc('\n', stderr);
-  }
 }
 
 #include "lexer.c"

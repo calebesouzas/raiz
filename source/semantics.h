@@ -14,6 +14,7 @@ typedef struct {
     ERR_SEM_LOOP_KEYWORD_OUTSIDE_LOOP,
     ERR_SEM_INCOMPATIBLE_OPERATOR,
     ERR_SEM_DEREF_NON_POINTER,
+    ERR_SEM_REDEFINITION,
   } code;
   // context:
   Token *token;
@@ -34,5 +35,7 @@ typedef struct {
   } data;
   Type *type;
 } SemanticContext;
+
+void Semantics_print_errs(SemanticError_A *errs, char *file_path, size_t source_len);
 
 #endif /* RAIZ_SEMANTICS_H */

@@ -9,6 +9,7 @@ typedef enum {
   EXPR_UNARY,
   EXPR_GROUP,
   EXPR_IDENT,
+  EXPR_DEF,
   EXPR_DECL,
   EXPR_BLOCK,
   EXPR_PARENT,
@@ -18,6 +19,10 @@ typedef enum {
   EXPR_CONTINUE,
   EXPR_ERROR,
 } ExprKind;
+
+typedef struct {
+  struct Expr *body;
+} Fun;
 
 typedef struct {
   Token *op;
@@ -35,15 +40,25 @@ typedef struct {
 } Expr_Group;
 
 typedef struct {
+  struct Expr **dat;
+  size_t len, cap;
+} Expr_Block;
+
+typedef struct {
   Token *ident;
   struct Expr *value;
   TypePattern type;
 } Expr_Decl;
 
 typedef struct {
-  struct Expr **dat;
-  size_t len, cap;
-} Expr_Block;
+  Token *ident;
+  enum {
+    DEF_FUN,
+  } kind;
+  union {
+    Fun fun;
+  };
+} Expr_Def;
 
 typedef struct {
   uint32_t level;
@@ -73,6 +88,7 @@ typedef struct Expr {
     Expr_Group group;
     Token *ident;
     Expr_Decl decl;
+    Expr_Def def;
     Expr_Block block;
     Expr_Parent parent;
     Expr_If_node if_node;

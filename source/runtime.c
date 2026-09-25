@@ -163,8 +163,6 @@ EvalResult eval(Expr *e, Scope *s) {
     res.value = sym->var;
     break;
   case EXPR_DECL:
-    sym = Scope_search_single_level(s, token_sv(e->decl.ident));
-
     value = e->decl.value != NULL ? eval(e->decl.value, s).value : (Value){0};
     new_symbol.kind = SYM_VAR;
     new_symbol.var = value;
@@ -172,6 +170,11 @@ EvalResult eval(Expr *e, Scope *s) {
     Scope_insert(s, new_symbol);
 
     res.value = new_symbol.var;
+    break;
+  case EXPR_DEF:
+    new_symbol.kind = SYM_FUN;
+    new_symbol.fun = e->def.fun;
+    Scope_insert(s, new_symbol);
     break;
   case EXPR_BLOCK:
     s_in = Scope_new(s);
