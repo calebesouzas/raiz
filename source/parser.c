@@ -9,6 +9,7 @@ int parse_block(Token *tok, Expr *res, Parser *par);
 int parse_parent_access(Token *tok, Expr *res, Parser *par);
 int parse_if(Token *tok, Expr *res, Parser *par);
 int parse_definition(Token *tok, Expr *res, Parser *par);
+int parse_declaration(Token *tok, Expr *res, Parser *par);
 int parse_while(Token *tok, Expr *res, Parser *par);
 int parse_type_pattern(TypePattern *res, Parser *par);
 int parse_nud(Expr *res, Parser *par);
@@ -34,7 +35,10 @@ do {\
   err_expr->kind = EXPR_ERROR;\
   err_expr->error.tok = __token;\
   err_expr->error.code = __code;\
+  snprintf(err_expr->error.msg, sizeof(err_expr->error.msg), __VA_ARGS__);\
   da_add(&par->errs, err_expr);\
+  debug("parse error (with token '%s' at (%zu:%zu))\n",\
+    token_string(__token), (__token)->line, (__token)->column);\
   return __code;\
 } while (0)
 
@@ -189,20 +193,27 @@ int parse_if(Token *tok, Expr *res, Parser *par) {
 }
 
 int parse_definition(Token *tok, Expr *res, Parser *par) {
-  TODO("parse correct syntax: Symbol :: kind { body } or var: @type = value");
+  TODO("parse definition");
+  return 0;
+}
+
+int parse_declaration(Token *tok, Expr *res, Parser *par) {
+  expect(tok, TOKEN_IDENT, "identifier");
+
+  Token *peeked = peek();
+  expect(peeked, TOKEN_COLLON, "declaration");
+
+  consume(tok, TOKEN_IDENT);
+  consume(peeked, TOKEN_COLLON);
+
   TypePattern type = {0};
   int err = parse_type_pattern(&type, par);
   if (err)
     return err;
 
-  Token *peeked = peek();
-
-  expect(peeked, TOKEN_IDENT, "identifier");
-  tok = advance(); // rest of type
-
   peeked = peek();
   if (peeked->kind == TOKEN_EQUAL) {
-    consume(tok, TOKEN_IDENT);
+    advance();
     consume(peeked, TOKEN_EQUAL);
 
     Expr *value = Expr_();
@@ -295,7 +306,7 @@ int parse_nud(Expr *res, Parser *par) {
   res->token = tok;
 
   if (tok->kind == TOKEN_INVALID)
-    error(PARSER_INVALID_TOKEN, tok, "invalid token: %s", token_label(tok));
+    error(PARSER_INVALID_TOKEN, tok, "invalid token");
 
   else if (tok->flags & TOKEN_FLAG_CONSTANT) {
     return parse_literal(tok, res, par);
@@ -313,7 +324,7 @@ int parse_nud(Expr *res, Parser *par) {
     return parse_if(tok, res, par);
   } else {
     error(PARSER_UNEXPECTED_TOKEN, tok,
-      "unexpected token: %s\n", token_label(tok));
+      "unexpected token: '%s'\n", token_string(tok));
   }
   return 0;
 }
@@ -362,8 +373,11 @@ int parse_expr(Expr *ls, Parser *par, uint8_t min_bp) {
 // a line is like a statement, expression and then a TOKEN_NEWLINE
 int parse_line(Expr *res, Parser *par) {
   Token *tok = current();
-  while (tok->flags & TOKEN_FLAG_FINISHER)
+  while (tok->flags & TOKEN_FLAG_FINISHER && tok->kind != TOKEN_EOF)
     tok = advance();
+
+  if (tok->kind == TOKEN_EOF)
+    return -1;
 
   int err = 0;
   Token *first = tok;
@@ -377,13 +391,16 @@ int parse_line(Expr *res, Parser *par) {
   switch (tok->kind) {
   case TOKEN_IDENT: {
     Token *peeked = peek();
-    if (peeked->kind != TOKEN_COLLON_X2) {
+    if (peeked->kind == TOKEN_COLLON_X2) {
+      return parse_definition(tok, res, par);
+    } else if (peeked->kind == TOKEN_COLLON) {
+      return parse_declaration(tok, res, par);
+    } else {
       err = parse_expr(res, par, 0);
       if (err)
         TODO("find safe spot!\n");
       goto finish_line;
     }
-    return parse_definition(tok, res, par);
   } break;
   case TOKEN_WHILE:
     return parse_while(tok, res, par);
@@ -393,7 +410,7 @@ int parse_line(Expr *res, Parser *par) {
   case TOKEN_CONTINUE:
     res->kind = EXPR_CONTINUE;
     break;
-  default: UNREACHABLE("token %s\n", token_label(tok));
+  default: UNREACHABLE("token %s\n", token_name(tok->kind));
   }
 
 finish_line:
@@ -408,19 +425,25 @@ int parse_program(Parser *par) {
   while ((tok = current())->kind != TOKEN_EOF) {
     Expr *node = Expr_();
 
-    int err = parse_line(node, par);
-    if (err > 0) {
-      Token *t;
-      da_for(t, par->toks) {
-        fprintf(stderr, "token #%zu: %s,", i_t+1, token_label(t));
-        if (i_t == par->cur)
-          fprintf(stderr, " // current\n");
-        else
-          fprintf(stderr, "\n");
+    int res = parse_line(node, par);
+    if (res > 0) {
+      da_iter(expr, &par->errs) {
+        Expr_Error *err = &(*expr)->error;
+        fprintf(stderr, "parser error [%zu](%zu:%zu): ",
+          err->tok->start, err->tok->line, err->tok->column);
+        fprintf(stderr, "ID(%d): %s\n", err->code, err->msg);
       }
-      return err;
-    } else if (err < 0)
-      break;
+      // Token *t;
+      // da_for(t, par->toks) {
+      //   fprintf(stderr, "token #%zu: %s,", i_t+1, token_string(t));
+      //   if (i_t == par->cur)
+      //     fprintf(stderr, " // current\n");
+      //   else
+      //     fprintf(stderr, "\n");
+      // }
+      return res;
+    } else if (res < 0)
+      continue;
 
     da_add(&par->ast, node);
     advance();
