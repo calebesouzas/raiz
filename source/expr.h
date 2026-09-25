@@ -61,6 +61,7 @@ typedef struct {
 typedef struct {
   Token *tok;
   int code;
+  char msg[128];
 } Expr_Error;
 
 typedef struct Expr {
