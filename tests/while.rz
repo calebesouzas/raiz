@@ -1,7 +1,8 @@
-@int i = 0
-@int max = 15
-@int point = 18
+i: @int = 0
+max: @int = 15
+point: @int = 18
 
+res: @char
 while i < max {
   if i == point {
     break
@@ -9,7 +10,7 @@ while i < max {
 
   i = i + 1
 } then {
-  print 'Y'
+  res = 'Y'
 } else {
-  print 'N'
+  res = 'N'
 }

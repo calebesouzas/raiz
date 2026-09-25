@@ -1,5 +1,5 @@
-@int x = 69
+x: @int = 69
 
-@int *ptr = &x
+ptr: @int* = &x
 
 print *ptr

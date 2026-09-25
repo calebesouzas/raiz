@@ -1,9 +1,7 @@
-@bool bool = true
+bool: @bool = true
 
-@int i = if bool {
+i: @int = if bool {
   69
 } else {
   96
 }
-
-print i
