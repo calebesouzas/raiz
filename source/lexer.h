@@ -62,6 +62,7 @@ enum TokenFlags {
   X(TOKEN_R_CURLY, TOKEN_FLAG_GROUPING|TOKEN_FLAG_BREAKING)\
 \
   X(TOKEN_AT,        0)\
+  X(TOKEN_HASH,      0)\
   X(TOKEN_COLLON,    0)\
   X(TOKEN_COLLON_X2, 0)\
 \

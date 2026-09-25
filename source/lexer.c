@@ -30,6 +30,7 @@ int Lexer_tokenize(Lexer *lex) {
     case '%': add(tk(TOKEN_PERCENT)); break;
     case ':': add(tk(TOKEN_COLLON)); break;
     case '@': add(tk(TOKEN_AT)); break;
+    case '#': add(tk(TOKEN_HASH)); break;
     case '=':
       if (peek() == '=') {
         advance();
@@ -237,6 +238,7 @@ char *token_name(enum TokenKind kind) {
   case TOKEN_L_CURLY: return "{";
   case TOKEN_R_CURLY: return "}";
   case TOKEN_AT: return "@";
+  case TOKEN_HASH: return "#";
   case TOKEN_COLLON: return ":";
   case TOKEN_COLLON_X2: return "::";
   case TOKEN_FUN: return "fun";
