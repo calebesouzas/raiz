@@ -22,6 +22,13 @@ typedef enum {
 } ExprKind;
 
 typedef struct {
+  sv_t name;
+  TypePattern pattern;
+} Param;
+da_make(Param_A, Param*);
+
+typedef struct {
+  Param_A params;
   struct Expr *body;
 } Fun;
 

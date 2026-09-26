@@ -4,9 +4,8 @@ hello :: fun {
 
 hello()
 
-/*
-  add :: fun (x @int, y @int) @int {
-    return x + y
-  }
-  sum: @int = add(32, 64)
-*/
+add :: fun (x @int, y @int) {
+  x + y
+}
+
+add(3, 4)

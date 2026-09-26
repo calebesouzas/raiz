@@ -13,6 +13,8 @@ int parse_function_definition(Token *tok, Expr *res, Parser *par);
 int parse_declaration(Token *tok, Expr *res, Parser *par);
 int parse_while(Token *tok, Expr *res, Parser *par);
 int parse_type_pattern(TypePattern *res, Parser *par);
+int parse_param(Param *res, Parser *par);
+int parse_params(Param_A *res, Parser *par);
 int parse_nud(Expr *res, Parser *par);
 int parse_expr(Expr *res, Parser *par, uint8_t min_bp);
 int parse_line(Expr *res, Parser *par);
@@ -116,7 +118,6 @@ int parse_function_call(Token *tok, Expr *res, Parser *par) {
   res->funcall.ident = tok;
   tok = current();
 
-  tok = current();
   ExprNode_A args = {0};
   while (tok->flags & TOKEN_FLAG_STARTER) {
     Expr *arg = Expr_();
@@ -131,7 +132,7 @@ int parse_function_call(Token *tok, Expr *res, Parser *par) {
   }
   memcpy(&res->funcall.args, &args, sizeof(res->funcall.args));
 
-  consume(tok, TOKEN_R_PAREN);
+  // consume(tok, TOKEN_R_PAREN);
   res->kind = EXPR_FUNCALL;
   return 0;
 }
@@ -224,17 +225,63 @@ int parse_if(Token *tok, Expr *res, Parser *par) {
   return 0;
 }
 
-int parse_function_definition(Token *tok, Expr *res, Parser *par) {
-  expect(tok, TOKEN_IDENT, "identifier");
+int parse_param(Param *res, Parser *par) {
+  Token *tok = current();
+  consume(tok, TOKEN_IDENT);
 
-  Token *peeked = peek();
-  advance();
+  res->name = token_sv(tok);
 
-  expect_block(peeked, "fun");
+  int err = parse_type_pattern(&res->pattern, par);
+  if (err)
+    return err;
+  return 0;
+}
+
+int parse_params(Param_A *res, Parser *par) {
+  Token *tok = current();
+  if (tok->kind == TOKEN_L_CURLY)
+    return 0;
+  consume(tok, TOKEN_L_PAREN);
+
+  while (tok->kind == TOKEN_NEWLINE) {
+    tok = advance();
+  }
+
+  while ((tok = current())->kind != TOKEN_R_PAREN) {
+    Param param = {0};
+    int err = parse_param(&param, par);
+    if (err)
+      return err;
+
+    da_add(res, param);
+
+    Token *peeked = peek();
+    if (peeked->kind == TOKEN_R_PAREN)
+      break;;
+
+    expect_flag(peeked, TOKEN_FLAG_SEPARATOR, "new line or ','");
+    advance();
+    advance();
+  }
+
+  consume(tok, TOKEN_R_PAREN);
+  return 0;
+}
+
+int parse_function_definition(Token *ident, Expr *res, Parser *par) {
+  consume(ident, TOKEN_IDENT);
+
+  Param_A params = {0};
+  int err = parse_params(&params, par);
+  if (err)
+    return err;
+
+  Token *tok = current();
+  expect_block(tok, "fun");
   advance();
 
   Expr *body = Expr_();
-  int err = parse_block(peeked, body, par);
+  err = parse_block(tok, body, par);
   if (err)
     return err;
 
@@ -354,9 +401,9 @@ int parse_while(Token *tok, Expr *res, Parser *par) {
 
 int parse_type_pattern(TypePattern *res, Parser *par) {
   Token *tok = current();
-  expect(tok, TOKEN_AT, "'@'");
+  consume(tok, TOKEN_AT);
 
-  tok = advance();
+  tok = current();
   expect(tok, TOKEN_IDENT, "type identifier");
   res->name = token_sv(tok);
 
