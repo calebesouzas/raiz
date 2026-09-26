@@ -15,5 +15,6 @@ struct {
 } Value_Pool = {0};
 
 Value *Value_alloc(Value value);
+void Value_print(Value *value, bool newline);
 
 #endif // RAIZ_VALUE_C
