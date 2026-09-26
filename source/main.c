@@ -80,7 +80,8 @@ int main(int argc, char **argv) {
   }
   free(errs.dat);
 
-  (void) Program_run(&pro);
+  Value res = Program_run(&pro);
+  Value_print(&res, true);
 
   Program_free(&pro);
   free(code.dat);

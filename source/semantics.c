@@ -310,6 +310,7 @@ SemanticContext Expr_check_fun_def(
 
   Symbol new_symbol = {0};
   new_symbol.kind = SYM_FUN;
+  new_symbol.ident = token_sv(expr->funcall.ident);
   new_symbol.fun.body = expr->def.fun.body;
   Scope_insert(sco, new_symbol);
   ctx_success();
@@ -325,6 +326,16 @@ SemanticContext Expr_check_def(
   switch (expr->def.kind) {
   case DEF_FUN:
     return Expr_check_fun_def(expr, errs, sco, out);
+  }
+  ctx_success();
+}
+
+SemanticContext Expr_check_funcall(
+    Expr *expr, SemanticError_A *errs, Scope *sco, SemanticContext *out
+) {
+  Symbol *sym = Scope_search_until_global(sco, token_sv(expr->funcall.ident));
+  if (sym == NULL) {
+    ctx_err(ERR_SEM_UNDEFINED_SYMBOL, .token = expr->funcall.ident);
   }
   ctx_success();
 }
@@ -363,6 +374,8 @@ SemanticContext Expr_check(
     return Expr_check_while(expr, errs, sco, &ctx);
   case EXPR_DEF:
     return Expr_check_def(expr, errs, sco, &ctx);
+  case EXPR_FUNCALL:
+    return Expr_check_funcall(expr, errs, sco, &ctx);
   case EXPR_ERROR:
     UNREACHABLE("error leaf at semantics?\n");
   }

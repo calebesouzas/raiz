@@ -17,6 +17,7 @@ typedef enum {
   EXPR_WHILE,
   EXPR_BREAK,
   EXPR_CONTINUE,
+  EXPR_FUNCALL,
   EXPR_ERROR,
 } ExprKind;
 
@@ -61,6 +62,11 @@ typedef struct {
 } Expr_Def;
 
 typedef struct {
+  Token *ident;
+  // ExprNode_A args;
+} Expr_Funcall;
+
+typedef struct {
   uint32_t level;
   Token *ident;
 } Expr_Parent;
@@ -93,6 +99,7 @@ typedef struct Expr {
     Expr_Parent parent;
     Expr_If_node if_node;
     Expr_While_node while_node;
+    Expr_Funcall funcall;
     Expr_Error error;
   };
   Token *token;

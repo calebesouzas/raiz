@@ -109,7 +109,39 @@ int parse_group(Token *tok, Expr *res, Parser *par) {
   return 0;
 }
 
+int parse_function_call(Token *tok, Expr *res, Parser *par) {
+  consume(tok, TOKEN_IDENT);
+  consume(tok + 1, TOKEN_L_PAREN);
+
+  res->funcall.ident = tok;
+  tok = current();
+
+#if 0
+  tok = current();
+  ExprNode_A args = {0};
+  while (tok->flags & TOKEN_FLAG_STARTER) {
+    Expr *arg = Expr_();
+    int err = parse_expr(arg, par, 0);
+    if (err)
+      return err;
+    da_add(&args, arg);
+    tok = current();
+    Token *peeked = peek();
+    expect_flag(peeked, TOKEN_FLAG_SEPARATOR, "seperator");
+    advance();
+  }
+  res->funcall.args = args;
+#endif
+
+  consume(tok, TOKEN_R_PAREN);
+  res->kind = EXPR_FUNCALL;
+  return 0;
+}
+
 int parse_ident(Token *tok, Expr *res, Parser *par) {
+  Token *peeked = peek();
+  if (peeked->kind == TOKEN_L_PAREN)
+    return parse_function_call(tok, res, par);
   res->kind = EXPR_IDENT;
   res->ident = tok;
   return 0;
@@ -437,7 +469,7 @@ int parse_line(Expr *res, Parser *par) {
     } else {
       err = parse_expr(res, par, 0);
       if (err)
-        TODO("find safe spot!\n");
+        return -1;
       goto finish_line;
     }
   } break;
@@ -544,6 +576,8 @@ void Expr_free(Expr *node) {
   case EXPR_PARENT:
   case EXPR_BREAK:
   case EXPR_CONTINUE:
+  case EXPR_FUNCALL:
+    break;
   case EXPR_BINARY:
     Expr_free(node->binary.ls);
     Expr_free(node->binary.rs);

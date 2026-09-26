@@ -187,6 +187,9 @@ EvalResult eval(Expr *e, Scope *s) {
     free(s_in);
     s->inner = NULL;
     break;
+  case EXPR_FUNCALL:
+    sym = Scope_search_until_global(s, token_sv(e->funcall.ident));
+    return eval(sym->fun.body, s);
   case EXPR_PARENT:
     target = s;
     uint32_t level = e->parent.level;
