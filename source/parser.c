@@ -38,10 +38,11 @@ do {\
   err_expr->kind = EXPR_ERROR;\
   err_expr->error.tok = __token;\
   err_expr->error.code = __code;\
-  snprintf(err_expr->error.msg, sizeof(err_expr->error.msg), __VA_ARGS__);\
+  assert(snprintf(err_expr->error.msg, sizeof(err_expr->error.msg),\
+    __VA_ARGS__));\
   da_add(&par->errs, err_expr);\
-  debug("parse error (with token '%s' at (%zu:%zu))\n",\
-    token_string(__token), (__token)->line, (__token)->column);\
+  debug("parse error (%zu:%zu):\n%s\n",\
+    (__token)->line, (__token)->column, err_expr->error.msg);\
   return __code;\
 } while (0)
 
@@ -69,6 +70,12 @@ do {\
   expect(__token, __kind);\
   advance();\
 } while (0)
+
+#define consume_flag(__token, __flag, __name)\
+do {\
+  expect_flag(__token, __flag, __name);\
+  advance();\
+} while (0);
 
 int parse_literal(Token *tok, Expr *res, Parser *par) {
   res->kind = EXPR_LITERAL;
@@ -112,28 +119,37 @@ int parse_group(Token *tok, Expr *res, Parser *par) {
 }
 
 int parse_function_call(Token *tok, Expr *res, Parser *par) {
-  consume(tok, TOKEN_IDENT);
-  consume(tok + 1, TOKEN_L_PAREN);
+  consume(current(), TOKEN_IDENT);
+  consume(current(), TOKEN_L_PAREN);
 
+  res->kind = EXPR_FUNCALL;
   res->funcall.ident = tok;
-  tok = current();
 
   ExprNode_A args = {0};
-  while (tok->flags & TOKEN_FLAG_STARTER) {
+  while (current()->flags & TOKEN_FLAG_STARTER) {
     Expr *arg = Expr_();
     int err = parse_expr(arg, par, 0);
     if (err)
       return err;
     da_add(&args, arg);
-    tok = current();
+
     Token *peeked = peek();
-    expect_flag(peeked, TOKEN_FLAG_SEPARATOR, "seperator");
+    if (!(peeked->flags & TOKEN_FLAG_SEPARATOR))
+      break;
+
+    expect_flag(peeked, TOKEN_FLAG_SEPARATOR, "new line or ','");
+    advance();
+    advance();
     advance();
   }
-  memcpy(&res->funcall.args, &args, sizeof(res->funcall.args));
 
-  // consume(tok, TOKEN_R_PAREN);
-  res->kind = EXPR_FUNCALL;
+  expect(current(), TOKEN_R_PAREN);
+
+  res->funcall.args.dat = args.dat;
+  res->funcall.args.len = args.len;
+  res->funcall.args.cap = args.cap;
+  debug("funcall.args = { dat = %p, len = %zu, cap = %zu };\n",
+    res->funcall.args.dat, res->funcall.args.len, res->funcall.args.cap);
   return 0;
 }
 
@@ -241,13 +257,15 @@ int parse_params(Param_A *res, Parser *par) {
   Token *tok = current();
   if (tok->kind == TOKEN_L_CURLY)
     return 0;
+
   consume(tok, TOKEN_L_PAREN);
 
   while (tok->kind == TOKEN_NEWLINE) {
     tok = advance();
   }
 
-  while ((tok = current())->kind != TOKEN_R_PAREN) {
+  Token *peeked = peek();
+  while (1) {
     Param param = {0};
     int err = parse_param(&param, par);
     if (err)
@@ -255,15 +273,16 @@ int parse_params(Param_A *res, Parser *par) {
 
     da_add(res, param);
 
-    Token *peeked = peek();
+    peeked = peek();
     if (peeked->kind == TOKEN_R_PAREN)
-      break;;
+      break;
 
     expect_flag(peeked, TOKEN_FLAG_SEPARATOR, "new line or ','");
     advance();
     advance();
   }
 
+  tok = advance();
   consume(tok, TOKEN_R_PAREN);
   return 0;
 }
@@ -497,13 +516,6 @@ int parse_line(Expr *res, Parser *par) {
 
   int err = 0;
   Token *first = tok;
-  if (!(tok->flags & TOKEN_FLAG_STARTER)) {
-    err = parse_expr(res, par, 0);
-    if (err)
-      return err;
-
-    goto finish_line;
-  }
   switch (tok->kind) {
   case TOKEN_IDENT: {
     Token *peeked = peek();
@@ -526,7 +538,15 @@ int parse_line(Expr *res, Parser *par) {
   case TOKEN_CONTINUE:
     res->kind = EXPR_CONTINUE;
     break;
-  default: UNREACHABLE("token %s\n", token_name(tok->kind));
+  default:
+    if (tok->flags & TOKEN_FLAG_STARTER) {
+      err = parse_expr(res, par, 0);
+      if (err)
+        return err;
+
+      goto finish_line;
+    }
+    UNREACHABLE("token %s\n", token_name(tok->kind));
   }
 
 finish_line:
