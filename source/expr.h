@@ -63,7 +63,10 @@ typedef struct {
 
 typedef struct {
   Token *ident;
-  // ExprNode_A args;
+  struct {
+    struct Expr **dat;
+    size_t len, cap;
+  } args;
 } Expr_Funcall;
 
 typedef struct {

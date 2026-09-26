@@ -116,7 +116,6 @@ int parse_function_call(Token *tok, Expr *res, Parser *par) {
   res->funcall.ident = tok;
   tok = current();
 
-#if 0
   tok = current();
   ExprNode_A args = {0};
   while (tok->flags & TOKEN_FLAG_STARTER) {
@@ -130,8 +129,7 @@ int parse_function_call(Token *tok, Expr *res, Parser *par) {
     expect_flag(peeked, TOKEN_FLAG_SEPARATOR, "seperator");
     advance();
   }
-  res->funcall.args = args;
-#endif
+  memcpy(&res->funcall.args, &args, sizeof(res->funcall.args));
 
   consume(tok, TOKEN_R_PAREN);
   res->kind = EXPR_FUNCALL;

@@ -30,6 +30,7 @@ int Lexer_tokenize(Lexer *lex) {
     case '%': add(tk(TOKEN_PERCENT)); break;
     case '@': add(tk(TOKEN_AT)); break;
     case '#': add(tk(TOKEN_HASH)); break;
+    case ',': add(tk(TOKEN_COMMA)); break;
     case ':':
       if (peek() == ':') {
         advance();
@@ -99,6 +100,12 @@ int Lexer_tokenize(Lexer *lex) {
         advance();
       }
       add(tk(TOKEN_NEWLINE));
+      break;
+    case ';':
+      while (peek() == ';') {
+        advance();
+      }
+      add(tk(TOKEN_SEMICOLLON));
       break;
     case ' ': case '\t': case '\r': break;
     case '\'':
@@ -258,6 +265,8 @@ char *token_name(enum TokenKind kind) {
   case TOKEN_BREAK: return "break";
   case TOKEN_CONTINUE: return "continue";
   case TOKEN_NEWLINE: return "newline";
+  case TOKEN_COMMA: return ",";
+  case TOKEN_SEMICOLLON: return ";";
   case TOKEN_EOF: return "eof";
   }
 }
