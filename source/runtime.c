@@ -189,7 +189,17 @@ EvalResult eval(Expr *e, Scope *s) {
     break;
   case EXPR_FUNCALL:
     sym = Scope_search_until_global(s, token_sv(e->funcall.ident));
-    return eval(sym->fun.body, s);
+    Scope *fun_sco = Scope_new(s);
+
+    Expr **arg = NULL;
+    da_for(arg, &e->funcall.args) {
+      Symbol new_symbol = {0};
+      new_symbol.kind = SYM_VAR;
+      new_symbol.ident = sym->fun.params.dat[i_arg].name;
+      new_symbol.var = eval(*arg, s).value;
+      Scope_insert(fun_sco, new_symbol);
+    }
+    return eval(sym->fun.body, fun_sco);
   case EXPR_PARENT:
     target = s;
     uint32_t level = e->parent.level;

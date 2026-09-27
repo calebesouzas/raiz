@@ -126,6 +126,7 @@ int parse_function_call(Token *tok, Expr *res, Parser *par) {
   res->funcall.ident = tok;
 
   ExprNode_A args = {0};
+  bool has_args = false;
   while (current()->flags & TOKEN_FLAG_STARTER) {
     Expr *arg = Expr_();
     int err = parse_expr(arg, par, 0);
@@ -137,19 +138,24 @@ int parse_function_call(Token *tok, Expr *res, Parser *par) {
     if (!(peeked->flags & TOKEN_FLAG_SEPARATOR))
       break;
 
-    expect_flag(peeked, TOKEN_FLAG_SEPARATOR, "new line or ','");
+    has_args = true;
     advance();
     advance();
-    advance();
+    // advance();
   }
 
-  expect(current(), TOKEN_R_PAREN);
+  // a bit hackish...
+  expect(has_args ? peek() : current(), TOKEN_R_PAREN);
+  if (has_args)
+    advance();
+  // advance();
 
+  // `Expr_Funcall.args` is an anonymous structure, so the type system can't
+  // guarantee that `ExprNode_A` is compatible with it. Even if all field
+  // types and names match... This is just another forward declaration issue!
   res->funcall.args.dat = args.dat;
   res->funcall.args.len = args.len;
   res->funcall.args.cap = args.cap;
-  debug("funcall.args = { dat = %p, len = %zu, cap = %zu };\n",
-    res->funcall.args.dat, res->funcall.args.len, res->funcall.args.cap);
   return 0;
 }
 
@@ -306,6 +312,7 @@ int parse_function_definition(Token *ident, Expr *res, Parser *par) {
 
   res->def.kind = DEF_FUN;
   res->def.fun.body = body;
+  res->def.fun.params = params;
   return 0;
 }
 

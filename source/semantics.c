@@ -305,14 +305,32 @@ SemanticContext Expr_check_break_or_continue(
 SemanticContext Expr_check_fun_def(
     Expr *expr, SemanticError_A *errs, Scope *sco, SemanticContext *out
 ) {
-  SemanticContext ctx_in = Expr_check(expr->def.fun.body, errs, sco, out);
+  Scope *fun_sco = Scope_new(sco);
+
+  da_iter(param, &expr->def.fun.params) {
+    Type *type = Type_find(sco, param->pattern);
+    if (!type) {
+      ctx_err(ERR_SEM_UNDEFINED_TYPE,
+        .type_pattern = param->pattern);
+    }
+    Symbol new_symbol = {0};
+    new_symbol.kind = SYM_VAR;
+    new_symbol.ident = param->name;
+    new_symbol.var.type = type;
+    Scope_insert(fun_sco, new_symbol);
+  }
+
+  SemanticContext ctx_in = Expr_check(expr->def.fun.body, errs, fun_sco, out);
   ctx_check(ctx_in);
 
   Symbol new_symbol = {0};
   new_symbol.kind = SYM_FUN;
-  new_symbol.ident = token_sv(expr->funcall.ident);
+  new_symbol.ident = token_sv(expr->def.ident);
   new_symbol.fun.body = expr->def.fun.body;
+  new_symbol.fun.params = expr->def.fun.params;
   Scope_insert(sco, new_symbol);
+  sco->inner = NULL;
+  Scope_free(fun_sco);
   ctx_success();
 }
 
@@ -336,6 +354,12 @@ SemanticContext Expr_check_funcall(
   Symbol *sym = Scope_search_until_global(sco, token_sv(expr->funcall.ident));
   if (sym == NULL) {
     ctx_err(ERR_SEM_UNDEFINED_SYMBOL, .token = expr->funcall.ident);
+  }
+
+  if (expr->funcall.args.len != sym->fun.params.len) {
+    ctx_err(ERR_SEM_INCORRECT_ARGUMENT_COUNT,
+      .expr = expr,
+      .token = expr->token);
   }
   ctx_success();
 }
@@ -448,6 +472,8 @@ void Semantics_print_errs(SemanticError_A *errs, char *file_path, size_t source_
     case ERR_SEM_REDEFINITION:
       P(SPEC"redefinition of symbol '%.*s'\n", DAT, TOK);
       break;
+    case ERR_SEM_INCORRECT_ARGUMENT_COUNT:
+      P(SPEC"argument and parameter counts do not match\n", DAT);
     }
 
     char *s = e->token->lexeme;

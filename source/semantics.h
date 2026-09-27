@@ -15,6 +15,7 @@ typedef struct {
     ERR_SEM_INCOMPATIBLE_OPERATOR,
     ERR_SEM_DEREF_NON_POINTER,
     ERR_SEM_REDEFINITION,
+    ERR_SEM_INCORRECT_ARGUMENT_COUNT,
   } code;
   // context:
   Token *token;
