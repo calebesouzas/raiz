@@ -1,0 +1,8 @@
+wrapping_add :: fun (a @int*, b @int) {
+  *a = *a + b
+}
+
+x: @int = 25
+wrapping_add(&x, 25)
+
+x

@@ -54,6 +54,9 @@ EvalResult eval(Expr *e, Scope *s) {
       goto end;
     }
     value = eval(e->unary.in, s).value;
+    if (e->unary.op->kind == TOKEN_STAR) {
+      value = *(Value*)(uintptr_t)value.data;
+    }
     switch (e->unary.op->kind) {
     case TOKEN_MINUS:
       res.value.data = -value.data;
