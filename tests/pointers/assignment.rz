@@ -1,6 +1,6 @@
-x: @int = 32
+x @int = 32
 
-p: @int* = &x
+p @int* = &x
 
 *p = x * 2
 

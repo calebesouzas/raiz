@@ -340,20 +340,14 @@ int parse_definition(Token *tok, Expr *res, Parser *par) {
 }
 
 int parse_declaration(Token *tok, Expr *res, Parser *par) {
-  expect(tok, TOKEN_IDENT, "identifier");
-
-  Token *peeked = peek();
-  expect(peeked, TOKEN_COLLON, "declaration");
-
   consume(tok, TOKEN_IDENT);
-  consume(peeked, TOKEN_COLLON);
 
   TypePattern type = {0};
   int err = parse_type_pattern(&type, par);
   if (err)
     return err;
 
-  peeked = peek();
+  Token *peeked = peek();
   if (peeked->kind == TOKEN_EQUAL) {
     advance();
     consume(peeked, TOKEN_EQUAL);
@@ -528,7 +522,7 @@ int parse_line(Expr *res, Parser *par) {
     Token *peeked = peek();
     if (peeked->kind == TOKEN_COLLON_X2) {
       return parse_definition(tok, res, par);
-    } else if (peeked->kind == TOKEN_COLLON) {
+    } else if (peeked->kind == TOKEN_AT) {
       return parse_declaration(tok, res, par);
     } else {
       err = parse_expr(res, par, 0);

@@ -1,8 +1,8 @@
-i: @int = 0
-max: @int = 15
-point: @int = 18
+i @int = 0
+max @int = 15
+point @int = 18
 
-res: @char
+res @char
 while i < max {
   if i == point {
     break
