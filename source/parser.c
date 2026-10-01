@@ -133,12 +133,12 @@ int parse_function_call(Token *tok, Expr *res, Parser *par) {
     if (err)
       return err;
     da_add(&args, arg);
+    has_args = true;
 
     Token *peeked = peek();
     if (!(peeked->flags & TOKEN_FLAG_SEPARATOR))
       break;
 
-    has_args = true;
     advance();
     advance();
     // advance();
