@@ -270,6 +270,10 @@ int parse_params(Param_A *res, Parser *par) {
     tok = advance();
   }
 
+  tok = current();
+  if (tok->kind == TOKEN_R_PAREN)
+    goto ending;
+
   Token *peeked = peek();
   while (1) {
     Param param = {0};
@@ -289,6 +293,7 @@ int parse_params(Param_A *res, Parser *par) {
   }
 
   tok = advance();
+ending:
   consume(tok, TOKEN_R_PAREN);
   return 0;
 }
@@ -538,6 +543,9 @@ int parse_line(Expr *res, Parser *par) {
     break;
   case TOKEN_CONTINUE:
     res->kind = EXPR_CONTINUE;
+    break;
+  case TOKEN_RETURN:
+    res->kind = EXPR_RETURN;
     break;
   default:
     if (tok->flags & TOKEN_FLAG_STARTER) {

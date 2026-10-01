@@ -12,6 +12,7 @@ typedef struct {
     ERR_SEM_DECL_AFTER_WHILE_THEN_ELSE,
     ERR_SEM_INCOMPATIBLE_TYPES,
     ERR_SEM_LOOP_KEYWORD_OUTSIDE_LOOP,
+    ERR_SEM_RETURN_KEYWORD_OUTSIDE_FUNCTION,
     ERR_SEM_INCOMPATIBLE_OPERATOR,
     ERR_SEM_DEREF_NON_POINTER,
     ERR_SEM_REDEFINITION,
@@ -30,10 +31,11 @@ typedef struct {
   bool err : 1;
   bool is_lvalue : 1;
   bool is_constant : 1;
-  uint8_t deref_count;
   struct {
     bool inside_loop : 1;
+    bool inside_function : 1;
   } data;
+  uint8_t deref_count;
   Type *type;
 } SemanticContext;
 

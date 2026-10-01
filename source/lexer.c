@@ -264,6 +264,7 @@ char *token_name(enum TokenKind kind) {
   case TOKEN_WHILE: return "while";
   case TOKEN_BREAK: return "break";
   case TOKEN_CONTINUE: return "continue";
+  case TOKEN_RETURN: return "return";
   case TOKEN_NEWLINE: return "newline";
   case TOKEN_COMMA: return ",";
   case TOKEN_SEMICOLLON: return ";";

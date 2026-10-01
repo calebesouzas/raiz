@@ -184,7 +184,7 @@ EvalResult eval(Expr *e, Scope *s) {
     s_in = Scope_new(s);
     da_for(line, &e->block) {
       res = eval(*line, s_in);
-      if (res.sig == SIGNAL_BREAK)
+      if (res.sig == SIGNAL_BREAK || res.sig == SIGNAL_RETURN)
         break;
     }
     free(s_in);
@@ -224,14 +224,16 @@ EvalResult eval(Expr *e, Scope *s) {
     break;
   case EXPR_WHILE:
     while ((cond = eval(e->while_node.cond, s).value.data)) {
-      if (res.sig == SIGNAL_BREAK)
+      if (res.sig == SIGNAL_BREAK || res.sig == SIGNAL_RETURN)
         break;
       if (res.sig == SIGNAL_CONTINUE)
         continue;
 
       res = eval(e->while_node.body, s);
     }
-    if (res.sig == SIGNAL_BREAK && e->while_node.else_branch) {
+    if (res.sig == SIGNAL_RETURN)
+      return res;
+    else if (res.sig == SIGNAL_BREAK && e->while_node.else_branch) {
       res = eval(e->while_node.else_branch, s);
     } else if (e->while_node.then_branch) {
       res = eval(e->while_node.then_branch, s);
@@ -243,6 +245,9 @@ EvalResult eval(Expr *e, Scope *s) {
     break;
   case EXPR_CONTINUE:
     res.sig = SIGNAL_CONTINUE;
+    break;
+  case EXPR_RETURN:
+    res.sig = SIGNAL_RETURN;
     break;
   case EXPR_ERROR:
     UNREACHABLE("error expression at runtime?\n");

@@ -5,6 +5,7 @@ typedef enum {
   SIGNAL_NONE,
   SIGNAL_BREAK,
   SIGNAL_CONTINUE,
+  SIGNAL_RETURN,
 } ControlSignal;
 
 typedef struct {

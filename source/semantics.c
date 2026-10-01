@@ -302,6 +302,15 @@ SemanticContext Expr_check_break_or_continue(
   ctx_success();
 }
 
+SemanticContext Expr_check_return(
+    Expr *expr, SemanticError_A *errs, Scope *sco, SemanticContext *out
+) {
+  if (!out->data.inside_function)
+    ctx_err(ERR_SEM_RETURN_KEYWORD_OUTSIDE_FUNCTION, .token = expr->token);
+
+  ctx_success();
+}
+
 SemanticContext Expr_check_fun_def(
     Expr *expr, SemanticError_A *errs, Scope *sco, SemanticContext *out
 ) {
@@ -320,7 +329,10 @@ SemanticContext Expr_check_fun_def(
     Scope_insert(fun_sco, new_symbol);
   }
 
-  SemanticContext ctx_in = Expr_check(expr->def.fun.body, errs, fun_sco, out);
+  SemanticContext ctx = {0};
+  ctx.data.inside_function = true;
+
+  SemanticContext ctx_in = Expr_check(expr->def.fun.body, errs, fun_sco, &ctx);
   ctx_check(ctx_in);
 
   Symbol new_symbol = {0};
@@ -380,6 +392,8 @@ SemanticContext Expr_check(
   case EXPR_BREAK:
   case EXPR_CONTINUE:
     return Expr_check_break_or_continue(expr, errs, sco, &ctx);
+  case EXPR_RETURN:
+    return Expr_check_return(expr, errs, sco, &ctx);
   case EXPR_BINARY:
     return Expr_check_binary(expr, errs, sco, &ctx);
   case EXPR_GROUP:

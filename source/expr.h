@@ -17,6 +17,7 @@ typedef enum {
   EXPR_WHILE,
   EXPR_BREAK,
   EXPR_CONTINUE,
+  EXPR_RETURN,
   EXPR_FUNCALL,
   EXPR_ERROR,
 } ExprKind;
