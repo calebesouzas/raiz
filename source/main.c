@@ -81,7 +81,8 @@ int main(int argc, char **argv) {
   free(errs.dat);
 
   Value res = Program_run(&pro);
-  Value_print(&res, true);
+  if (res.type != NULL)
+    Value_print(&res, true);
 
   Program_free(&pro);
   free(code.dat);
