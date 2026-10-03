@@ -1,0 +1,53 @@
+#!/bin/env bash
+
+set -xe
+
+build ()
+{
+  rm -rf build
+  mkdir -p build
+  clang -o ./build/raiz -Iinclude "source/main.c" -ggdb
+}
+
+run ()
+{
+  build
+  ./build/raiz "${@:1}"
+}
+
+debug ()
+{
+  case $1 in
+    "--rebuild" | "-r")
+      build
+      ;;
+  esac
+  gdb ./build/raiz
+}
+
+tests ()
+{
+  SUCCEDED=0
+  TOTAL=0
+  FAILED=0
+
+  for $RAIZ_FILE in $(find tests -type f -name "*.rz"); do
+    echo "Testing $RAIZ_FILE"
+    ./build/raiz "$RAIZ_FILE"
+
+    if [ $? -eq 0 ]; then
+      echo "Test succeded"
+      let SUCCEDED++
+    else
+      echo "Test failed"
+      let FAILED++
+    fi
+
+    let TOTAL++
+  done
+
+  echo "Resume: successful: $SUCCEDED, failed: $FAILED, total: $TOTAL"
+}
+
+clear
+$1 "${2:@}"
