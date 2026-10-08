@@ -1,0 +1,63 @@
+#!/bin/env bash
+
+BUILD="./build/"
+SOURCE0="./source0/"
+
+echoerr ()
+{
+  echo "${@:1}" >&2
+}
+
+prompt ()
+{
+  echo -n "yo: $1 [y for yes]: "
+  read ANSWER
+  case $ANSWER in
+    "y" | "yes")
+      set $2 "true"
+      ;;
+    *)
+      set $2 "false"
+      ;;
+  esac
+}
+
+build ()
+{
+  rm -rf "$BUILD"
+  mkdir -p "$BUILD"
+  clang -o "$BUILD/raiz" -Iinclude "$SOURCE0/main.c" -ggdb
+}
+
+run ()
+{
+  build
+  if [ $? -eq 0 ]; then
+    "$BUILD/raiz" "${@:1}"
+  else
+    prompt "build failed, continue running?" CONTINUE
+    if [ $CONTINUE = "true" ]; then
+      "$BUILD/raiz" "${@:1}"
+    fi
+  fi
+}
+
+debug ()
+{
+  case $1 in
+    "--rebuild" | "-r")
+      build
+      if [ $? -ne 0 ]; then
+        prompt "build failed, continue debugging?" CONTINUE
+        if [ $CONTINUE = "false" ]; then
+          echoerr "yo: cancelling debug session..."
+          exit 1
+        fi
+      fi
+      ;;
+  esac
+  gdb "$BUILD/raiz"
+}
+
+clear
+$1 "${@:2}"
