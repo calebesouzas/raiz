@@ -59,5 +59,11 @@ debug ()
   gdb "$BUILD/raiz"
 }
 
+tests ()
+{
+  clang -o "$BUILD/tests" "tests.c"
+  "$BUILD/tests" "${@:1}"
+}
+
 clear
 $1 "${@:2}"
