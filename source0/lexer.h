@@ -27,3 +27,5 @@ typedef struct Token {
     int literal;
   } as;
 } Token;
+
+Token next_token(Lexer *L);
