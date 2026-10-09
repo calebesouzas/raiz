@@ -97,8 +97,25 @@ typedef struct Token {
   } as;
 } Token;
 
+void skip_whitespace(Lexer *L)
+{
+next:
+  switch (*L->cursor)
+  {
+    case ' ': case '\r': case '\t':
+      L->cursor++;
+      L->remaining--;
+      goto next;
+    break;
+    default:
+    return;
+  }
+}
+
 Token next_token(Lexer *L)
 {
+  skip_whitespace(L);
+
   if (L->remaining == 0)
     return (Token){TOKEN_END_OF_FILE, 0, NULL};
 
