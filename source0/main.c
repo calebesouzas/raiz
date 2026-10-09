@@ -6,6 +6,7 @@
 #include <stdint.h>
 #include <limits.h>
 #include <string.h>
+#include <ctype.h>
 
 bool read_entire_file(const char *file_path, char **p_buffer, size_t *p_size)
 {
@@ -91,6 +92,9 @@ typedef struct Token {
   TokenType type;
   size_t length;
   const char *lexeme;
+  union {
+    int literal;
+  } as;
 } Token;
 
 Token next_token(Lexer *L)
@@ -125,8 +129,22 @@ Token next_token(Lexer *L)
       token.length++;
     break;
     default:
+    if (isdigit(*L->cursor))
+    {
+      token.type = TOKEN_NUMBER;
+      int number = 0;
+      do
+      {
+        number = (number * 10) + (L->cursor[token.length] - '0');
+        token.length++;
+      } while (isdigit(L->cursor[token.length]));
+      token.as.literal = number;
+    }
+    else
+    {
       fprintf(stderr, "%s(): invalid character: '%c'\n", __FUNCTION__, *L->cursor);
       exit(1);
+    }
     break;
   }
 
@@ -149,11 +167,19 @@ bool process_program(const char *source, const size_t size)
   do
   {
     token = next_token(&lexer);
-    printf(
-        "  (%d) \"%.*s\"\n",
-        token.type, token.length > INT_MAX ? INT_MAX : (int)token.length,
-        token.lexeme
-    );
+    printf("  (%d)", token.type);
+    if (token.lexeme != NULL)
+    {
+      printf(" \"%.*s\"",
+          token.length > INT_MAX ? INT_MAX : (int)token.length,
+          token.lexeme
+      );
+    }
+    if (token.type == TOKEN_NUMBER)
+    {
+      printf(" %d", token.as.literal);
+    }
+    printf("\n");
   } while (token.type != TOKEN_END_OF_FILE);
   printf("]\n");
 
