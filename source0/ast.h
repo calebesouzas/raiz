@@ -14,12 +14,12 @@ typedef struct {
 
 typedef struct {
   struct Expr *inner;
-  Token operator;
+  Token *operator;
 } Expr_Unary;
 
 typedef struct {
   struct Expr *left, *right;
-  Token operator;
+  Token *operator;
 } Expr_Binary;
 
 typedef enum {

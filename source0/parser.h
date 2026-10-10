@@ -7,8 +7,8 @@
 typedef struct {
   ExprArena *arena;
   Lexer lexer;
-  Token buffer[3];
-  unsigned char cursor;
+  TokenArena *tokens;
+  Token *buffer[3];
 } Parser;
 
 // all parser functions should check the depth to prevent stack overflow due to indirect recursion

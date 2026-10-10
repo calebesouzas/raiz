@@ -2,26 +2,40 @@
 #include "lexer.h"
 #include "parser.h"
 
+static inline Token *parser_save_token(Parser *P)
+{
+  Token *token = new_token(P->tokens);
+  if (token == NULL)
+  {
+    fprintf(stderr, "parser_save_token(): failed to allocate token arena\n");
+    abort();
+  }
+
+  *token = next_token(&P->lexer);
+  return token;
+}
+
 static inline Token *parser_current(Parser *P)
 {
-  return &P->buffer[1];
+  return P->buffer[1];
 }
 
 static inline Token *parser_previous(Parser *P)
 {
-  return &P->buffer[0];
+  return P->buffer[0];
 }
 
 static inline Token *parser_peek(Parser *P)
 {
-  return &P->buffer[2];
+  return P->buffer[2];
 }
 
 static inline Token *parser_advance(Parser *P)
 {
   P->buffer[0] = P->buffer[1];
   P->buffer[1] = P->buffer[2];
-  P->buffer[2] = next_token(&P->lexer);
+
+  P->buffer[2] = parser_save_token(P);
   return parser_current(P);
 }
 
@@ -84,7 +98,7 @@ again:
       goto again;
     case TOKEN_MINUS:
       parser_advance(P);
-      Token operator = *parser_previous(P);
+      Token *operator = parser_previous(P);
 
       // weird... at this point `inner` is already declared
       inner = parse_expr(P, depth + 1);
@@ -128,7 +142,7 @@ Expr *parse_expr(Parser *P, uint32_t depth)
 
   while (token_is_operator(parser_current(P)))
   {
-    Token operator = *parser_next(P);
+    Token *operator = parser_next(P);
 
     Expr *right = parse_expr(P, depth + 1);
     if (right == NULL)
@@ -162,10 +176,17 @@ Ast parse(const char *source, const size_t size)
   parser.lexer.source = source;
   parser.lexer.size = size;
 
+  parser.tokens = new_token_arena();
+  if (parser.tokens == NULL)
+  {
+    free_expr_arena(ast.arena);
+    return ast;
+  }
+
   // start from index 1 (which is the current token)
   for (int i = 1; i < sizeof(parser.buffer)/sizeof(parser.buffer[0]); i++)
   {
-    parser.buffer[i] = next_token(&parser.lexer);
+    parser.buffer[i] = parser_save_token(&parser);
   }
 
   parser.arena = ast.arena;

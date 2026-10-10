@@ -80,8 +80,8 @@ void dump_expr(Expr *expr, FILE *stream, uint32_t level)
       fprintf(stream,
           "unary (%.*s):\n",
           // TODO: factor it out to a macro (in "token.h") to simplify your life
-          expr->as.unary.operator.length > INT_MAX ? INT_MAX : (int) expr->as.unary.operator.length,
-          expr->as.unary.operator.lexeme
+          expr->as.unary.operator->length > INT_MAX ? INT_MAX : (int) expr->as.unary.operator->length,
+          expr->as.unary.operator->lexeme
       );
       dump_expr(expr->as.unary.inner, stream, level + 1);
       break;
@@ -89,8 +89,8 @@ void dump_expr(Expr *expr, FILE *stream, uint32_t level)
       fprintf(stream,
           "binary (%.*s):\n",
           // TODO: factor it out to a macro (in "token.h") to simplify your life
-          expr->as.binary.operator.length > INT_MAX ? INT_MAX : (int) expr->as.binary.operator.length,
-          expr->as.binary.operator.lexeme
+          expr->as.binary.operator->length > INT_MAX ? INT_MAX : (int) expr->as.binary.operator->length,
+          expr->as.binary.operator->lexeme
       );
       dump_expr(expr->as.binary.left, stream, level + 1);
       dump_expr(expr->as.binary.right, stream, level + 1);

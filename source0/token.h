@@ -21,5 +21,14 @@ typedef struct {
   } as;
 } Token;
 
+typedef struct TokenArena {
+  Token *tokens;
+  size_t count;
+  struct TokenArena *next;
+} TokenArena;
+
+TokenArena *new_token_arena(void);
+void free_token_arena(TokenArena *arena);
+Token *new_token(TokenArena *arena);
 
 bool token_is_operator(Token *token);
