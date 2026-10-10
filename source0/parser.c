@@ -7,6 +7,11 @@ static inline Token *parser_current(Parser *P)
   return &P->buffer[1];
 }
 
+static inline Token *parser_previous(Parser *P)
+{
+  return &P->buffer[0];
+}
+
 static inline Token *parser_peek(Parser *P)
 {
   return &P->buffer[2];
@@ -57,6 +62,23 @@ again:
     case TOKEN_PLUS:
       parser_advance(P);
       goto again;
+    case TOKEN_MINUS:
+      parser_advance(P);
+      Token operator = *parser_previous(P);
+
+      // weird... at this point `inner` is already declared
+      inner = parse_expr(P, depth + 1);
+      if (inner == NULL)
+        return NULL;
+
+      res = new_expr_node(P->arena);
+      if (res == NULL)
+        return NULL;
+
+      res->type = EXPR_UNARY;
+      res->as.unary.inner = inner;
+      res->as.unary.operator = operator;
+      break;
     case TOKEN_NUMBER:
       res = new_expr_node(P->arena);
       if (res == NULL)

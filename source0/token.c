@@ -5,6 +5,7 @@ bool token_is_operator(Token *token)
   switch (token->type)
   {
     case TOKEN_PLUS:
+    case TOKEN_MINUS:
       return true;
     case TOKEN_NUMBER:
     case TOKEN_LINE_BREAK:
