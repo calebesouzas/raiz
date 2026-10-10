@@ -25,6 +25,12 @@ static inline Token *parser_advance(Parser *P)
   return parser_current(P);
 }
 
+static inline Token *parser_next(Parser *P)
+{
+  parser_advance(P);
+  return parser_previous(P);
+}
+
 static inline bool parser_consume(Parser *P, TokenType expected, const char *message)
 {
   if (parser_current(P)->type != expected)
@@ -63,12 +69,11 @@ again:
       if (inner == NULL)
         return NULL;
 
-      res = new_expr_node(P->arena);
-      if (res == NULL)
+      if (!parser_consume(P, TOKEN_CLOSE_PAREN, "expect ')'"))
         return NULL;
 
-      parser_advance(P);
-      if (!parser_consume(P, TOKEN_CLOSE_PAREN, "expect ')'"))
+      res = new_expr_node(P->arena);
+      if (res == NULL)
         return NULL;
 
       res->as.group.inner = inner;
@@ -101,6 +106,7 @@ again:
 
       res->type = EXPR_LITERAL;
       res->as.literal.value = token->as.literal;
+      parser_advance(P);
       break;
     case TOKEN_LINE_BREAK:
     case TOKEN_END_OF_FILE:
@@ -120,10 +126,9 @@ Expr *parse_expr(Parser *P, uint32_t depth)
   if (left == NULL)
     return NULL;
 
-  while (token_is_operator(parser_peek(P)))
+  while (token_is_operator(parser_current(P)))
   {
-    Token operator = *parser_advance(P);
-    parser_advance(P);
+    Token operator = *parser_next(P);
 
     Expr *right = parse_expr(P, depth + 1);
     if (right == NULL)
