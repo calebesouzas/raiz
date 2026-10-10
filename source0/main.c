@@ -1,5 +1,7 @@
 #include "libc.h"
 #include "files.h"
+#include "ast.h"
+#include "parser.h"
 
 bool process_program(const char *source, size_t size);
 
@@ -27,7 +29,11 @@ int main(int argc, char **argv)
 
 bool process_program(const char *source, const size_t size)
 {
-  (void) source;
-  (void) size;
+  Ast ast = parse(source, size);
+  if (ast.arena == NULL)
+    return false;
+
+  dump_ast(&ast, stderr);
+  free_expr_arena(ast.arena);
   return true;
 }

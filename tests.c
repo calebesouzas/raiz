@@ -1,6 +1,8 @@
 #include "source0/libc.h"
 #include "source0/files.h"
 #include "source0/lexer.h"
+#include "source0/ast.h"
+#include "source0/parser.h"
 
 bool test_lexer(const char *source, const size_t size)
 {
@@ -34,6 +36,24 @@ bool test_lexer(const char *source, const size_t size)
   return true;
 }
 
+bool test_parser(const char *source, const size_t size)
+{
+  Ast ast = parse(source, size);
+  if (ast.root != NULL)
+  {
+    dump_ast(&ast, stderr);
+  }
+  else if (ast.arena == NULL)
+  {
+    return false;
+  }
+
+  free_expr_arena(ast.arena);
+  ast.arena = NULL;
+
+  return true;
+}
+
 typedef bool (*TestFunction) (const char *source, const size_t size);
 
 int main(void)
@@ -45,6 +65,7 @@ int main(void)
 
   const TestFunction test_functions[] = {
     test_lexer,
+    test_parser,
   };
 
   unsigned int total = 0;
@@ -71,3 +92,6 @@ int main(void)
 
 #include "source0/files.c"
 #include "source0/lexer.c"
+#include "source0/token.c"
+#include "source0/ast.c"
+#include "source0/parser.c"
