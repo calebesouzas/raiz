@@ -25,6 +25,17 @@ static inline Token *parser_advance(Parser *P)
   return parser_current(P);
 }
 
+static inline bool parser_consume(Parser *P, TokenType expected, const char *message)
+{
+  if (parser_current(P)->type != expected)
+  {
+    fprintf(stderr, "%s\n", message);
+    return false;
+  }
+  parser_advance(P);
+  return true;
+}
+
 static inline void check_depth(uint32_t depth)
 {
   if (depth > PARSER_DEPTH_LIMIT)
@@ -54,6 +65,10 @@ again:
 
       res = new_expr_node(P->arena);
       if (res == NULL)
+        return NULL;
+
+      parser_advance(P);
+      if (!parser_consume(P, TOKEN_CLOSE_PAREN, "expect ')'"))
         return NULL;
 
       res->as.group.inner = inner;
