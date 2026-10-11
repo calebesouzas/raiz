@@ -71,11 +71,10 @@ Expr *parse_nud(Parser *P, uint32_t depth)
 {
   check_depth(depth);
 
-  Token *token = parser_current(P);
   Expr *res = NULL;
 
 again:
-  switch (token->type)
+  switch (parser_current(P)->type)
   {
     case TOKEN_OPEN_PAREN:
       parser_advance(P);
@@ -119,7 +118,7 @@ again:
         return NULL;
 
       res->type = EXPR_LITERAL;
-      res->as.literal.value = token->as.literal;
+      res->as.literal.value = parser_current(P)->as.literal;
       parser_advance(P);
       break;
     case TOKEN_LINE_BREAK:
