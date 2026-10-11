@@ -20,7 +20,7 @@ Token next_token(Lexer *L)
   skip_whitespace(L);
 
   if (L->remaining == 0)
-    return (Token){TOKEN_END_OF_FILE, 0, NULL};
+    return (Token){TOKEN_END_OF_FILE, 0, NULL, {0}};
 
   Token token = {0};
   token.lexeme = L->cursor;

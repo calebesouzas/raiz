@@ -25,10 +25,11 @@ static inline Token *parser_previous(Parser *P)
   return P->buffer[0];
 }
 
-static inline Token *parser_peek(Parser *P)
-{
-  return P->buffer[2];
-}
+// Since we always consume tokens that were already processed, we won't peek very often.
+// static inline Token *parser_peek(Parser *P)
+// {
+//   return P->buffer[2];
+// }
 
 static inline Token *parser_advance(Parser *P)
 {
@@ -186,7 +187,7 @@ Ast parse(const char *source, const size_t size)
   }
 
   // start from index 1 (which is the current token)
-  for (int i = 1; i < sizeof(parser.buffer)/sizeof(parser.buffer[0]); i++)
+  for (size_t i = 1; i < sizeof(parser.buffer)/sizeof(parser.buffer[0]); i++)
   {
     parser.buffer[i] = parser_save_token(&parser);
   }
