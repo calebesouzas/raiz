@@ -67,6 +67,15 @@ int main(void)
     test_lexer,
     test_parser,
   };
+  const char *test_names[] = {
+    "token list",
+    "AST dump",
+  };
+
+  _Static_assert(
+      sizeof(test_functions)/sizeof(test_functions[0]) == sizeof(test_names)/sizeof(test_names[0]),
+      "Should keep test functions and names in sync!"
+  );
 
   unsigned int total = 0;
   unsigned int success = 0;
@@ -74,6 +83,7 @@ int main(void)
 
   for (unsigned int index = 0; index < sizeof(test_functions)/sizeof(test_functions[0]); index++)
   {
+    printf("// TESTING: %s\n", test_names[index]);
     if (test_functions[index](source, size))
     {
       success++;
