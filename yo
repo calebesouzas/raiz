@@ -65,8 +65,5 @@ tests ()
   "$BUILD/tests" "${@:1}"
 }
 
-if [[ "$#" -gt 1 ]]; then
-  $1 "${@:2}"
-else
-  build
-fi
+command="${1:-build}"
+$command "${@:2}"
