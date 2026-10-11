@@ -66,7 +66,7 @@ static inline void check_depth(uint32_t depth)
   }
 }
 
-Expr *parse_expr(Parser *P, uint32_t depth);
+Expr *parse_expr(Parser *P, uint32_t depth, uint8_t min_precedence);
 
 Expr *parse_nud(Parser *P, uint32_t depth)
 {
@@ -79,7 +79,8 @@ again:
   {
     case TOKEN_OPEN_PAREN:
       parser_advance(P);
-      Expr *inner = parse_expr(P, depth + 1);
+      uint8_t precedence = operator_precedence(parser_previous(P), OPERATOR_PREFIX);
+      Expr *inner = parse_expr(P, depth + 1, precedence);
       if (inner == NULL)
         return NULL;
 
@@ -97,11 +98,13 @@ again:
       parser_advance(P);
       goto again;
     case TOKEN_MINUS:
+      // NOTE: could remove advance() and previous() and use just next() but that would trigger a
+      // compiler extension warning, so we're not doing that.
       parser_advance(P);
       Token *operator = parser_previous(P);
 
-      // weird... at this point `inner` is already declared
-      inner = parse_expr(P, depth + 1);
+      precedence = operator_precedence(operator, OPERATOR_PREFIX);
+      inner = parse_expr(P, depth + 1, precedence);
       if (inner == NULL)
         return NULL;
 
@@ -135,7 +138,7 @@ again:
   return res;
 }
 
-Expr *parse_expr(Parser *P, uint32_t depth)
+Expr *parse_expr(Parser *P, uint32_t depth, uint8_t min_precedence)
 {
   check_depth(depth);
 
@@ -147,7 +150,11 @@ Expr *parse_expr(Parser *P, uint32_t depth)
   {
     Token *operator = parser_next(P);
 
-    Expr *right = parse_expr(P, depth + 1);
+    uint8_t precedence = operator_precedence(operator, OPERATOR_INFIX);
+    if (precedence < min_precedence)
+      break;
+
+    Expr *right = parse_expr(P, depth + 1, precedence);
     if (right == NULL)
       return NULL;
 
@@ -194,6 +201,6 @@ Ast parse(const char *source, const size_t size)
 
   parser.arena = ast.arena;
 
-  ast.root = parse_expr(&parser, 0);
+  ast.root = parse_expr(&parser, 0, 0);
   return ast;
 }

@@ -68,3 +68,31 @@ bool token_is_operator(Token *token)
 {
   return (token_flags_map[token->type] & TOKENFLAG_OPERATOR) != 0; // single flag, this is OK
 }
+
+typedef union {
+  struct {
+    uint8_t infix;
+    uint8_t prefix;
+  };
+  uint32_t combined;
+} OperatorPrecedence;
+
+// TODO: find a way to detect if a precedence kind was not set for any specific operator.
+// Magic values are acceptable in this case.
+static const OperatorPrecedence operator_precedence_map[__TOKEN_COUNT] = {
+  [TOKEN_PLUS] = {.infix = 10, .prefix = 0},
+  [TOKEN_MINUS] = {.infix = 10, .prefix = 11},
+  [TOKEN_OPEN_PAREN] = {.infix = 0, .prefix = 0},
+};
+
+uint8_t operator_precedence(Token *token, OperatorPrecedenceType type)
+{
+  switch (type)
+  {
+    case OPERATOR_INFIX:
+      return operator_precedence_map[token->type].infix;
+    case OPERATOR_PREFIX:
+      return operator_precedence_map[token->type].prefix;
+  }
+  return 0;
+}

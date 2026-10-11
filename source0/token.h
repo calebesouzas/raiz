@@ -22,6 +22,11 @@ typedef struct {
   } as;
 } Token;
 
+typedef enum {
+  OPERATOR_INFIX,
+  OPERATOR_PREFIX,
+} OperatorPrecedenceType;
+
 typedef struct TokenArena {
   Token *tokens;
   size_t count;
@@ -33,3 +38,4 @@ void free_token_arena(TokenArena *arena);
 Token *new_token(TokenArena *arena);
 
 bool token_is_operator(Token *token);
+uint8_t operator_precedence(Token *token, OperatorPrecedenceType type);
