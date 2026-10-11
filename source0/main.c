@@ -9,7 +9,7 @@ int main(int argc, char **argv)
 {
   if (argc <= 1)
   {
-    fprintf(stderr, "usage: %s <raiz file>", argv[0]);
+    fprintf(stderr, "usage: %s <raiz file>\n", argv[0]);
     return 1;
   }
 
