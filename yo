@@ -65,5 +65,4 @@ tests ()
   "$BUILD/tests" "${@:1}"
 }
 
-clear
 $1 "${@:2}"
