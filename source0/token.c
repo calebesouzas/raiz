@@ -52,18 +52,19 @@ Token *new_token(TokenArena *arena)
   return &current->tokens[current->count++];
 }
 
+typedef enum {
+  TOKENFLAG_OPERATOR = 1 << 0,
+  TOKENFLAG_LITERAL = 1 << 1,
+} TokenFlags;
+
+static const uint32_t token_flags_map[__TOKEN_COUNT] = {
+  [TOKEN_PLUS] = TOKENFLAG_OPERATOR,
+  [TOKEN_MINUS] = TOKENFLAG_OPERATOR,
+  [TOKEN_NUMBER] = TOKENFLAG_LITERAL,
+  [TOKEN_OPEN_PAREN] = TOKENFLAG_OPERATOR,
+};
+
 bool token_is_operator(Token *token)
 {
-  switch (token->type)
-  {
-    case TOKEN_PLUS:
-    case TOKEN_MINUS:
-      return true;
-    case TOKEN_NUMBER:
-    case TOKEN_LINE_BREAK:
-    case TOKEN_OPEN_PAREN:
-    case TOKEN_END_OF_FILE:
-    case TOKEN_CLOSE_PAREN:
-      return false;
-  }
+  return (token_flags_map[token->type] & TOKENFLAG_OPERATOR) != 0; // single flag, this is OK
 }

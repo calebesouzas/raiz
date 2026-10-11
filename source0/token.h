@@ -3,13 +3,14 @@
 #include "libc.h"
 
 typedef enum TokenType {
-  TOKEN_END_OF_FILE,
+  TOKEN_END_OF_FILE = 0, // do not assign to the other variants!
   TOKEN_NUMBER,
   TOKEN_PLUS,
   TOKEN_MINUS,
   TOKEN_OPEN_PAREN,
   TOKEN_CLOSE_PAREN,
   TOKEN_LINE_BREAK,
+  __TOKEN_COUNT, // keep this one as the last!
 } TokenType;
 
 typedef struct {

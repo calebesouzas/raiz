@@ -126,6 +126,9 @@ again:
     case TOKEN_CLOSE_PAREN:
       fprintf(stderr, "current token is not a null-denotation starter\n");
       return NULL;
+    case __TOKEN_COUNT:
+      fprintf(stderr, "unreachable token: __TOKEN_COUNT\n");
+      abort();
   }
 
   return res;
