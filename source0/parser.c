@@ -40,11 +40,12 @@ static inline Token *parser_advance(Parser *P)
   return parser_current(P);
 }
 
-static inline Token *parser_next(Parser *P)
-{
-  parser_advance(P);
-  return parser_previous(P);
-}
+// Uncomment when needed, doing this to silence "unused X" warnings
+// static inline Token *parser_next(Parser *P)
+// {
+//   parser_advance(P);
+//   return parser_previous(P);
+// }
 
 static inline bool parser_consume(Parser *P, TokenType expected, const char *message)
 {
@@ -148,12 +149,16 @@ Expr *parse_expr(Parser *P, uint32_t depth, uint8_t min_precedence)
 
   while (token_is_operator(parser_current(P)))
   {
-    Token *operator = parser_next(P);
+    Token *operator = parser_current(P);
 
     uint8_t precedence = operator_precedence(operator, OPERATOR_INFIX);
     if (precedence < min_precedence)
       break;
 
+    // NOTE: we advance after comparing the precedences!
+    // If we don't and this loop breaks, the operator will be skipped and the other part of the
+    // binary expression will be not resolved correctly and maybe it would even propagate further.
+    parser_advance(P);
     Expr *right = parse_expr(P, depth + 1, precedence);
     if (right == NULL)
       return NULL;
