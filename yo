@@ -65,4 +65,8 @@ tests ()
   "$BUILD/tests" "${@:1}"
 }
 
-$1 "${@:2}"
+if [[ "$#" -gt 1 ]]; then
+  $1 "${@:2}"
+else
+  build
+fi
