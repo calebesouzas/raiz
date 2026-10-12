@@ -20,10 +20,7 @@ bool test_lexer(const char *source, const size_t size)
     printf("  (%d)", token.type);
     if (token.lexeme != NULL)
     {
-      printf(" \"%.*s\"",
-          token.length > INT_MAX ? INT_MAX : (int)token.length,
-          token.lexeme
-      );
+      printf(" \"%.*s\"", __TOKEN_FMT(&token));
     }
     if (token.type == TOKEN_NUMBER)
     {

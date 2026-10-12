@@ -22,6 +22,9 @@ typedef struct {
   } as;
 } Token;
 
+#define __TOKEN_FMT(token)\
+((token)->length > INT_MAX ? INT_MAX : (int)(token)->length), (token)->lexeme
+
 typedef enum {
   OPERATOR_INFIX,
   OPERATOR_PREFIX,
