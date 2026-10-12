@@ -60,6 +60,8 @@ typedef enum {
 static const uint32_t token_flags_map[__TOKEN_COUNT] = {
   [TOKEN_PLUS] = TOKENFLAG_OPERATOR,
   [TOKEN_MINUS] = TOKENFLAG_OPERATOR,
+  [TOKEN_STAR] = TOKENFLAG_OPERATOR,
+  [TOKEN_SLASH] = TOKENFLAG_OPERATOR,
   [TOKEN_NUMBER] = TOKENFLAG_LITERAL,
   [TOKEN_OPEN_PAREN] = TOKENFLAG_OPERATOR,
 };
@@ -82,6 +84,8 @@ typedef union {
 static const OperatorPrecedence operator_precedence_map[__TOKEN_COUNT] = {
   [TOKEN_PLUS] = {.infix = 10, .prefix = 0},
   [TOKEN_MINUS] = {.infix = 10, .prefix = 11},
+  [TOKEN_STAR] = {.infix = 20, .prefix = 21},
+  [TOKEN_SLASH] = {.infix = 20, .prefix = 0},
   [TOKEN_OPEN_PAREN] = {.infix = 0, .prefix = 0},
 };
 

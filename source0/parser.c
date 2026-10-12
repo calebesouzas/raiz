@@ -117,6 +117,11 @@ again:
       res->as.unary.inner = inner;
       res->as.unary.operator = operator;
       break;
+    case TOKEN_STAR:
+      fprintf(stderr, "dereferences are not yet implemented\n");
+    case TOKEN_SLASH:
+      fprintf(stderr, "token '%.*s' is not an unary operator\n", __TOKEN_FMT(parser_current(P)));
+      return NULL;
     case TOKEN_NUMBER:
       res = new_expr_node(P->arena);
       if (res == NULL)

@@ -44,6 +44,14 @@ Token next_token(Lexer *L)
       token.type = TOKEN_MINUS;
       token.length++;
     break;
+    case '*':
+      token.type = TOKEN_STAR;
+      token.length++;
+    break;
+    case '/':
+      token.type = TOKEN_SLASH;
+      token.length++;
+    break;
     case '(':
       token.type = TOKEN_OPEN_PAREN;
       token.length++;
