@@ -79,23 +79,40 @@ typedef union {
   uint32_t combined;
 } OperatorPrecedence;
 
-// TODO: find a way to detect if a precedence kind was not set for any specific operator.
-// Magic values are acceptable in this case.
 static const OperatorPrecedence operator_precedence_map[__TOKEN_COUNT] = {
-  [TOKEN_PLUS] = {.infix = 10, .prefix = 0},
+  [TOKEN_PLUS] = {.infix = 10, .prefix = 1},
   [TOKEN_MINUS] = {.infix = 10, .prefix = 11},
   [TOKEN_STAR] = {.infix = 20, .prefix = 21},
-  [TOKEN_SLASH] = {.infix = 20, .prefix = 0},
-  [TOKEN_OPEN_PAREN] = {.infix = 0, .prefix = 0},
+  [TOKEN_SLASH] = {.infix = 20, .prefix = 1},
+  [TOKEN_OPEN_PAREN] = {.infix = 1, .prefix = 1},
 };
 
 uint8_t operator_precedence(Token *token, OperatorPrecedenceType type)
 {
+#ifndef NO_DEBUG
+  if (!token_is_operator(token))
+  {
+    fprintf(stderr, "operator '%.*s' is not marked as an operator\n", __TOKEN_FMT(token));
+    return 0;
+  }
+#endif
   switch (type)
   {
     case OPERATOR_INFIX:
+#ifndef NO_DEBUG
+      if (operator_precedence_map[token->type].infix == 0)
+      {
+        fprintf(stderr, "operator '%.*s' has no infix precedence!\n", __TOKEN_FMT(token));
+      }
+#endif
       return operator_precedence_map[token->type].infix;
     case OPERATOR_PREFIX:
+#ifndef NO_DEBUG
+      if (operator_precedence_map[token->type].prefix == 0)
+      {
+        fprintf(stderr, "operator '%.*s' has no prefix precedence!\n", __TOKEN_FMT(token));
+      }
+#endif
       return operator_precedence_map[token->type].prefix;
   }
   return 0;

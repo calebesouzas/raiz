@@ -211,6 +211,6 @@ Ast parse(const char *source, const size_t size)
 
   parser.arena = ast.arena;
 
-  ast.root = parse_expr(&parser, 0, 0);
+  ast.root = parse_expr(&parser, 0, 1);
   return ast;
 }
