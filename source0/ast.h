@@ -8,6 +8,8 @@ typedef struct {
   int value;
 } Expr_Literal;
 
+typedef Token * Expr_Identifier;
+
 typedef struct {
   struct Expr *inner;
 } Expr_Group;
@@ -27,6 +29,7 @@ typedef enum {
   EXPR_GROUP,
   EXPR_UNARY,
   EXPR_BINARY,
+  EXPR_IDENTIFIER,
 } ExprType;
 
 typedef struct Expr {
@@ -35,6 +38,7 @@ typedef struct Expr {
     Expr_Group group;
     Expr_Unary unary;
     Expr_Binary binary;
+    Expr_Identifier identifier;
   } as;
   ExprType type;
 } Expr;

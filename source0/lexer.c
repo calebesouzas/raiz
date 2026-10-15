@@ -60,6 +60,10 @@ Token next_token(Lexer *L)
       token.type = TOKEN_CLOSE_PAREN;
       token.length++;
     break;
+    case '=':
+      token.type = TOKEN_EQUAL;
+      token.length++;
+    break;
     default:
     if (isdigit(*L->cursor))
     {
@@ -71,6 +75,14 @@ Token next_token(Lexer *L)
         token.length++;
       } while (isdigit(L->cursor[token.length]));
       token.as.literal = number;
+    }
+    else if (isalpha(*L->cursor))
+    {
+      token.type = TOKEN_IDENTIFIER;
+      do
+      {
+        token.length++;
+      } while (isalnum(L->cursor[token.length]) || L->cursor[token.length] == '_');
     }
     else
     {

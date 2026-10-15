@@ -64,6 +64,7 @@ static const uint32_t token_flags_map[__TOKEN_COUNT] = {
   [TOKEN_SLASH] = TOKENFLAG_OPERATOR,
   [TOKEN_NUMBER] = TOKENFLAG_LITERAL,
   [TOKEN_OPEN_PAREN] = TOKENFLAG_OPERATOR,
+  [TOKEN_EQUAL] = TOKENFLAG_OPERATOR,
 };
 
 bool token_is_operator(Token *token)
@@ -80,11 +81,12 @@ typedef union {
 } OperatorPrecedence;
 
 static const OperatorPrecedence operator_precedence_map[__TOKEN_COUNT] = {
-  [TOKEN_PLUS] = {.infix = 10, .prefix = 1},
-  [TOKEN_MINUS] = {.infix = 10, .prefix = 11},
-  [TOKEN_STAR] = {.infix = 20, .prefix = 21},
-  [TOKEN_SLASH] = {.infix = 20, .prefix = 1},
-  [TOKEN_OPEN_PAREN] = {.infix = 1, .prefix = 1},
+  [TOKEN_EQUAL] = {.infix = 10, .prefix = 0},
+  [TOKEN_PLUS] = {.infix = 20, .prefix = 1},
+  [TOKEN_MINUS] = {.infix = 20, .prefix = 21},
+  [TOKEN_STAR] = {.infix = 30, .prefix = 31},
+  [TOKEN_SLASH] = {.infix = 30, .prefix = 0},
+  [TOKEN_OPEN_PAREN] = {.infix = 0, .prefix = 1},
 };
 
 uint8_t operator_precedence(Token *token, OperatorPrecedenceType type)

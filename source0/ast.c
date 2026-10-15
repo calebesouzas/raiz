@@ -85,6 +85,9 @@ void dump_expr(Expr *expr, FILE *stream, uint32_t level)
       dump_expr(expr->as.binary.left, stream, level + 1);
       dump_expr(expr->as.binary.right, stream, level + 1);
       break;
+    case EXPR_IDENTIFIER:
+      fprintf(stream, "identifier '%.*s'\n", __TOKEN_FMT((Token*) expr->as.identifier));
+      break;
   }
 }
 

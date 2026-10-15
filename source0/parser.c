@@ -40,12 +40,11 @@ static inline Token *parser_advance(Parser *P)
   return parser_current(P);
 }
 
-// Uncomment when needed, doing this to silence "unused X" warnings
-// static inline Token *parser_next(Parser *P)
-// {
-//   parser_advance(P);
-//   return parser_previous(P);
-// }
+static inline Token *parser_next(Parser *P)
+{
+  parser_advance(P);
+  return parser_previous(P);
+}
 
 static inline bool parser_consume(Parser *P, TokenType expected, const char *message)
 {
@@ -131,9 +130,21 @@ again:
       res->as.literal.value = parser_current(P)->as.literal;
       parser_advance(P);
       break;
+    case TOKEN_IDENTIFIER:
+    {
+      Token *identifier = parser_next(P);
+
+      res = new_expr_node(P->arena);
+      if (res == NULL)
+        return NULL;
+
+      res->type = EXPR_IDENTIFIER;
+      res->as.identifier = (Expr_Identifier) identifier;
+    } break;
     case TOKEN_LINE_BREAK:
     case TOKEN_END_OF_FILE:
     case TOKEN_CLOSE_PAREN:
+    case TOKEN_EQUAL:
       fprintf(stderr, "current token is not a null-denotation starter\n");
       return NULL;
     case __TOKEN_COUNT:

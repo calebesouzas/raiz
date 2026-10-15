@@ -5,10 +5,12 @@
 typedef enum TokenType {
   TOKEN_END_OF_FILE = 0, // do not assign to the other variants!
   TOKEN_NUMBER,
+  TOKEN_IDENTIFIER,
   TOKEN_PLUS,
   TOKEN_MINUS,
   TOKEN_STAR,
   TOKEN_SLASH,
+  TOKEN_EQUAL,
   TOKEN_OPEN_PAREN,
   TOKEN_CLOSE_PAREN,
   TOKEN_LINE_BREAK,
