@@ -1,5 +1,17 @@
 #include "lexer.h"
 
+Lexer lexer_init(const char *source, size_t length)
+{
+  return (Lexer){
+    .source = source,
+    .source_length = length,
+    .cursor = source,
+    .remaining = length,
+    .line_count = 1,
+    .column_count = 1,
+  };
+}
+
 void skip_whitespace(Lexer *L)
 {
 next:

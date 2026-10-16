@@ -6,14 +6,7 @@
 
 bool test_lexer(const char *source, const size_t length)
 {
-  Lexer lexer = {
-    .source = source,
-    .source_length = length,
-    .cursor = source,
-    .remaining = length,
-    .column = 1,
-    .line_count = 1,
-  };
+  Lexer lexer = lexer_init(source, length);
 
   Token token = {0};
   printf("[\n");

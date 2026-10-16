@@ -202,12 +202,7 @@ Ast parse(const char *source, const size_t length)
     return ast;
 
   Parser parser = {0};
-  parser.lexer.cursor = source;
-  parser.lexer.remaining = length;
-  parser.lexer.source = source;
-  parser.lexer.source_length = length;
-  parser.lexer.column_count = 1;
-  parser.lexer.line_count = 1;
+  parser.lexer = lexer_init(source, length);
 
   parser.tokens = new_token_arena();
   if (parser.tokens == NULL)

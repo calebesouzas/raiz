@@ -14,4 +14,6 @@ typedef struct Lexer {
   size_t line_count;
 } Lexer;
 
+Lexer lexer_init(const char *source, size_t length);
+
 Token next_token(Lexer *L);
