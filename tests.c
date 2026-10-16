@@ -6,22 +6,23 @@
 
 bool test_lexer(const char *source, const size_t size)
 {
-  Lexer lexer = {0};
-  lexer.source = source;
-  lexer.size = size;
-  lexer.cursor = source;
-  lexer.remaining = size;
+  Lexer lexer = {
+    .source = source,
+    .size = size,
+    .cursor = source,
+    .remaining = size,
+    .column = 1,
+    .line_count = 1,
+  };
 
   Token token = {0};
   printf("[\n");
   do
   {
     token = next_token(&lexer);
-    printf("  (%d)", token.type);
-    if (token.lexeme != NULL)
-    {
-      printf(" \"%.*s\"", __TOKEN_FMT(&token));
-    }
+    printf("  [%zu](%zu:%zu):", token.location.index, token.location.line, token.location.column);
+    printf(" \"%.*s\"", __TOKEN_FMT(&token));
+
     if (token.type == TOKEN_NUMBER)
     {
       printf(" %d", token.as.literal);

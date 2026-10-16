@@ -9,6 +9,9 @@ typedef struct Lexer {
 
   const char *cursor;
   size_t remaining;
+
+  size_t column;
+  size_t line_count;
 } Lexer;
 
 Token next_token(Lexer *L);

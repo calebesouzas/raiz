@@ -7,6 +7,7 @@ next:
   {
     case ' ': case '\r': case '\t':
       L->cursor++;
+      L->column++;
       L->remaining--;
       goto next;
       break;
@@ -19,11 +20,18 @@ Token next_token(Lexer *L)
 {
   skip_whitespace(L);
 
-  if (L->remaining == 0)
-    return (Token){TOKEN_END_OF_FILE, 0, NULL, {0}};
-
   Token token = {0};
   token.lexeme = L->cursor;
+
+  token.location.index = L->size - L->remaining;
+  token.location.column = L->column;
+  token.location.line = L->line_count;
+
+  if (L->remaining == 0)
+  {
+    token.type = TOKEN_END_OF_FILE;
+    return token;
+  }
 
   switch (*L->cursor)
   {
@@ -33,8 +41,13 @@ Token next_token(Lexer *L)
       break;
     case '\n':
       token.type = TOKEN_LINE_BREAK;
-      token.length++;
-      token.lexeme = NULL;
+      do
+      {
+        L->line_count++;
+        L->column = 0;
+        token.length++;
+      } while (L->cursor[token.length] == '\n'); // NOTE: it won't work with "\r\n" in sequence
+      token.length = 1;
       break;
     case '+':
       token.type = TOKEN_PLUS;
@@ -86,13 +99,14 @@ Token next_token(Lexer *L)
     }
     else
     {
-      fprintf(stderr, "%s(): invalid character: '%c'\n", __FUNCTION__, *L->cursor);
-      exit(1);
+      token.type = TOKEN_ERROR;
+      token.as.error.message = "invalid character";
     }
     break;
   }
 
   L->cursor += token.length;
+  L->column += token.length;
   L->remaining -= token.length;
 
   return token;

@@ -4,6 +4,7 @@
 
 typedef enum TokenType {
   TOKEN_END_OF_FILE = 0, // do not assign to the other variants!
+  TOKEN_ERROR,
   TOKEN_NUMBER,
   TOKEN_IDENTIFIER,
   TOKEN_PLUS,
@@ -18,11 +19,21 @@ typedef enum TokenType {
 } TokenType;
 
 typedef struct {
+  size_t line;
+  size_t column;
+  size_t index;
+} Location;
+
+typedef struct {
   TokenType type;
+  Location location;
   size_t length;
   const char *lexeme;
   union {
     int literal;
+    struct {
+      const char *message;
+    } error;
   } as;
 } Token;
 
