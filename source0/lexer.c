@@ -23,7 +23,7 @@ Token next_token(Lexer *L)
   Token token = {0};
   token.lexeme = L->cursor;
 
-  token.location.index = L->size - L->remaining;
+  token.location.index = L->source_length - L->remaining;
   token.location.column = L->column_count;
   token.location.line = L->line_count;
 

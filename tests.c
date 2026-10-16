@@ -4,13 +4,13 @@
 #include "source0/ast.h"
 #include "source0/parser.h"
 
-bool test_lexer(const char *source, const size_t size)
+bool test_lexer(const char *source, const size_t length)
 {
   Lexer lexer = {
     .source = source,
-    .size = size,
+    .source_length = length,
     .cursor = source,
-    .remaining = size,
+    .remaining = length,
     .column = 1,
     .line_count = 1,
   };
@@ -34,9 +34,9 @@ bool test_lexer(const char *source, const size_t size)
   return true;
 }
 
-bool test_parser(const char *source, const size_t size)
+bool test_parser(const char *source, const size_t length)
 {
-  Ast ast = parse(source, size);
+  Ast ast = parse(source, length);
   if (ast.root != NULL)
   {
     dump_ast(&ast, stderr);
@@ -52,7 +52,7 @@ bool test_parser(const char *source, const size_t size)
   return true;
 }
 
-typedef bool (*TestFunction) (const char *source, const size_t size);
+typedef bool (*TestFunction) (const char *source, const size_t length);
 
 int main(void)
 {

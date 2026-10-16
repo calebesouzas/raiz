@@ -193,7 +193,7 @@ Expr *parse_expr(Parser *P, uint32_t depth, uint8_t min_precedence)
   return left;
 }
 
-Ast parse(const char *source, const size_t size)
+Ast parse(const char *source, const size_t length)
 {
   Ast ast = {0};
 
@@ -203,9 +203,9 @@ Ast parse(const char *source, const size_t size)
 
   Parser parser = {0};
   parser.lexer.cursor = source;
-  parser.lexer.remaining = size;
+  parser.lexer.remaining = length;
   parser.lexer.source = source;
-  parser.lexer.size = size;
+  parser.lexer.source_length = length;
   parser.lexer.column_count = 1;
   parser.lexer.line_count = 1;
 

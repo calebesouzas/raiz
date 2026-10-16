@@ -3,7 +3,7 @@
 #include "ast.h"
 #include "parser.h"
 
-bool process_program(const char *source, size_t size);
+bool process_program(const char *source, size_t length);
 
 int main(int argc, char **argv)
 {
@@ -27,9 +27,9 @@ int main(int argc, char **argv)
   return 0;
 }
 
-bool process_program(const char *source, const size_t size)
+bool process_program(const char *source, const size_t length)
 {
-  Ast ast = parse(source, size);
+  Ast ast = parse(source, length);
   if (ast.arena == NULL)
     return false;
 

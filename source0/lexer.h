@@ -5,7 +5,7 @@
 
 typedef struct Lexer {
   const char *source;
-  size_t size;
+  size_t source_length;
 
   const char *cursor;
   size_t remaining;
