@@ -196,10 +196,15 @@ Expr *parse_expr(Parser *P, uint32_t depth, uint8_t min_precedence)
 Ast parse(const char *source, const size_t length)
 {
   Ast ast = {0};
+  ast.ok = true;
 
   ast.arena = new_expr_arena();
   if (ast.arena == NULL)
+  {
+    fprintf(stderr, "parse(): failed to allocate expression arena\n");
+    ast.ok = false;
     return ast;
+  }
 
   Parser parser = {0};
   parser.lexer = lexer_init(source, length);
@@ -207,7 +212,9 @@ Ast parse(const char *source, const size_t length)
   parser.tokens = new_token_arena();
   if (parser.tokens == NULL)
   {
+    fprintf(stderr, "parse(): failed to allocate token arena\n");
     free_expr_arena(ast.arena);
+    ast.ok = false;
     return ast;
   }
 

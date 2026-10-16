@@ -19,7 +19,10 @@ int main(int argc, char **argv)
     return 1;
 
   if (!process_program(source, size))
+  {
+    fprintf(stderr, "raiz: process failed\n");
     return 1;
+  }
 
   free(source);
   source = NULL;
@@ -30,7 +33,7 @@ int main(int argc, char **argv)
 bool process_program(const char *source, const size_t length)
 {
   Ast ast = parse(source, length);
-  if (ast.arena == NULL)
+  if (!ast.ok)
     return false;
 
   dump_ast(&ast, stderr);

@@ -50,6 +50,7 @@ typedef struct ExprArena {
 } ExprArena;
 
 typedef struct {
+  bool ok;
   ExprArena *arena;
   Expr *root;
 } Ast;
