@@ -72,6 +72,28 @@ bool token_is_operator(Token *token)
   return (token_flags_map[token->type] & TOKENFLAG_OPERATOR) != 0; // single flag, this is OK
 }
 
+const char *token_name(TokenType type)
+{
+  switch (type)
+  {
+    case TOKEN_END_OF_FILE: return "end of file";
+    case TOKEN_ERROR: return "error";
+    case TOKEN_NUMBER: return "number";
+    case TOKEN_IDENTIFIER: return "identifier";
+    case TOKEN_PLUS: return "+";
+    case TOKEN_MINUS: return "-";
+    case TOKEN_STAR: return "*";
+    case TOKEN_SLASH: return "/";
+    case TOKEN_EQUAL: return "=";
+    case TOKEN_OPEN_PAREN: return "(";
+    case TOKEN_CLOSE_PAREN: return ")";
+    case TOKEN_LINE_BREAK: return "line break";
+    case __TOKEN_COUNT: return NULL;
+  }
+  fprintf(stderr, "token_name(): unhandled token (id %d)\n", type);
+  abort();
+}
+
 typedef union {
   struct {
     uint8_t infix;
