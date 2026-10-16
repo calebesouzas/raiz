@@ -9,9 +9,9 @@ next:
       L->cursor++;
       L->remaining--;
       goto next;
-    break;
+      break;
     default:
-    return;
+      return;
   }
 }
 
@@ -30,40 +30,40 @@ Token next_token(Lexer *L)
     case '\0':
       token.type = TOKEN_END_OF_FILE;
       L->remaining = 0;
-    break;
+      break;
     case '\n':
       token.type = TOKEN_LINE_BREAK;
       token.length++;
       token.lexeme = NULL;
-    break;
+      break;
     case '+':
       token.type = TOKEN_PLUS;
       token.length++;
-    break;
+      break;
     case '-':
       token.type = TOKEN_MINUS;
       token.length++;
-    break;
+      break;
     case '*':
       token.type = TOKEN_STAR;
       token.length++;
-    break;
+      break;
     case '/':
       token.type = TOKEN_SLASH;
       token.length++;
-    break;
+      break;
     case '(':
       token.type = TOKEN_OPEN_PAREN;
       token.length++;
-    break;
+      break;
     case ')':
       token.type = TOKEN_CLOSE_PAREN;
       token.length++;
-    break;
+      break;
     case '=':
       token.type = TOKEN_EQUAL;
       token.length++;
-    break;
+      break;
     default:
     if (isdigit(*L->cursor))
     {
