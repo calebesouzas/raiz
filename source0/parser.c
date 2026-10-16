@@ -2,7 +2,7 @@
 #include "lexer.h"
 #include "parser.h"
 
-static inline Token *parser_save_token(Parser *P)
+static Token *parser_save_token(Parser *P)
 {
   Token *token = new_token(P->tokens);
   if (token == NULL)
@@ -13,6 +13,15 @@ static inline Token *parser_save_token(Parser *P)
 
   *token = next_token(&P->lexer);
   return token;
+}
+
+static inline void parser_error(Parser *P, Token *token, const char *message)
+{
+  ParserError error = {
+    .token = token,
+    .message = message,
+  };
+  array_push(&P->errors, error);
 }
 
 static inline Token *parser_current(Parser *P)
@@ -46,31 +55,53 @@ static inline Token *parser_next(Parser *P)
   return parser_previous(P);
 }
 
-static inline bool parser_consume(Parser *P, TokenType expected, const char *message)
+bool parser_expect(Parser *P, TokenType expected, Token *token)
 {
-  if (parser_current(P)->type != expected)
-  {
-    fprintf(stderr, "%s\n", message);
+  if (token->type == expected)
+    return true;
+
+  char formatted_message[PARSER_MESSAGE_SIZE];
+  snprintf(formatted_message, sizeof(formatted_message), "expected '%s'", token_name(expected));
+
+  parser_error(P, token, formatted_message);
+  return false;
+}
+
+static inline bool parser_consume(Parser *P, TokenType expected)
+{
+  if (!parser_expect(P, expected, parser_current(P)))
     return false;
-  }
+
   parser_advance(P);
   return true;
 }
 
-static inline void check_depth(uint32_t depth)
+static inline Expr *parser_new_node(Parser *P)
+{
+  Expr *node = new_expr_node(P->arena);
+  if (node == NULL)
+  {
+    parser_error(P, parser_current(P), "failed to allocate expression");
+  }
+  return node;
+}
+
+static inline bool check_depth(Parser *P, uint32_t depth)
 {
   if (depth > PARSER_DEPTH_LIMIT)
   {
-    fprintf(stderr, "reached parser recursion depth limit (%u)\n", PARSER_DEPTH_LIMIT);
-    abort();
+    parser_error(P, parser_current(P), "depth limit overflow");
+    return false;
   }
+  return true;
 }
 
 Expr *parse_expr(Parser *P, uint32_t depth, uint8_t min_precedence);
 
 Expr *parse_nud(Parser *P, uint32_t depth)
 {
-  check_depth(depth);
+  if (!check_depth(P, depth))
+    return NULL;
 
   Expr *res = NULL;
 
@@ -84,10 +115,10 @@ again:
       if (inner == NULL)
         return NULL;
 
-      if (!parser_consume(P, TOKEN_CLOSE_PAREN, "expect ')'"))
+      if (!parser_consume(P, TOKEN_CLOSE_PAREN))
         return NULL;
 
-      res = new_expr_node(P->arena);
+      res = parser_new_node(P);
       if (res == NULL)
         return NULL;
 
@@ -108,7 +139,7 @@ again:
       if (inner == NULL)
         return NULL;
 
-      res = new_expr_node(P->arena);
+      res = parser_new_node(P);
       if (res == NULL)
         return NULL;
 
@@ -117,12 +148,11 @@ again:
       res->as.unary.operator = operator;
       break;
     case TOKEN_STAR:
-      fprintf(stderr, "dereferences are not yet implemented\n");
     case TOKEN_SLASH:
-      fprintf(stderr, "token '%.*s' is not an unary operator\n", __TOKEN_FMT(parser_current(P)));
+      parser_error(P, parser_current(P), "not an unary operator");
       return NULL;
     case TOKEN_NUMBER:
-      res = new_expr_node(P->arena);
+      res = parser_new_node(P);
       if (res == NULL)
         return NULL;
 
@@ -134,22 +164,19 @@ again:
     {
       Token *identifier = parser_next(P);
 
-      res = new_expr_node(P->arena);
+      res = parser_new_node(P);
       if (res == NULL)
         return NULL;
 
       res->type = EXPR_IDENTIFIER;
       res->as.identifier = (Expr_Identifier) identifier;
     } break;
-    case TOKEN_LINE_BREAK:
-    case TOKEN_END_OF_FILE:
-    case TOKEN_CLOSE_PAREN:
-    case TOKEN_EQUAL:
-      fprintf(stderr, "current token is not a null-denotation starter\n");
-      return NULL;
     case __TOKEN_COUNT:
       fprintf(stderr, "unreachable token: __TOKEN_COUNT\n");
       abort();
+    default:
+      parser_error(P, parser_current(P), "not a null-denotation starter");
+      return NULL;
   }
 
   return res;
@@ -157,7 +184,7 @@ again:
 
 Expr *parse_expr(Parser *P, uint32_t depth, uint8_t min_precedence)
 {
-  check_depth(depth);
+  check_depth(P, depth);
 
   Expr *left = parse_nud(P, depth + 1);
   if (left == NULL)
@@ -179,7 +206,7 @@ Expr *parse_expr(Parser *P, uint32_t depth, uint8_t min_precedence)
     if (right == NULL)
       return NULL;
 
-    Expr *expr = new_expr_node(P->arena);
+    Expr *expr = parser_new_node(P);
     if (expr == NULL)
       return NULL;
 
@@ -227,5 +254,16 @@ Ast parse(const char *source, const size_t length)
   parser.arena = ast.arena;
 
   ast.root = parse_expr(&parser, 0, 1);
+  if (parser.errors.count != 0)
+  {
+    ast.ok = false;
+    array_for(ParserError, error, &parser.errors)
+    {
+      Location *location = &error->token->location;
+      fprintf(stderr, "[%zu](%zu:%zu): %s\n",
+          location->index, location->line, location->column, error->message
+      );
+    }
+  }
   return ast;
 }
