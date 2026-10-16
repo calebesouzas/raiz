@@ -61,7 +61,7 @@ debug ()
 
 tests ()
 {
-  clang -o "$BUILD/tests" "tests.c" -ggdb
+  clang -o "$BUILD/tests" "tests.c" -Wall -Wextra -ggdb
   "$BUILD/tests" "${@:1}"
 }
 
