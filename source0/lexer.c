@@ -7,7 +7,7 @@ next:
   {
     case ' ': case '\r': case '\t':
       L->cursor++;
-      L->column++;
+      L->column_count++;
       L->remaining--;
       goto next;
       break;
@@ -24,7 +24,7 @@ Token next_token(Lexer *L)
   token.lexeme = L->cursor;
 
   token.location.index = L->size - L->remaining;
-  token.location.column = L->column;
+  token.location.column = L->column_count;
   token.location.line = L->line_count;
 
   if (L->remaining == 0)
@@ -44,7 +44,7 @@ Token next_token(Lexer *L)
       do
       {
         L->line_count++;
-        L->column = 0;
+        L->column_count = 0;
         token.length++;
       } while (L->cursor[token.length] == '\n'); // NOTE: it won't work with "\r\n" in sequence
       token.length = 1;
@@ -106,7 +106,7 @@ Token next_token(Lexer *L)
   }
 
   L->cursor += token.length;
-  L->column += token.length;
+  L->column_count += token.length;
   L->remaining -= token.length;
 
   return token;

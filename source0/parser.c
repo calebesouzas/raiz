@@ -206,7 +206,7 @@ Ast parse(const char *source, const size_t size)
   parser.lexer.remaining = size;
   parser.lexer.source = source;
   parser.lexer.size = size;
-  parser.lexer.column = 1;
+  parser.lexer.column_count = 1;
   parser.lexer.line_count = 1;
 
   parser.tokens = new_token_arena();
