@@ -88,6 +88,13 @@ void dump_expr(Expr *expr, FILE *stream, uint32_t level)
     case EXPR_IDENTIFIER:
       fprintf(stream, "identifier '%.*s'\n", __TOKEN_FMT((Token*) expr->as.identifier));
       break;
+    case EXPR_BLOCK:
+      fprintf(stream, "block (count %zu):\n", expr->as.block.count);
+      array_for(Expr*, node, &expr->as.block)
+      {
+        dump_expr(*node, stream, level + 1);
+      }
+      break;
   }
 }
 

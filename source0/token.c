@@ -88,6 +88,8 @@ const char *token_name(TokenType type)
     case TOKEN_OPEN_PAREN: return "(";
     case TOKEN_CLOSE_PAREN: return ")";
     case TOKEN_LINE_BREAK: return "line break";
+    case TOKEN_OPEN_CURLY: return "{";
+    case TOKEN_CLOSE_CURLY: return "}";
     case __TOKEN_COUNT: return NULL;
   }
   fprintf(stderr, "token_name(): unhandled token (id %d)\n", type);

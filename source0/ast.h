@@ -1,6 +1,7 @@
 #pragma once
 
 #include "token.h"
+#include "generics.h"
 
 struct Expr;
 
@@ -24,12 +25,15 @@ typedef struct {
   Token *operator;
 } Expr_Binary;
 
+typedef array_of(struct Expr*) Expr_Block;
+
 typedef enum {
   EXPR_LITERAL,
   EXPR_GROUP,
   EXPR_UNARY,
   EXPR_BINARY,
   EXPR_IDENTIFIER,
+  EXPR_BLOCK,
 } ExprType;
 
 typedef struct Expr {
@@ -39,6 +43,7 @@ typedef struct Expr {
     Expr_Unary unary;
     Expr_Binary binary;
     Expr_Identifier identifier;
+    Expr_Block block;
   } as;
   ExprType type;
 } Expr;

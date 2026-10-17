@@ -85,6 +85,14 @@ Token next_token(Lexer *L)
       token.type = TOKEN_CLOSE_PAREN;
       token.length++;
       break;
+    case '{':
+      token.type = TOKEN_OPEN_CURLY;
+      token.length++;
+      break;
+    case '}':
+      token.type = TOKEN_CLOSE_CURLY;
+      token.length++;
+      break;
     case '=':
       token.type = TOKEN_EQUAL;
       token.length++;

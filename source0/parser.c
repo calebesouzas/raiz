@@ -96,7 +96,8 @@ static inline bool check_depth(Parser *P, uint32_t depth)
   return true;
 }
 
-Expr *parse_expr(Parser *P, uint32_t depth, uint8_t min_precedence);
+Expr *parse_expr_tree(Parser *P, uint32_t depth, uint8_t min_precedence);
+Expr *parse_expr(Parser *P, uint32_t depth);
 
 Expr *parse_nud(Parser *P, uint32_t depth)
 {
@@ -111,7 +112,7 @@ again:
     case TOKEN_OPEN_PAREN:
       parser_advance(P);
       uint8_t precedence = operator_precedence(parser_previous(P), OPERATOR_PREFIX);
-      Expr *inner = parse_expr(P, depth + 1, precedence);
+      Expr *inner = parse_expr_tree(P, depth + 1, precedence);
       if (inner == NULL)
         return NULL;
 
@@ -135,7 +136,7 @@ again:
       Token *operator = parser_previous(P);
 
       precedence = operator_precedence(operator, OPERATOR_PREFIX);
-      inner = parse_expr(P, depth + 1, precedence);
+      inner = parse_expr_tree(P, depth + 1, precedence);
       if (inner == NULL)
         return NULL;
 
@@ -182,7 +183,7 @@ again:
   return res;
 }
 
-Expr *parse_expr(Parser *P, uint32_t depth, uint8_t min_precedence)
+Expr *parse_expr_tree(Parser *P, uint32_t depth, uint8_t min_precedence)
 {
   check_depth(P, depth);
 
@@ -202,7 +203,7 @@ Expr *parse_expr(Parser *P, uint32_t depth, uint8_t min_precedence)
     // If we don't and this loop breaks, the operator will be skipped and the other part of the
     // binary expression will be not resolved correctly and maybe it would even propagate further.
     parser_advance(P);
-    Expr *right = parse_expr(P, depth + 1, precedence);
+    Expr *right = parse_expr_tree(P, depth + 1, precedence);
     if (right == NULL)
       return NULL;
 
@@ -218,6 +219,53 @@ Expr *parse_expr(Parser *P, uint32_t depth, uint8_t min_precedence)
   }
 
   return left;
+}
+
+Expr *parse_expr(Parser *P, uint32_t depth)
+{
+  if (!check_depth(P, depth))
+    return NULL;
+
+  Expr *res = NULL;
+  switch (parser_current(P)->type)
+  {
+    case TOKEN_ERROR:
+      parser_error(P, parser_current(P), parser_current(P)->as.error.message);
+      break;
+    case TOKEN_OPEN_CURLY:
+      parser_advance(P);
+      res = parser_new_node(P);
+      if (res == NULL)
+        return NULL;
+
+      res->type = EXPR_BLOCK;
+
+      while (parser_current(P)->type != TOKEN_CLOSE_CURLY)
+      {
+        Expr *node = parse_expr_tree(P, depth + 1, 1);
+        if (node == NULL)
+        {
+          while (parser_current(P)->type != TOKEN_LINE_BREAK
+              && parser_current(P)->type != TOKEN_END_OF_FILE)
+          {
+            parser_advance(P);
+          }
+          continue;
+        }
+
+        if (!parser_consume(P, TOKEN_LINE_BREAK))
+        {
+          return NULL;
+        }
+
+        array_push(&res->as.block, node);
+      }
+      break;
+    default:
+      return parse_expr_tree(P, depth + 1, 1);
+  }
+
+  return res;
 }
 
 Ast parse(const char *source, const size_t length)
@@ -253,7 +301,7 @@ Ast parse(const char *source, const size_t length)
 
   parser.arena = ast.arena;
 
-  ast.root = parse_expr(&parser, 0, 1);
+  ast.root = parse_expr(&parser, 0);
   if (parser.errors.count != 0)
   {
     ast.ok = false;
