@@ -4,6 +4,7 @@
 
 #define array_size(array) (sizeof((array)->data[0]) * (array)->capacity)
 
+#define ARRAY_INITIAL_CAPACITY 16
 #define array_init(array)\
 do\
 {\
@@ -24,7 +25,14 @@ do\
 #define array_push(array, value)\
 do\
 {\
-  array_reserve(array, (array)->count + 1);\
+  if ((array)->capacity == 0)\
+  {\
+    array_init(array);\
+  }\
+  else\
+  {\
+    array_reserve(array, (array)->count + 1);\
+  }\
   if ((array)->data != NULL)\
   {\
     (array)->data[(array)->count++] = (value);\
