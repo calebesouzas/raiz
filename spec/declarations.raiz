@@ -1,0 +1,43 @@
+// Defining syntax for declarations
+
+// It should be consistent through all kinds of symbols you can declare.
+
+// idea
+typed @type = value
+inferred @= value
+
+constant_typed @type : known_value
+constant_inferred @: known_value
+
+// examples
+name @string = "Calebe"
+age @= 16 // infers @int
+
+Query @: struct
+{
+  pattern: Pattern
+  user: User
+}
+
+Status @: enum /* (nat8) */
+{
+  IN_QUEUE
+  IN_PROGRESS
+  COMPLETED
+}
+
+Vector3 @: union
+{
+  array @float[3]
+  _ @struct
+  {
+    x @float
+    y @float
+    z @float
+  }
+}
+
+add @: fun (x @int, y @int) %[computes] @int =
+{
+  return x + y
+}
