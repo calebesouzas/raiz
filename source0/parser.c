@@ -2,7 +2,9 @@
 #include "lexer.h"
 #include "parser.h"
 
-static Token *parser_save_token(Parser *P)
+#define PARSER_DEFAULT_FLAGS (LEXERFLAG_ENABLE_NEW_LINE)
+
+static Token *parser_save_token(Parser *P, uint32_t flags)
 {
   Token *token = new_token(P->tokens);
   if (token == NULL)
@@ -11,7 +13,7 @@ static Token *parser_save_token(Parser *P)
     abort();
   }
 
-  *token = next_token(&P->lexer);
+  *token = next_token(&P->lexer, flags);
   return token;
 }
 
@@ -43,9 +45,14 @@ static inline Token *parser_previous(Parser *P)
 static inline Token *parser_advance(Parser *P)
 {
   P->buffer[0] = P->buffer[1];
-  P->buffer[1] = P->buffer[2];
+  P->buffer[1] = parser_save_token(P, PARSER_DEFAULT_FLAGS);
+  return parser_current(P);
+}
 
-  P->buffer[2] = parser_save_token(P);
+static inline Token *parser_advance_with(Parser *P, uint32_t flags)
+{
+  P->buffer[0] = P->buffer[1];
+  P->buffer[1] = parser_save_token(P, flags);
   return parser_current(P);
 }
 
@@ -233,7 +240,7 @@ Expr *parse_expr(Parser *P, uint32_t depth)
       parser_error(P, parser_current(P), parser_current(P)->as.error.message);
       break;
     case TOKEN_OPEN_CURLY:
-      parser_advance(P);
+      parser_advance_with(P, PARSER_DEFAULT_FLAGS & ~LEXERFLAG_ENABLE_NEW_LINE);
       res = parser_new_node(P);
       if (res == NULL)
         return NULL;
@@ -296,7 +303,7 @@ Ast parse(const char *source, const size_t length)
   // start from index 1 (which is the current token)
   for (size_t i = 1; i < sizeof(parser.buffer)/sizeof(parser.buffer[0]); i++)
   {
-    parser.buffer[i] = parser_save_token(&parser);
+    parser.buffer[i] = parser_save_token(&parser, PARSER_DEFAULT_FLAGS);
   }
 
   parser.arena = ast.arena;

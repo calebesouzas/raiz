@@ -12,7 +12,7 @@ Lexer lexer_init(const char *source, size_t length)
   };
 }
 
-void skip_whitespace(Lexer *L)
+void skip_whitespace(Lexer *L, uint32_t flags)
 {
 next:
   switch (*L->cursor)
@@ -23,14 +23,24 @@ next:
       L->remaining--;
       goto next;
       break;
+    case '\n':
+      if ((flags & LEXERFLAG_ENABLE_NEW_LINE) == 0)
+      {
+        L->cursor++;
+        L->column_count = 0;
+        L->line_count++;
+        L->remaining--;
+        goto next;
+      }
+      break;
     default:
       return;
   }
 }
 
-Token next_token(Lexer *L)
+Token next_token(Lexer *L, uint32_t flags)
 {
-  skip_whitespace(L);
+  skip_whitespace(L, flags);
 
   Token token = {0};
   token.lexeme = L->cursor;

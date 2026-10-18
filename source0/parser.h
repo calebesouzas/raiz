@@ -17,7 +17,7 @@ typedef struct {
   ExprArena *arena;
   Lexer lexer;
   TokenArena *tokens;
-  Token *buffer[3];
+  Token *buffer[2];
   ParserError_Array errors;
 } Parser;
 
