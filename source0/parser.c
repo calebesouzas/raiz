@@ -238,7 +238,7 @@ Expr *parse_expr_tree(Parser *P, uint32_t depth, uint8_t min_precedence)
     // NOTE: we advance after comparing the precedences!
     // If we don't and this loop breaks, the operator will be skipped and the other part of the
     // binary expression will be not resolved correctly and maybe it would even propagate further.
-    parser_advance(P);
+    parser_advance_with(P, PARSER_DEFAULT_FLAGS & ~LEXERFLAG_ENABLE_NEW_LINE);
     Expr *right = parse_expr_tree(P, depth + 1, precedence);
     if (right == NULL)
       return NULL;
