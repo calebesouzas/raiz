@@ -133,6 +133,35 @@ again:
       res->as.group.inner = inner;
       res->type = EXPR_GROUP;
       break;
+    case TOKEN_OPEN_CURLY:
+      parser_advance_with(P, PARSER_DEFAULT_FLAGS & ~LEXERFLAG_ENABLE_NEW_LINE);
+      res = parser_new_node(P);
+      if (res == NULL)
+        return NULL;
+
+      res->type = EXPR_BLOCK;
+
+      while (parser_current(P)->type != TOKEN_CLOSE_CURLY)
+      {
+        Expr *node = parse_expr_tree(P, depth + 1, 1);
+        if (node == NULL)
+        {
+          while (parser_current(P)->type != TOKEN_LINE_BREAK
+              && parser_current(P)->type != TOKEN_END_OF_FILE)
+          {
+            parser_advance(P);
+          }
+          continue;
+        }
+
+        if (!parser_consume(P, TOKEN_LINE_BREAK))
+        {
+          return NULL;
+        }
+
+        array_push(&res->as.block, node);
+      }
+      break;
     case TOKEN_PLUS:
       parser_advance(P);
       goto again;
@@ -238,35 +267,6 @@ Expr *parse_expr(Parser *P, uint32_t depth)
   {
     case TOKEN_ERROR:
       parser_error(P, parser_current(P), parser_current(P)->as.error.message);
-      break;
-    case TOKEN_OPEN_CURLY:
-      parser_advance_with(P, PARSER_DEFAULT_FLAGS & ~LEXERFLAG_ENABLE_NEW_LINE);
-      res = parser_new_node(P);
-      if (res == NULL)
-        return NULL;
-
-      res->type = EXPR_BLOCK;
-
-      while (parser_current(P)->type != TOKEN_CLOSE_CURLY)
-      {
-        Expr *node = parse_expr_tree(P, depth + 1, 1);
-        if (node == NULL)
-        {
-          while (parser_current(P)->type != TOKEN_LINE_BREAK
-              && parser_current(P)->type != TOKEN_END_OF_FILE)
-          {
-            parser_advance(P);
-          }
-          continue;
-        }
-
-        if (!parser_consume(P, TOKEN_LINE_BREAK))
-        {
-          return NULL;
-        }
-
-        array_push(&res->as.block, node);
-      }
       break;
     default:
       return parse_expr_tree(P, depth + 1, 1);
