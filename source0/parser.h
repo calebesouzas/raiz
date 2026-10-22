@@ -24,4 +24,4 @@ typedef struct {
 // all parser functions should check the depth to prevent stack overflow due to indirect recursion
 #define PARSER_DEPTH_LIMIT 256
 
-Ast parse(const char *source, const size_t length);
+Ast parse(const char *source, const size_t length, const char *file_path);

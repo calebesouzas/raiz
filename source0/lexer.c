@@ -1,6 +1,6 @@
 #include "lexer.h"
 
-Lexer lexer_init(const char *source, size_t length)
+Lexer lexer_init(const char *source, size_t length, const char *file_path)
 {
   return (Lexer){
     .source = source,
@@ -9,6 +9,7 @@ Lexer lexer_init(const char *source, size_t length)
     .remaining = length,
     .line_count = 1,
     .column_count = 1,
+    .file_path = file_path,
   };
 }
 
@@ -43,11 +44,11 @@ Token next_token(Lexer *L, uint32_t flags)
   skip_whitespace(L, flags);
 
   Token token = {0};
-  token.lexeme = L->cursor;
 
-  token.location.index = L->source_length - L->remaining;
-  token.location.column = L->column_count;
-  token.location.line = L->line_count;
+  token.span.text = L->cursor;
+  token.span.index = L->source_length - L->remaining;
+  token.span.column = L->column_count;
+  token.span.line = L->line_count;
 
   if (L->remaining == 0)
   {
@@ -67,45 +68,45 @@ Token next_token(Lexer *L, uint32_t flags)
       {
         L->line_count++;
         L->column_count = 0;
-        token.length++;
-      } while (L->cursor[token.length] == '\n'); // NOTE: it won't work with "\r\n" in sequence
-      token.length = 1;
+        token.span.length++;
+      } while (L->cursor[token.span.length] == '\n'); // NOTE: it won't work with "\r\n" in sequence
+      token.span.length = 1;
       break;
     case '+':
       token.type = TOKEN_PLUS;
-      token.length++;
+      token.span.length++;
       break;
     case '-':
       token.type = TOKEN_MINUS;
-      token.length++;
+      token.span.length++;
       break;
     case '*':
       token.type = TOKEN_STAR;
-      token.length++;
+      token.span.length++;
       break;
     case '/':
       token.type = TOKEN_SLASH;
-      token.length++;
+      token.span.length++;
       break;
     case '(':
       token.type = TOKEN_OPEN_PAREN;
-      token.length++;
+      token.span.length++;
       break;
     case ')':
       token.type = TOKEN_CLOSE_PAREN;
-      token.length++;
+      token.span.length++;
       break;
     case '{':
       token.type = TOKEN_OPEN_CURLY;
-      token.length++;
+      token.span.length++;
       break;
     case '}':
       token.type = TOKEN_CLOSE_CURLY;
-      token.length++;
+      token.span.length++;
       break;
     case '=':
       token.type = TOKEN_EQUAL;
-      token.length++;
+      token.span.length++;
       break;
     default:
     if (isdigit(*L->cursor))
@@ -114,9 +115,9 @@ Token next_token(Lexer *L, uint32_t flags)
       int number = 0;
       do
       {
-        number = (number * 10) + (L->cursor[token.length] - '0');
-        token.length++;
-      } while (isdigit(L->cursor[token.length]));
+        number = (number * 10) + (L->cursor[token.span.length] - '0');
+        token.span.length++;
+      } while (isdigit(L->cursor[token.span.length]));
       token.as.literal = number;
     }
     else if (isalpha(*L->cursor))
@@ -124,8 +125,8 @@ Token next_token(Lexer *L, uint32_t flags)
       token.type = TOKEN_IDENTIFIER;
       do
       {
-        token.length++;
-      } while (isalnum(L->cursor[token.length]) || L->cursor[token.length] == '_');
+        token.span.length++;
+      } while (isalnum(L->cursor[token.span.length]) || L->cursor[token.span.length] == '_');
     }
     else
     {
@@ -135,9 +136,9 @@ Token next_token(Lexer *L, uint32_t flags)
     break;
   }
 
-  L->cursor += token.length;
-  L->column_count += token.length;
-  L->remaining -= token.length;
+  L->cursor += token.span.length;
+  L->column_count += token.span.length;
+  L->remaining -= token.span.length;
 
   return token;
 }

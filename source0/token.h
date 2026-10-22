@@ -2,6 +2,8 @@
 
 #include "libc.h"
 
+#include "spans.h"
+
 typedef enum TokenType {
   TOKEN_END_OF_FILE = 0, // do not assign to the other variants!
   TOKEN_ERROR,
@@ -21,16 +23,8 @@ typedef enum TokenType {
 } TokenType;
 
 typedef struct {
-  size_t line;
-  size_t column;
-  size_t index;
-} Location;
-
-typedef struct {
   TokenType type;
-  Location location;
-  size_t length;
-  const char *lexeme;
+  Span span;
   union {
     int literal;
     struct {
@@ -40,7 +34,7 @@ typedef struct {
 } Token;
 
 #define __TOKEN_FMT(token)\
-((token)->length > INT_MAX ? INT_MAX : (int)(token)->length), (token)->lexeme
+((token)->span.length > INT_MAX ? INT_MAX : (int)(token)->span.length), (token)->span.text
 
 typedef enum {
   OPERATOR_INFIX,

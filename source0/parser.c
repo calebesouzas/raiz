@@ -275,7 +275,7 @@ Expr *parse_expr(Parser *P, uint32_t depth)
   return res;
 }
 
-Ast parse(const char *source, const size_t length)
+Ast parse(const char *source, const size_t length, const char *file_path)
 {
   Ast ast = {0};
   ast.ok = true;
@@ -289,7 +289,7 @@ Ast parse(const char *source, const size_t length)
   }
 
   Parser parser = {0};
-  parser.lexer = lexer_init(source, length);
+  parser.lexer = lexer_init(source, length, file_path);
 
   parser.tokens = new_token_arena();
   if (parser.tokens == NULL)
@@ -314,9 +314,9 @@ Ast parse(const char *source, const size_t length)
     ast.ok = false;
     array_for(ParserError, error, &parser.errors)
     {
-      Location *location = &error->token->location;
+      Span *span = &error->token->span;
       fprintf(stderr, "[%zu](%zu:%zu): %s\n",
-          location->index, location->line, location->column, error->message
+          span->index, span->line, span->column, error->message
       );
     }
   }
