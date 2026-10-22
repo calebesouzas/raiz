@@ -52,5 +52,6 @@ void free_token_arena(TokenArena *arena);
 Token *new_token(TokenArena *arena);
 
 bool token_is_operator(Token *token);
+bool token_is_expression_finisher(Token *token);
 uint8_t operator_precedence(Token *token, OperatorPrecedenceType type);
 const char *token_name(TokenType type);

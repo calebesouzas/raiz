@@ -55,6 +55,7 @@ Token *new_token(TokenArena *arena)
 typedef enum {
   TOKENFLAG_OPERATOR = 1 << 0,
   TOKENFLAG_LITERAL = 1 << 1,
+  TOKENFLAG_FINISHER = 1 << 2,
 } TokenFlags;
 
 static const uint32_t token_flags_map[__TOKEN_COUNT] = {
@@ -65,11 +66,21 @@ static const uint32_t token_flags_map[__TOKEN_COUNT] = {
   [TOKEN_NUMBER] = TOKENFLAG_LITERAL,
   [TOKEN_OPEN_PAREN] = TOKENFLAG_OPERATOR,
   [TOKEN_EQUAL] = TOKENFLAG_OPERATOR,
+  [TOKEN_LINE_BREAK] = TOKENFLAG_FINISHER,
+  [TOKEN_CLOSE_PAREN] = TOKENFLAG_FINISHER,
+  [TOKEN_CLOSE_CURLY] = TOKENFLAG_FINISHER,
+  [TOKEN_END_OF_FILE] = TOKENFLAG_FINISHER,
+  [TOKEN_ERROR] = TOKENFLAG_FINISHER,
 };
 
 bool token_is_operator(Token *token)
 {
   return (token_flags_map[token->type] & TOKENFLAG_OPERATOR) != 0; // single flag, this is OK
+}
+
+bool token_is_expression_finisher(Token *token)
+{
+  return (token_flags_map[token->type] & TOKENFLAG_FINISHER) != 0;
 }
 
 const char *token_name(TokenType type)

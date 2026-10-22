@@ -1,6 +1,7 @@
 #include "libc.h"
 #include "lexer.h"
 #include "parser.h"
+#include "report.h"
 
 #define PARSER_DEFAULT_FLAGS (LEXERFLAG_ENABLE_NEW_LINE)
 
@@ -19,10 +20,9 @@ static Token *parser_save_token(Parser *P, uint32_t flags)
 
 static inline void parser_error(Parser *P, Token *token, const char *message)
 {
-  ParserError error = {
-    .token = token,
-    .message = message,
-  };
+  ParserError error = {0};
+  error.token = token;
+  strncpy(error.message, message, sizeof(error.message) - 1); // - 1 for the null byte
   array_push(&P->errors, error);
 }
 
@@ -227,7 +227,20 @@ Expr *parse_expr_tree(Parser *P, uint32_t depth, uint8_t min_precedence)
   if (left == NULL)
     return NULL;
 
-  while (token_is_operator(parser_current(P)))
+  if (!token_is_operator(parser_current(P)))
+  {
+    if (token_is_expression_finisher(parser_current(P)))
+    {
+      return left;
+    }
+    else
+    {
+      parser_error(P, parser_current(P), "expected operator");
+      return NULL;
+    }
+  }
+
+  do
   {
     Token *operator = parser_current(P);
 
@@ -252,7 +265,7 @@ Expr *parse_expr_tree(Parser *P, uint32_t depth, uint8_t min_precedence)
     expr->as.binary.left = left;
     expr->as.binary.right = right;
     left = expr;
-  }
+  } while (token_is_operator(parser_current(P)));
 
   return left;
 }
@@ -315,9 +328,7 @@ Ast parse(const char *source, const size_t length, const char *file_path)
     array_for(ParserError, error, &parser.errors)
     {
       Span *span = &error->token->span;
-      fprintf(stderr, "[%zu](%zu:%zu): %s\n",
-          span->index, span->line, span->column, error->message
-      );
+      report(span, "error: %s\n", error->message);
     }
   }
   return ast;
