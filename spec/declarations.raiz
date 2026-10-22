@@ -3,33 +3,33 @@
 // It should be consistent through all kinds of symbols you can declare.
 
 // idea
-typed @type = value
-inferred @= value
+typed := @type value
+inferred := value
 
-constant_typed @type : known_value
-constant_inferred @: known_value
+constant_typed :: @type known_value
+constant_inferred :: known_value
 
 // examples
-name @string = "Calebe"
-age @= 16 // infers @int
+name := @string "Calebe"
+age := 16 // infers @int
 
-Query @: struct
+Query :: struct
 {
-  pattern: Pattern
-  user: User
+  pattern @Pattern
+  user @User
 }
 
-Status @: enum /* (nat8) */
+Status :: enum /* (nat8) */
 {
   IN_QUEUE
   IN_PROGRESS
   COMPLETED
 }
 
-Vector3 @: union
+Vector3 :: union
 {
   array @float[3]
-  _ @struct
+  _ :: struct
   {
     x @float
     y @float
@@ -37,7 +37,7 @@ Vector3 @: union
   }
 }
 
-add @: fun (x @int, y @int) %[computes] @int =
+add :: fun %[computes] (x @int, y @int) @int
 {
   return x + y
 }
