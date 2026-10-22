@@ -7,7 +7,7 @@
 
 #define PARSER_MESSAGE_SIZE 256
 typedef struct {
-  const char *message;
+  char message[PARSER_MESSAGE_SIZE];
   Token *token;
 } ParserError;
 

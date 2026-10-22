@@ -1,4 +1,5 @@
 #include "lexer.h"
+#include "report.h"
 
 Lexer lexer_init(const char *source, size_t length, const char *file_path)
 {
@@ -49,6 +50,7 @@ Token next_token(Lexer *L, uint32_t flags)
   token.span.index = L->source_length - L->remaining;
   token.span.column = L->column_count;
   token.span.line = L->line_count;
+  token.span.file_path = L->file_path;
 
   if (L->remaining == 0)
   {
@@ -132,6 +134,7 @@ Token next_token(Lexer *L, uint32_t flags)
     {
       token.type = TOKEN_ERROR;
       token.as.error.message = "invalid character";
+      report(&token.span, "error: %s\n", token.as.error.message);
     }
     break;
   }
