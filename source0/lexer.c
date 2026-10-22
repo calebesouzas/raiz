@@ -29,7 +29,7 @@ next:
       if ((flags & LEXERFLAG_ENABLE_NEW_LINE) == 0)
       {
         L->cursor++;
-        L->column_count = 0;
+        L->column_count = 1;
         L->line_count++;
         L->remaining--;
         goto next;
