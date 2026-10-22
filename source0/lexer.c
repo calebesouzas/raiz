@@ -133,6 +133,7 @@ Token next_token(Lexer *L, uint32_t flags)
     else
     {
       token.type = TOKEN_ERROR;
+      token.span.length++;
       token.as.error.message = "invalid character";
       report(&token.span, "error: %s\n", token.as.error.message);
     }
