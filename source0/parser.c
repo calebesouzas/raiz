@@ -36,12 +36,6 @@ static inline Token *parser_previous(Parser *P)
   return P->buffer[0];
 }
 
-// Since we always consume tokens that were already processed, we won't peek very often.
-// static inline Token *parser_peek(Parser *P)
-// {
-//   return P->buffer[2];
-// }
-
 static inline Token *parser_advance(Parser *P)
 {
   P->buffer[0] = P->buffer[1];
@@ -146,11 +140,16 @@ again:
         Expr *node = parse_expr_tree(P, depth + 1, 1);
         if (node == NULL)
         {
-          while (parser_current(P)->type != TOKEN_LINE_BREAK
-              && parser_current(P)->type != TOKEN_END_OF_FILE)
+          while (parser_current(P)->type != TOKEN_LINE_BREAK)
           {
             parser_advance(P);
+            if (parser_current(P)->type == TOKEN_END_OF_FILE)
+            {
+              parser_error(P, parser_current(P), "unexpected end of file");
+              return NULL;
+            }
           }
+          parser_consume(P, TOKEN_LINE_BREAK);
           continue;
         }
 
