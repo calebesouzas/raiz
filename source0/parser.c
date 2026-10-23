@@ -79,11 +79,10 @@ static inline bool parser_consume(Parser *P, TokenType expected)
 
 static inline Expr *parser_new_node(Parser *P)
 {
-  Expr *node = new_expr_node(P->arena);
-  if (node == NULL)
-  {
-    parser_error(P, parser_current(P), "failed to allocate expression");
-  }
+  size_t id = P->pool->count;
+  array_push(P->pool, (Expr){0});
+  Expr *node = array_last(P->pool);
+  node->id = id;
   return node;
 }
 
@@ -305,14 +304,6 @@ Ast parse(const char *source, const size_t length, const char *file_path)
   Ast ast = {0};
   ast.ok = true;
 
-  ast.arena = new_expr_arena();
-  if (ast.arena == NULL)
-  {
-    fprintf(stderr, "parse(): failed to allocate expression arena\n");
-    ast.ok = false;
-    return ast;
-  }
-
   Parser parser = {0};
   parser.lexer = lexer_init(source, length, file_path);
 
@@ -320,7 +311,6 @@ Ast parse(const char *source, const size_t length, const char *file_path)
   if (parser.tokens == NULL)
   {
     fprintf(stderr, "parse(): failed to allocate token arena\n");
-    free_expr_arena(ast.arena);
     ast.ok = false;
     return ast;
   }
@@ -331,7 +321,7 @@ Ast parse(const char *source, const size_t length, const char *file_path)
     parser.buffer[i] = parser_save_token(&parser, PARSER_DEFAULT_FLAGS);
   }
 
-  parser.arena = ast.arena;
+  parser.pool = &ast.pool;
 
   ast.root = parse_expr(&parser, 0);
   if (parser.errors.count != 0)

@@ -1,58 +1,6 @@
 #include "libc.h"
 #include "ast.h"
 
-#define EXPR_ARENA_CAPACITY (4 * 1024 * 1024)
-ExprArena *new_expr_arena(void)
-{
-  ExprArena *arena = malloc(sizeof(*arena));
-  if (arena == NULL)
-    return NULL;
-
-  arena->nodes = malloc(EXPR_ARENA_CAPACITY);
-  if (arena->nodes == NULL)
-  {
-    free(arena);
-    return NULL;
-  }
-
-  arena->count = 0;
-  arena->next = NULL;
-
-  return arena;
-}
-
-void free_expr_arena(ExprArena *arena)
-{
-  ExprArena *current = arena;
-  while (current != NULL)
-  {
-    if (current->nodes != NULL)
-    {
-      free(current->nodes);
-    }
-
-    ExprArena *previous = current;
-    current = current->next;
-    free(previous);
-  }
-}
-
-Expr *new_expr_node(ExprArena *arena)
-{
-  ExprArena *current = arena;
-
-  if ((current->count + 1) * sizeof(Expr) > EXPR_ARENA_CAPACITY)
-  {
-    current->next = new_expr_arena();
-    if (current->next == NULL)
-      return NULL;
-
-    current = current->next;
-  }
-
-  return &current->nodes[current->count++];
-}
-
 #define INDENT 2
 void dump_expr(Expr *expr, FILE *stream, uint32_t level)
 {

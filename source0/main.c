@@ -37,6 +37,6 @@ bool process_program(const char *source, size_t length, const char *file_path)
     return false;
 
   dump_ast(&ast, stderr);
-  free_expr_arena(ast.arena);
+  array_free(&ast.pool);
   return true;
 }

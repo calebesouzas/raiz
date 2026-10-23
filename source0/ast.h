@@ -52,24 +52,16 @@ typedef struct Expr {
     Expr_Block block;
     Expr_Declaration declaration;
   } as;
+  size_t id;
   ExprType type;
 } Expr;
 
-typedef struct ExprArena {
-  Expr *nodes;
-  size_t count;
-  struct ExprArena *next;
-} ExprArena;
+typedef array_of(Expr) ExprArray;
 
 typedef struct {
   bool ok;
-  ExprArena *arena;
+  ExprArray pool;
   Expr *root;
 } Ast;
-
-ExprArena *new_expr_arena(void);
-void free_expr_arena(ExprArena *arena);
-
-Expr *new_expr_node(ExprArena *arena);
 
 void dump_ast(Ast *ast, FILE *stream);

@@ -14,7 +14,7 @@ typedef struct {
 typedef array_of(ParserError) ParserError_Array;
 
 typedef struct {
-  ExprArena *arena;
+  ExprArray *pool;
   Lexer lexer;
   TokenArena *tokens;
   Token *buffer[2];
