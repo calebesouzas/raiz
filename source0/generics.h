@@ -39,6 +39,8 @@ do\
   }\
 } while (0)
 
+#define array_last(array) (&(array)->data[(array)->count - 1])
+
 #define array_free(array)\
 do\
 {\
