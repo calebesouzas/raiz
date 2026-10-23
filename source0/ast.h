@@ -27,6 +27,11 @@ typedef struct {
 
 typedef array_of(struct Expr*) Expr_Block;
 
+typedef struct {
+  Expr_Identifier identifier;
+  struct Expr *value;
+} Expr_Declaration;
+
 typedef enum {
   EXPR_LITERAL,
   EXPR_GROUP,
@@ -34,6 +39,7 @@ typedef enum {
   EXPR_BINARY,
   EXPR_IDENTIFIER,
   EXPR_BLOCK,
+  EXPR_DECLARATION,
 } ExprType;
 
 typedef struct Expr {
@@ -44,6 +50,7 @@ typedef struct Expr {
     Expr_Binary binary;
     Expr_Identifier identifier;
     Expr_Block block;
+    Expr_Declaration declaration;
   } as;
   ExprType type;
 } Expr;

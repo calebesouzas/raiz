@@ -96,6 +96,7 @@ const char *token_name(TokenType type)
     case TOKEN_STAR: return "*";
     case TOKEN_SLASH: return "/";
     case TOKEN_EQUAL: return "=";
+    case TOKEN_COLLON_EQUAL: return ":=";
     case TOKEN_OPEN_PAREN: return "(";
     case TOKEN_CLOSE_PAREN: return ")";
     case TOKEN_LINE_BREAK: return "line break";

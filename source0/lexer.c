@@ -110,6 +110,20 @@ Token next_token(Lexer *L, uint32_t flags)
       token.type = TOKEN_EQUAL;
       token.span.length++;
       break;
+    case ':':
+      token.span.length++;
+      if (L->cursor[1] == '=')
+      {
+        token.type = TOKEN_COLLON_EQUAL;
+        token.span.length++;
+      }
+      else
+      {
+        token.type = TOKEN_ERROR;
+        token.as.error.message = "incorrect use of ':' (not before '=')";
+        report(&token.span, "error: %s\n", token.as.error.message);
+      }
+      break;
     default:
     if (isdigit(*L->cursor))
     {

@@ -206,6 +206,19 @@ again:
 
       res->type = EXPR_IDENTIFIER;
       res->as.identifier = (Expr_Identifier) identifier;
+
+      if (parser_current(P)->type == TOKEN_COLLON_EQUAL)
+      {
+        parser_advance(P);
+
+        res->type = EXPR_DECLARATION;
+        res->as.declaration.identifier = identifier;
+
+        Expr *value = parse_expr(P, depth + 1);
+        if (value == NULL)
+          return NULL;
+        res->as.declaration.value = value;
+      }
     } break;
     case __TOKEN_COUNT:
       fprintf(stderr, "unreachable token: __TOKEN_COUNT\n");

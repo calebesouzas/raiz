@@ -85,8 +85,12 @@ void dump_expr(Expr *expr, FILE *stream, uint32_t level)
       dump_expr(expr->as.binary.left, stream, level + 1);
       dump_expr(expr->as.binary.right, stream, level + 1);
       break;
+    case EXPR_DECLARATION:
+      fprintf(stream, "declaration (%.*s):\n", __TOKEN_FMT(expr->as.declaration.identifier));
+      dump_expr(expr->as.declaration.value, stream, level + 1);
+      break;
     case EXPR_IDENTIFIER:
-      fprintf(stream, "identifier '%.*s'\n", __TOKEN_FMT((Token*) expr->as.identifier));
+      fprintf(stream, "identifier '%.*s'\n", __TOKEN_FMT(expr->as.identifier));
       break;
     case EXPR_BLOCK:
       fprintf(stream, "block (count %zu):\n", expr->as.block.count);
