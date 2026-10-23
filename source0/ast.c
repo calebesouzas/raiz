@@ -15,6 +15,8 @@ void dump_expr(Expr *expr, FILE *stream, uint32_t level)
     return;
   }
 
+  fprintf(stream, "[%zu] ", expr->id);
+
   switch (expr->type)
   {
     case EXPR_LITERAL:
