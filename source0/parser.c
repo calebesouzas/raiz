@@ -1,4 +1,5 @@
 #include "libc.h"
+#include "assertions.h"
 #include "lexer.h"
 #include "parser.h"
 #include "report.h"
@@ -123,7 +124,7 @@ again:
       if (res == NULL)
         return NULL;
 
-      res->as.group.inner = inner;
+      res->as.group.inner_id = inner->id;
       res->type = EXPR_GROUP;
       break;
     case TOKEN_OPEN_CURLY:
@@ -157,7 +158,7 @@ again:
           return NULL;
         }
 
-        array_push(&res->as.block, node);
+        array_push(&res->as.block, node->id);
       }
       break;
     case TOKEN_PLUS:
@@ -179,7 +180,7 @@ again:
         return NULL;
 
       res->type = EXPR_UNARY;
-      res->as.unary.inner = inner;
+      res->as.unary.inner_id = inner->id;
       res->as.unary.operator = operator;
       break;
     case TOKEN_STAR:
@@ -216,7 +217,7 @@ again:
         Expr *value = parse_expr(P, depth + 1);
         if (value == NULL)
           return NULL;
-        res->as.declaration.value = value;
+        res->as.declaration.value_id = value->id;
       }
     } break;
     case __TOKEN_COUNT:
@@ -273,8 +274,8 @@ Expr *parse_expr_tree(Parser *P, uint32_t depth, uint8_t min_precedence)
 
     expr->type = EXPR_BINARY;
     expr->as.binary.operator = operator;
-    expr->as.binary.left = left;
-    expr->as.binary.right = right;
+    expr->as.binary.left_id = left->id;
+    expr->as.binary.right_id = right->id;
     left = expr;
   } while (token_is_operator(parser_current(P)));
 

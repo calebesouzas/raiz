@@ -3,7 +3,7 @@
 
 typedef void (*WalkerFunction) (Expr *node, unsigned int depth, void *data);
 
-void expr_walk(Expr *node, unsigned int depth, WalkerFunction function, void *data)
+void expr_walk(Expr *pool, Expr *node, unsigned int depth, WalkerFunction function, void *data)
 {
   function(node, depth, data);
 
@@ -16,22 +16,22 @@ void expr_walk(Expr *node, unsigned int depth, WalkerFunction function, void *da
     case EXPR_IDENTIFIER:
       break;
     case EXPR_GROUP:
-      expr_walk(node->as.group.inner, depth + 1, function, data);
+      expr_walk(pool, &pool[node->as.group.inner_id], depth + 1, function, data);
       break;
     case EXPR_UNARY:
-      expr_walk(node->as.unary.inner, depth + 1, function, data);
+      expr_walk(pool, &pool[node->as.unary.inner_id], depth + 1, function, data);
       break;
     case EXPR_BINARY:
-      expr_walk(node->as.binary.left, depth + 1, function, data);
-      expr_walk(node->as.binary.right, depth + 1, function, data);
+      expr_walk(pool, &pool[node->as.binary.left_id], depth + 1, function, data);
+      expr_walk(pool, &pool[node->as.binary.right_id], depth + 1, function, data);
       break;
     case EXPR_DECLARATION:
-      expr_walk(node->as.declaration.value, depth + 1, function, data);
+      expr_walk(pool, &pool[node->as.declaration.value_id], depth + 1, function, data);
       break;
     case EXPR_BLOCK:
-      array_for(Expr*, term, &node->as.block)
+      array_for(size_t, term_id, &node->as.block)
       {
-        expr_walk(*term, depth + 1, function, data);
+        expr_walk(pool, &pool[*term_id], depth + 1, function, data);
       }
       break;
   }
@@ -39,7 +39,7 @@ void expr_walk(Expr *node, unsigned int depth, WalkerFunction function, void *da
 
 void ast_walk(Ast *ast, WalkerFunction function, void *data)
 {
-  expr_walk(ast->root, 0, function, data);
+  expr_walk(ast->pool.data, ast->root, 0, function, data);
 }
 
 #define INDENT 2

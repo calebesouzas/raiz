@@ -12,24 +12,24 @@ typedef struct {
 typedef Token * Expr_Identifier;
 
 typedef struct {
-  struct Expr *inner;
+  size_t inner_id;
 } Expr_Group;
 
 typedef struct {
-  struct Expr *inner;
+  size_t inner_id;
   Token *operator;
 } Expr_Unary;
 
 typedef struct {
-  struct Expr *left, *right;
+  size_t left_id, right_id;
   Token *operator;
 } Expr_Binary;
 
-typedef array_of(struct Expr*) Expr_Block;
+typedef array_of(size_t) Expr_Block;
 
 typedef struct {
   Expr_Identifier identifier;
-  struct Expr *value;
+  size_t value_id;
 } Expr_Declaration;
 
 typedef enum {
