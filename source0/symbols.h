@@ -1,12 +1,11 @@
 #pragma once
 
 #include "libc.h"
-#include "ast.h"
 
 typedef struct {
   Span span;
   bool poisoned : 1;
-  struct Expr *value;
+  size_t value_id;
 } Symbol;
 
 #define token_to_symbol(token) ((Symbol){.span = (token)->span, .poisoned = false, .value = NULL,})
