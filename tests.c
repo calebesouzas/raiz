@@ -4,16 +4,16 @@
 #include "source0/ast.h"
 #include "source0/parser.h"
 
-bool test_lexer(const char *source, const size_t length)
+bool test_lexer(const char *source, const size_t length, const char *file_path)
 {
-  Lexer lexer = lexer_init(source, length);
+  Lexer lexer = lexer_init(source, length, file_path);
 
   Token token = {0};
   printf("[\n");
   do
   {
-    token = next_token(&lexer);
-    printf("  [%zu](%zu:%zu):", token.location.index, token.location.line, token.location.column);
+    token = next_token(&lexer, LEXER_DEFAULT_FLAGS);
+    printf("  [%zu](%zu:%zu):", token.span.index, token.span.line, token.span.column);
     printf(" \"%.*s\"", __TOKEN_FMT(&token));
 
     if (token.type == TOKEN_NUMBER)
@@ -27,31 +27,26 @@ bool test_lexer(const char *source, const size_t length)
   return true;
 }
 
-bool test_parser(const char *source, const size_t length)
+bool test_parser(const char *source, const size_t length, const char *file_path)
 {
-  Ast ast = parse(source, length);
-  if (ast.root != NULL)
-  {
-    dump_ast(&ast, stderr);
-  }
-  else if (ast.arena == NULL)
+  Ast ast = parse(source, length, file_path);
+  if (!ast.ok)
   {
     return false;
   }
 
-  free_expr_arena(ast.arena);
-  ast.arena = NULL;
-
+  dump_ast(&ast, stderr);
   return true;
 }
 
-typedef bool (*TestFunction) (const char *source, const size_t length);
+typedef bool (*TestFunction) (const char *source, const size_t length, const char *file_path);
 
 int main(void)
 {
   char *source = NULL;
   size_t size = 0;
-  if (!read_entire_file("test.raiz", &source, &size))
+  const char file_path[] = "test.raiz";
+  if (!read_entire_file(file_path, &source, &size))
     return 1;
 
   const TestFunction test_functions[] = {
@@ -75,7 +70,7 @@ int main(void)
   for (unsigned int index = 0; index < sizeof(test_functions)/sizeof(test_functions[0]); index++)
   {
     printf("// TESTING: %s\n", test_names[index]);
-    if (test_functions[index](source, size))
+    if (test_functions[index](source, size, file_path))
     {
       success++;
     }
@@ -96,3 +91,4 @@ int main(void)
 #include "source0/token.c"
 #include "source0/ast.c"
 #include "source0/parser.c"
+#include "source0/report.c"
