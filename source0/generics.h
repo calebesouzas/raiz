@@ -17,10 +17,10 @@ do\
 } while (0)
 
 #define ARRAY_INITIAL_CAPACITY 16
-#define array_init(array)\
+#define array_init(array, initial_capacity)\
 do\
 {\
-  (array)->capacity = ARRAY_INITIAL_CAPACITY;\
+  (array)->capacity = (initial_capacity) > 0? (initial_capacity) : ARRAY_INITIAL_CAPACITY;\
   (array)->data = malloc(array_size(array));\
   array_check(array);\
 } while (0)
@@ -41,7 +41,7 @@ do\
 {\
   if ((array)->capacity == 0)\
   {\
-    array_init(array);\
+    array_init(array, 0);\
   }\
   else\
   {\
