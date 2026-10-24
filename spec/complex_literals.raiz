@@ -1,0 +1,56 @@
+MyStruct :: #struct
+{
+  a @int
+  b @StringView
+  c @bool
+}
+
+MyEnumList :: #enum_list (type: @int) // assignment to optional parameter
+{
+  // C like, starts at 0, increments toward `type.MAX` (it should have the MAX comptime property)
+  // will error if an overflow or undeflow happens
+  CONSTANT1
+  CONSTANT2
+  CONSTANT3
+  CONSTANT4
+  // ...
+  // CONSTANT33 // error!
+}
+
+MyScopedEnum :: #enum_scoped // if no `type` specified, it'll be set automatically
+{
+  // Same thing, but now these variants are wrapped inside `MyScopedEnum` and thus they can be accessed
+  // only through the '.' operator!
+  VARIANT1
+  VARIANT2
+  VARIANT3
+}
+
+MyFlagList :: #flag_list // there should be also `flag_scoped`
+{
+  FLAG1 // 1
+  FLAG2 // 2
+  FLAG3 // 4
+  FLAG4 // 8
+  FLAG5 // 16
+}
+
+MyManualFlagList :: /* what `#flag_list` returns (but already "expanded"): */ #enum_list (type: @int)
+{
+  FLAG1 :: 1 << #iota(reset: true, value: 0)
+  FLAG2 :: 1 << #iota
+  FLAG3 :: 1 << #iota
+  FLAG4 :: 1 << #iota
+  FLAG5 :: 1 << #iota
+}
+
+MyModule :: #module
+{
+  // like `#struct` but can also hold functions (with the bodies), inner structures, types and many
+  // other things should not be introspected at runtime becausw it will bring all of it's contents type
+  // information to the final program's read only data section (may be big and take a lot of space).
+  // It's what the agent `#import` returns after telling the compiler to process the content of
+  // `file_path @StringView` argument.
+  // By default, such contents will not be wrapped by any namespace, they'll just stay at the current scope.
+  // If namespacing is needed, use `desired_name :: #import "file_path"`!
+}
