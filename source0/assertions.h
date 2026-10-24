@@ -11,3 +11,13 @@ do\
     abort();\
   }\
 } while (0)
+
+#define just_assert(condition)\
+do\
+{\
+  if (!(condition))\
+  {\
+    fprintf(stderr, "%s:%d: `%s` condition failed\n", __FILE__, __LINE__, #condition);\
+    abort();\
+  }\
+} while (0)
