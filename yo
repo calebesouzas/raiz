@@ -10,14 +10,18 @@ echoerr ()
 
 prompt ()
 {
+  if [ $# -ne 2 ]; then
+    echo "prompt(): should provide exactly 1 argument"
+    exit 1
+  fi
   echo -n "yo: $1 [y for yes]: "
   read ANSWER
-  case $ANSWER in
+  case "$ANSWER" in
     "y" | "yes")
-      set $2 "true"
+      set $2 true
       ;;
     *)
-      set $2 "false"
+      set $2 false
       ;;
   esac
 }
@@ -26,7 +30,7 @@ build ()
 {
   rm -rf "$BUILD"
   mkdir -p "$BUILD"
-  clang -o "$BUILD/raiz" -Wall -Wextra -Wpedantic -std=c11 -Iinclude $SOURCE0/*.c -ggdb
+  clang -o "$BUILD/raiz" -Wall -Wextra -Wpedantic -std=c11 -Iinclude "$SOURCE0"/*.c -ggdb
 }
 
 run ()
@@ -36,7 +40,7 @@ run ()
     "$BUILD/raiz" "${@:1}"
   else
     prompt "build failed, continue running?" CONTINUE
-    if [ $CONTINUE = "true" ]; then
+    if [ $CONTINUE ]; then
       "$BUILD/raiz" "${@:1}"
     fi
   fi
@@ -44,12 +48,12 @@ run ()
 
 debug ()
 {
-  case $1 in
+  case "$1" in
     "--rebuild" | "-r")
       build
       if [ $? -ne 0 ]; then
         prompt "build failed, continue debugging?" CONTINUE
-        if [ $CONTINUE = "false" ]; then
+        if [ ! $CONTINUE ]; then
           echoerr "yo: cancelling debug session..."
           exit 1
         fi
