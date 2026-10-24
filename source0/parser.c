@@ -4,8 +4,6 @@
 #include "parser.h"
 #include "report.h"
 
-#define PARSER_DEFAULT_FLAGS (LEXERFLAG_ENABLE_NEW_LINE)
-
 static Token *parser_save_token(Parser *P, uint32_t flags)
 {
   Token *token = new_token(P->tokens);
@@ -40,7 +38,7 @@ static inline Token *parser_previous(Parser *P)
 static inline Token *parser_advance(Parser *P)
 {
   P->buffer[0] = P->buffer[1];
-  P->buffer[1] = parser_save_token(P, PARSER_DEFAULT_FLAGS);
+  P->buffer[1] = parser_save_token(P, LEXER_DEFAULT_FLAGS);
   return parser_current(P);
 }
 
@@ -128,7 +126,7 @@ again:
       res->type = EXPR_GROUP;
       break;
     case TOKEN_OPEN_CURLY:
-      parser_advance_with(P, PARSER_DEFAULT_FLAGS & ~LEXERFLAG_ENABLE_NEW_LINE);
+      parser_advance_with(P, LEXER_DEFAULT_FLAGS & ~LEXERFLAG_ENABLE_NEW_LINE);
       res = parser_new_node(P);
       if (res == NULL)
         return NULL;
@@ -263,7 +261,7 @@ Expr *parse_expr_tree(Parser *P, uint32_t depth, uint8_t min_precedence)
     // NOTE: we advance after comparing the precedences!
     // If we don't and this loop breaks, the operator will be skipped and the other part of the
     // binary expression will be not resolved correctly and maybe it would even propagate further.
-    parser_advance_with(P, PARSER_DEFAULT_FLAGS & ~LEXERFLAG_ENABLE_NEW_LINE);
+    parser_advance_with(P, LEXER_DEFAULT_FLAGS & ~LEXERFLAG_ENABLE_NEW_LINE);
     Expr *right = parse_expr_tree(P, depth + 1, precedence);
     if (right == NULL)
       return NULL;
@@ -319,7 +317,7 @@ Ast parse(const char *source, const size_t length, const char *file_path)
   // start from index 1 (which is the current token)
   for (size_t i = 1; i < sizeof(parser.buffer)/sizeof(parser.buffer[0]); i++)
   {
-    parser.buffer[i] = parser_save_token(&parser, PARSER_DEFAULT_FLAGS);
+    parser.buffer[i] = parser_save_token(&parser, LEXER_DEFAULT_FLAGS);
   }
 
   parser.pool = &ast.pool;
