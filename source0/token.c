@@ -1,18 +1,14 @@
 #include "token.h"
+#include "assertions.h"
 
 #define TOKEN_ARENA_CAPACITY (4 * 1024 * 1024)
 TokenArena *new_token_arena(void)
 {
   TokenArena *arena = malloc(sizeof(*arena));
-  if (arena == NULL)
-    return NULL;
+  assert_allocation(arena);
 
   arena->tokens = malloc(TOKEN_ARENA_CAPACITY);
-  if (arena->tokens == NULL)
-  {
-    free(arena);
-    return NULL;
-  }
+  assert_allocation(arena->tokens);
 
   arena->count = 0;
   arena->next = NULL;
@@ -36,16 +32,10 @@ void free_token_arena(TokenArena *arena)
 
 Token *new_token(TokenArena *arena)
 {
-  if (arena == NULL)
-    return NULL;
-
   TokenArena *current = arena;
   if ((current->count + 1) * sizeof(Token) > TOKEN_ARENA_CAPACITY)
   {
     current->next = new_token_arena();
-    if (current->next == NULL)
-      return NULL;
-
     current = current->next;
   }
 
