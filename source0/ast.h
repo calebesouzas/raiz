@@ -65,6 +65,6 @@ typedef struct {
 } Ast;
 
 typedef void (*WalkerFunction) (Expr *node, unsigned int depth, void *data, void *out);
-void ast_walk(Ast *ast, WalkerFunction visit, void *data, void *out)
+void ast_walk(Ast *ast, WalkerFunction visit, void *data, void *out);
 
 void dump_ast(Ast *ast, FILE *stream);
