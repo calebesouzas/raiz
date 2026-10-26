@@ -53,6 +53,8 @@ do\
   }\
 } while (0)
 
+#define array_push_back(array, value) ((array)->data[(array)->count++] = (value))
+
 #define array_last(array) (&(array)->data[(array)->count - 1])
 
 #define array_pop(array) ((array)->data[--(array)->count])
