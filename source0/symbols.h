@@ -8,4 +8,6 @@ typedef struct {
   size_t value_id;
 } Symbol;
 
+typedef array_of(Symbol) SymbolArray;
+
 #define token_to_symbol(token) ((Symbol){.span = (token)->span, .poisoned = false, .value = NULL,})
