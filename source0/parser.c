@@ -189,7 +189,7 @@ again:
 
       if (parser_current(P)->type == TOKEN_COLLON_EQUAL)
       {
-        parser_advance(P);
+        parser_advance_with(P, LEXER_DEFAULT_FLAGS & ~LEXERFLAG_ENABLE_NEW_LINE);
 
         res->type = EXPR_DECLARATION;
         res->as.declaration.identifier = identifier;
