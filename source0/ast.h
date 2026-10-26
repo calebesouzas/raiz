@@ -54,6 +54,7 @@ typedef struct Expr {
   } as;
   size_t id;
   ExprType type;
+  Span span;
 } Expr;
 
 typedef array_of(Expr) ExprArray;

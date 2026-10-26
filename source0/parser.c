@@ -82,6 +82,7 @@ static inline Expr *parser_new_node(Parser *P)
   array_push(P->pool, (Expr){0});
   Expr *node = array_last(P->pool);
   node->id = id;
+  node->span = parser_current(P)->span;
   return node;
 }
 
@@ -103,7 +104,7 @@ Expr *parse_nud(Parser *P, uint32_t depth)
   if (!check_depth(P, depth))
     return NULL;
 
-  Expr *res = NULL;
+  Expr *res = parser_new_node(P);
 
 again:
   switch (parser_current(P)->type)
@@ -118,18 +119,11 @@ again:
       if (!parser_consume(P, TOKEN_CLOSE_PAREN))
         return NULL;
 
-      res = parser_new_node(P);
-      if (res == NULL)
-        return NULL;
-
       res->as.group.inner_id = inner->id;
       res->type = EXPR_GROUP;
       break;
     case TOKEN_OPEN_CURLY:
       parser_advance_with(P, LEXER_DEFAULT_FLAGS & ~LEXERFLAG_ENABLE_NEW_LINE);
-      res = parser_new_node(P);
-      if (res == NULL)
-        return NULL;
 
       res->type = EXPR_BLOCK;
 
@@ -173,10 +167,6 @@ again:
       if (inner == NULL)
         return NULL;
 
-      res = parser_new_node(P);
-      if (res == NULL)
-        return NULL;
-
       res->type = EXPR_UNARY;
       res->as.unary.inner_id = inner->id;
       res->as.unary.operator = operator;
@@ -186,10 +176,6 @@ again:
       parser_error(P, parser_current(P), "not an unary operator");
       return NULL;
     case TOKEN_NUMBER:
-      res = parser_new_node(P);
-      if (res == NULL)
-        return NULL;
-
       res->type = EXPR_LITERAL;
       res->as.literal.value = parser_current(P)->as.literal;
       parser_advance(P);
@@ -197,10 +183,6 @@ again:
     case TOKEN_IDENTIFIER:
     {
       Token *identifier = parser_next(P);
-
-      res = parser_new_node(P);
-      if (res == NULL)
-        return NULL;
 
       res->type = EXPR_IDENTIFIER;
       res->as.identifier = (Expr_Identifier) identifier;
@@ -267,8 +249,6 @@ Expr *parse_expr_tree(Parser *P, uint32_t depth, uint8_t min_precedence)
       return NULL;
 
     Expr *expr = parser_new_node(P);
-    if (expr == NULL)
-      return NULL;
 
     expr->type = EXPR_BINARY;
     expr->as.binary.operator = operator;
@@ -292,7 +272,8 @@ Expr *parse_expr(Parser *P, uint32_t depth)
       parser_error(P, parser_current(P), parser_current(P)->as.error.message);
       break;
     default:
-      return parse_expr_tree(P, depth + 1, 1);
+      res = parse_expr_tree(P, depth + 1, 1);
+      break;
   }
 
   return res;
