@@ -4,7 +4,7 @@
 #include "parser.h"
 #include "semantics.h"
 
-bool process_program(const char *source, size_t length, const char *file_path);
+bool process_program(const char *source, size_t length, const char *file_path, bool dump);
 
 int main(int argc, char **argv)
 {
@@ -19,7 +19,9 @@ int main(int argc, char **argv)
   if (!read_entire_file(argv[1], &source, &size))
     return 1;
 
-  if (!process_program(source, size, argv[1]))
+  bool dump = argc > 2 && strcmp(argv[2], "--dump") == 0;
+
+  if (!process_program(source, size, argv[1], dump))
   {
     fprintf(stderr, "raiz: process failed\n");
     return 1;
@@ -31,16 +33,22 @@ int main(int argc, char **argv)
   return 0;
 }
 
-bool process_program(const char *source, size_t length, const char *file_path)
+bool process_program(const char *source, size_t length, const char *file_path, bool dump)
 {
   Ast ast = parse(source, length, file_path);
   if (!ast.ok)
     return false;
 
   bool result = true;
-  // dump_ast(&ast, stderr);
-  if (!check_ast(&ast))
-    result = false;
+  if (dump)
+  {
+    dump_ast(&ast, stderr);
+  }
+  else
+  {
+    if (!check_ast(&ast))
+      result = false;
+  }
 
   array_free(&ast.pool);
   return result;
