@@ -94,11 +94,11 @@ void check_node(Expr *node, uint32_t depth, void *data, void *out)
       Result inner = array_pop(&state->result_stack);
       if (inner.poisoned)
       {
-        array_push_back(&state->result_stack, poison);
+        array_push_no_resize(&state->result_stack, poison);
         return;
       }
 
-      array_push_back(&state->result_stack, ok);
+      array_push_no_resize(&state->result_stack, ok);
     } break;
     case EXPR_BLOCK:
     {
@@ -112,12 +112,11 @@ void check_node(Expr *node, uint32_t depth, void *data, void *out)
       const Result *result = poisoned? &poison : &ok;
       if (node->as.block.count == 0)
       {
-        // TODO: maybe come up with a better name, like 'push_no_resize()'
         array_push(&state->result_stack, *result);
       }
       else
       {
-        array_push_back(&state->result_stack, *result);
+        array_push_no_resize(&state->result_stack, *result);
       }
     } break;
     case EXPR_BINARY:
@@ -126,11 +125,11 @@ void check_node(Expr *node, uint32_t depth, void *data, void *out)
       Result left = array_pop(&state->result_stack);
       if (right.poisoned || left.poisoned)
       {
-        array_push_back(&state->result_stack, poison);
+        array_push_no_resize(&state->result_stack, poison);
         return;
       }
 
-      array_push_back(&state->result_stack, ok);
+      array_push_no_resize(&state->result_stack, ok);
     } break;
     case EXPR_IDENTIFIER:
     {
@@ -161,7 +160,7 @@ void check_node(Expr *node, uint32_t depth, void *data, void *out)
       Result value = array_pop(&state->result_stack);
       if (value.poisoned)
       {
-        array_push_back(&state->result_stack, poison);
+        array_push_no_resize(&state->result_stack, poison);
         return;
       }
 
@@ -173,12 +172,12 @@ void check_node(Expr *node, uint32_t depth, void *data, void *out)
         Result error = push_error(errors, node,
             "redeclaration of symbol '%.*s'", __TOKEN_FMT(identifier)
         );
-        array_push_back(&state->result_stack, error);
+        array_push_no_resize(&state->result_stack, error);
         return;
       }
 
       scope_insert(&state->scope, &node->span, node->as.declaration.value_id);
-      array_push_back(&state->result_stack, ok);
+      array_push_no_resize(&state->result_stack, ok);
     } break;
   }
 }
