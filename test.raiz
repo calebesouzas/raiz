@@ -1,5 +1,1 @@
-c =
-{
-  a := 34
-  b := 35 + a
-}
+./tests/dev.raiz
