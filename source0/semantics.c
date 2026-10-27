@@ -15,9 +15,11 @@ typedef struct {
   SymbolArray symbols;
 } Scope;
 
+typedef array_of(Scope) ScopeStack;
+
 typedef struct {
-  Scope scope;
   ResultStack result_stack;
+  ScopeStack scope_stack;
 } State;
 
 typedef struct {
@@ -28,33 +30,39 @@ typedef struct {
 
 typedef array_of(Error) ErrorArray;
 
-Symbol *scope_search(Scope *scope, const char *name, size_t length)
+Symbol *scope_search(ScopeStack *stack, const char *name, size_t length)
 {
-  array_for(Symbol, symbol, &scope->symbols)
+  Scope *scope = array_last(stack);
+  do
   {
-    if (symbol->span.length == length && strncmp(symbol->span.text, name, length) == 0)
+    array_for(Symbol, symbol, &scope->symbols)
     {
-      return symbol;
+      if (symbol->span.length == length && strncmp(symbol->span.text, name, length) == 0)
+      {
+        return symbol;
+      }
     }
-  }
+    scope = scope > stack->data && scope < stack->data + stack->count ? scope - 1 : NULL;
+  } while (scope != NULL);
   return NULL;
 }
 
-Symbol *scope_insert(Scope *scope, Span *span, size_t value_id)
+Symbol *scope_insert(ScopeStack *stack, Span *span, size_t value_id)
 {
   Symbol symbol = {0};
   symbol.value_id = value_id;
   symbol.span = *span;
+  Scope *scope = array_last(stack);
   array_push(&scope->symbols, symbol);
   return array_last(&scope->symbols);
 }
 
-Symbol *scope_search_or_insert(Scope *scope, Span *span, size_t value_id)
+Symbol *scope_search_or_insert(ScopeStack *stack, Span *span, size_t value_id)
 {
-  Symbol *symbol = scope_search(scope, span->text, span->length);
+  Symbol *symbol = scope_search(stack, span->text, span->length);
   if (symbol == NULL)
   {
-    symbol = scope_insert(scope, span, value_id);
+    symbol = scope_insert(stack, span, value_id);
   }
   return symbol;
 }
@@ -143,7 +151,9 @@ void check_node(Expr *node, uint32_t depth, void *data, void *out)
     case EXPR_IDENTIFIER:
     {
       Token *identifier = node->as.identifier;
-      Symbol *symbol = scope_search(&state->scope, identifier->span.text, identifier->span.length);
+      Symbol *symbol = scope_search(&state->scope_stack,
+          identifier->span.text, identifier->span.length
+      );
 
       // do not castade the error further!
       if (symbol == NULL
@@ -152,7 +162,7 @@ void check_node(Expr *node, uint32_t depth, void *data, void *out)
         push_error(errors, node, "use of undeclared identifier '%.*s'", __TOKEN_FMT(identifier));
         array_push(&state->result_stack, poison);
 
-        symbol = scope_search_or_insert(&state->scope, &identifier->span, node->id);
+        symbol = scope_search_or_insert(&state->scope_stack, &identifier->span, node->id);
         symbol->poisoned = true;
         symbol->error_count++;
         if (symbol->error_count >= UNDECLARED_REPORT_LIMIT)
@@ -175,7 +185,9 @@ void check_node(Expr *node, uint32_t depth, void *data, void *out)
       }
 
       Token *identifier = node->as.declaration.identifier;
-      Symbol *symbol = scope_search(&state->scope, identifier->span.text, identifier->span.length);
+      Symbol *symbol = scope_search(&state->scope_stack,
+          identifier->span.text, identifier->span.length
+      );
       // TODO: think on what to do with redeclaration of poisoned symbols
       if (symbol != NULL)
       {
@@ -186,7 +198,7 @@ void check_node(Expr *node, uint32_t depth, void *data, void *out)
         return;
       }
 
-      scope_insert(&state->scope, &node->span, node->as.declaration.value_id);
+      scope_insert(&state->scope_stack, &node->span, node->as.declaration.value_id);
       array_push_no_resize(&state->result_stack, ok);
     } break;
   }
@@ -195,14 +207,25 @@ void check_node(Expr *node, uint32_t depth, void *data, void *out)
 bool check_ast(Ast *ast)
 {
   State state = {0};
+  Scope empty_scope = {0};
+  array_push(&state.scope_stack, empty_scope);
+
   ErrorArray errors = {0};
 
   ast_walk(ast, check_node, true, &state, &errors);
+
+  array_for(Scope, scope, &state.scope_stack)
+  {
+    array_free(&scope->symbols);
+  }
+  array_free(&state.scope_stack);
 
   array_for(Error, error, &errors)
   {
     report(error->span, "%s\n", error->message);
   }
+  size_t error_count = errors.count;
+  array_free(&errors);
 
-  return errors.count == 0;
+  return error_count == 0;
 }
