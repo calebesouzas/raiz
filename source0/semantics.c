@@ -146,7 +146,8 @@ void check_node(Expr *node, uint32_t depth, void *data, void *out)
       Symbol *symbol = scope_search(&state->scope, identifier->span.text, identifier->span.length);
 
       // do not castade the error further!
-      if (symbol == NULL || symbol->error_count < UNDECLARED_REPORT_LIMIT)
+      if (symbol == NULL
+          || (symbol->error_count > 0 && symbol->error_count < UNDECLARED_REPORT_LIMIT))
       {
         push_error(errors, node, "use of undeclared identifier '%.*s'", __TOKEN_FMT(identifier));
         array_push(&state->result_stack, poison);
