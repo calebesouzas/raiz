@@ -28,7 +28,7 @@ do\
 #define array_reserve(array, amount)\
 do\
 {\
-  while ((array)->capacity < amount)\
+  while ((array)->capacity <= (amount))\
   {\
     (array)->capacity *= 2;\
   }\
@@ -45,7 +45,7 @@ do\
   }\
   else\
   {\
-    array_reserve(array, (array)->count + 2);\
+    array_reserve(array, (array)->count + 1);\
   }\
   if ((array)->data != NULL)\
   {\

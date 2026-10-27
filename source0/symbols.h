@@ -4,8 +4,9 @@
 
 typedef struct {
   Span span;
-  bool poisoned : 1;
   size_t value_id;
+  bool poisoned : 1;
+  uint8_t error_count : 7; // limit: 127
 } Symbol;
 
 typedef array_of(Symbol) SymbolArray;
