@@ -45,7 +45,7 @@ do\
   }\
   else\
   {\
-    array_reserve(array, (array)->count + 1);\
+    array_reserve(array, (array)->count + 2);\
   }\
   if ((array)->data != NULL)\
   {\
