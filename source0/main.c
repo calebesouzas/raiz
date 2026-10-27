@@ -2,6 +2,7 @@
 #include "files.h"
 #include "ast.h"
 #include "parser.h"
+#include "semantics.h"
 
 bool process_program(const char *source, size_t length, const char *file_path);
 
@@ -36,7 +37,11 @@ bool process_program(const char *source, size_t length, const char *file_path)
   if (!ast.ok)
     return false;
 
-  dump_ast(&ast, stderr);
+  bool result = true;
+  // dump_ast(&ast, stderr);
+  if (!check_ast(&ast))
+    result = false;
+
   array_free(&ast.pool);
-  return true;
+  return result;
 }
