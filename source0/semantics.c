@@ -44,10 +44,19 @@ Symbol *scope_insert(Scope *scope, Span *span, size_t value_id)
 {
   Symbol symbol = {0};
   symbol.value_id = value_id;
-  symbol.poisoned = false;
   symbol.span = *span;
   array_push(&scope->symbols, symbol);
   return array_last(&scope->symbols);
+}
+
+Symbol *scope_search_or_insert(Scope *scope, Span *span, size_t value_id)
+{
+  Symbol *symbol = scope_search(scope, span->text, span->length);
+  if (symbol == NULL)
+  {
+    symbol = scope_insert(scope, span, value_id);
+  }
+  return symbol;
 }
 
 static inline Result push_error(ErrorArray *errors, Expr *node, const char *format, ...)
@@ -135,21 +144,21 @@ void check_node(Expr *node, uint32_t depth, void *data, void *out)
     {
       Token *identifier = node->as.identifier;
       Symbol *symbol = scope_search(&state->scope, identifier->span.text, identifier->span.length);
-      if (symbol == NULL)
+
+      // do not castade the error further!
+      if (symbol == NULL || symbol->error_count < UNDECLARED_REPORT_LIMIT)
       {
         push_error(errors, node, "use of undeclared identifier '%.*s'", __TOKEN_FMT(identifier));
         array_push(&state->result_stack, poison);
 
-        // do not castade the error further!
-        // TODO: system to actually allow some repeated "undeclared identifier" errors but with a
-        // carefully set limit.
-        symbol = scope_insert(&state->scope, &identifier->span, node->id);
+        symbol = scope_search_or_insert(&state->scope, &identifier->span, node->id);
         symbol->poisoned = true;
-        return;
-      }
-      else if (symbol->poisoned)
-      {
-        array_push(&state->result_stack, poison);
+        symbol->error_count++;
+        if (symbol->error_count >= UNDECLARED_REPORT_LIMIT)
+        {
+          // TODO: add CLI option tip when we support parsing them
+          push_error(errors, node, "last report of 'undeclared identifier' error");
+        }
         return;
       }
 
