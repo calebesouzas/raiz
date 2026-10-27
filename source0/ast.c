@@ -68,7 +68,7 @@ void dump_expr(Expr *expr, uint32_t level, void *data, void *out)
     return;
   }
 
-  fprintf(stream, "[%zu] ", expr->id);
+  fprintf(stream, "[%zu](%zu:%zu) ", expr->id, expr->span.line, expr->span.column);
 
   switch (expr->type)
   {
