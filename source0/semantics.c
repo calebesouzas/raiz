@@ -67,6 +67,13 @@ Symbol *scope_search_or_insert(ScopeStack *stack, Span *span, size_t value_id)
   return symbol;
 }
 
+Scope *scope_new(ScopeStack *stack)
+{
+  Scope empty = {0};
+  array_push(stack, empty);
+  return array_last(stack);
+}
+
 static inline Result push_error(ErrorArray *errors, Expr *node, const char *format, ...)
 {
   Error error = {
@@ -90,7 +97,7 @@ static inline Result push_error(ErrorArray *errors, Expr *node, const char *form
   };
 }
 
-void check_node(Expr *node, uint32_t depth, void *data, void *out)
+void check_node_post(Expr *node, uint32_t depth, void *data, void *out)
 {
   (void) depth;
 
@@ -135,6 +142,8 @@ void check_node(Expr *node, uint32_t depth, void *data, void *out)
       {
         array_push_no_resize(&state->result_stack, *result);
       }
+
+      array_pop(&state->scope_stack);
     } break;
     case EXPR_BINARY:
     {
@@ -204,6 +213,24 @@ void check_node(Expr *node, uint32_t depth, void *data, void *out)
   }
 }
 
+void check_node_pre(Expr *node, uint32_t depth, void *data, void *out)
+{
+  (void) depth;
+
+  State *state = (State*) data;
+  ErrorArray *errors = (ErrorArray*) out;
+
+  switch (node->type)
+  {
+    case EXPR_BLOCK:
+      // do not forget to pop it in post logic for blocks!
+      scope_new(&state->scope_stack);
+      break;
+    default:
+      break;
+  }
+}
+
 bool check_ast(Ast *ast)
 {
   State state = {0};
@@ -212,7 +239,12 @@ bool check_ast(Ast *ast)
 
   ErrorArray errors = {0};
 
-  ast_walk(ast, check_node, true, &state, &errors);
+  WalkerCombo combo = {
+    .pre = check_node_pre,
+    .post = check_node_post
+  };
+
+  ast_walk_combo(ast, &combo, &state, &errors);
 
   array_for(Scope, scope, &state.scope_stack)
   {
