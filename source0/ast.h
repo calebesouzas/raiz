@@ -69,3 +69,10 @@ typedef void (*WalkerFunction) (Expr *node, unsigned int depth, void *data, void
 void ast_walk(Ast *ast, WalkerFunction visit, bool post_order, void *data, void *out);
 
 void dump_ast(Ast *ast, FILE *stream);
+
+typedef struct {
+  WalkerFunction pre;
+  WalkerFunction post;
+} WalkerCombo;
+
+void ast_walk_combo(Ast *ast, WalkerCombo *combo, void *data, void *out);

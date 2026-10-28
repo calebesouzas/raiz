@@ -51,6 +51,56 @@ void ast_walk(Ast *ast, WalkerFunction visit, bool post_order, void *data, void 
   expr_walk(ast->pool.data, ast->root, 0, visit, post_order, data, out);
 }
 
+void expr_walk_combo(
+    Expr *pool, Expr *node, uint32_t depth,
+    WalkerCombo *combo, void *data, void *out
+)
+{
+  if (node == NULL)
+    return;
+
+  if (combo->pre != NULL)
+  {
+    combo->pre(node, depth, data, out);
+  }
+
+  switch (node->type)
+  {
+    case EXPR_LITERAL:
+    case EXPR_IDENTIFIER:
+      break;
+    case EXPR_GROUP:
+      expr_walk_combo(pool, &pool[node->as.group.inner_id], depth + 1, combo, data, out);
+      break;
+    case EXPR_UNARY:
+      expr_walk_combo(pool, &pool[node->as.unary.inner_id], depth + 1, combo, data, out);
+      break;
+    case EXPR_BINARY:
+      expr_walk_combo(pool, &pool[node->as.binary.left_id], depth + 1, combo, data, out);
+      expr_walk_combo(pool, &pool[node->as.binary.right_id], depth + 1, combo, data, out);
+      break;
+    case EXPR_DECLARATION:
+      expr_walk_combo(pool, &pool[node->as.declaration.value_id], depth + 1, combo, data, out);
+      break;
+    case EXPR_BLOCK:
+      array_for(size_t, term_id, &node->as.block)
+      {
+        expr_walk_combo(pool, &pool[*term_id], depth + 1, combo, data, out);
+      }
+      break;
+  }
+
+  if (combo->post != NULL)
+  {
+    combo->post(node, depth, data, out);
+  }
+}
+
+void ast_walk_combo(Ast *ast, WalkerCombo *combo, void *data, void *out)
+{
+  expr_walk_combo(ast->pool.data, ast->root, 1, combo, data, out);
+}
+
 #define INDENT 2
 void dump_expr(Expr *expr, uint32_t level, void *data, void *out)
 {
