@@ -147,6 +147,11 @@ again:
           continue;
         }
 
+        if (parser_current(P)->type == TOKEN_CLOSE_CURLY)
+        {
+          parser_advance(P);
+        }
+
         if (!parser_consume(P, TOKEN_LINE_BREAK))
         {
           return NULL;
