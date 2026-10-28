@@ -61,7 +61,9 @@ bool parser_expect(Parser *P, TokenType expected, Token *token)
     return true;
 
   char formatted_message[PARSER_MESSAGE_SIZE];
-  snprintf(formatted_message, sizeof(formatted_message), "expected '%s'", token_name(expected));
+  snprintf(formatted_message, sizeof(formatted_message),
+      "expected '%s', got '%s'", token_name(expected), token_name(token->type)
+  );
 
   parser_error(P, token, formatted_message);
   return false;
