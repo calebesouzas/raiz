@@ -219,6 +219,7 @@ void check_node_pre(Expr *node, uint32_t depth, void *data, void *out)
 
   State *state = (State*) data;
   ErrorArray *errors = (ErrorArray*) out;
+  (void) errors;
 
   switch (node->type)
   {
