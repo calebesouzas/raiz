@@ -1,3 +1,5 @@
+#include <stdarg.h>
+
 #include "semantics.h"
 #include "symbols.h"
 #include "scope.h"
