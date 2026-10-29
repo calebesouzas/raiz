@@ -101,6 +101,62 @@ static inline bool check_depth(Parser *P, uint32_t depth)
 Expr *parse_expr_tree(Parser *P, uint32_t depth, uint8_t min_precedence);
 Expr *parse_expr(Parser *P, uint32_t depth);
 
+Expr *parse_term(Parser *P, uint32_t depth)
+{
+  Expr *res = parse_expr(P, depth);
+
+  if (!parser_consume(P, TOKEN_LINE_BREAK))
+    return NULL;
+
+  return res;
+}
+
+Expr *parse_block(Parser *P, uint32_t depth)
+{
+  parser_advance_with(P, LEXER_DEFAULT_FLAGS & ~LEXERFLAG_ENABLE_NEW_LINE);
+
+  Expr *res = parser_new_node(P);
+  res->type = EXPR_BLOCK;
+
+  while (parser_current(P)->type != TOKEN_CLOSE_CURLY)
+  {
+    Expr *node = parse_term(P, depth + 1);
+    if (node == NULL)
+    {
+      while (parser_current(P)->type != TOKEN_LINE_BREAK)
+      {
+        parser_advance(P);
+        if (parser_current(P)->type == TOKEN_END_OF_FILE)
+        {
+          parser_error(P, parser_current(P), "unexpected end of file");
+          return NULL;
+        }
+      }
+
+      if (!parser_consume(P, TOKEN_LINE_BREAK))
+      {
+        break;
+      }
+
+      continue;
+    }
+
+    array_push(&res->as.block, node->id);
+
+    if (parser_current(P)->type == TOKEN_CLOSE_CURLY)
+    {
+      parser_advance(P);
+    }
+
+    if (token_is_expression_finisher(parser_current(P)))
+    {
+      break;
+    }
+  }
+
+  return res;
+}
+
 Expr *parse_nud(Parser *P, uint32_t depth)
 {
   if (!check_depth(P, depth))
@@ -125,40 +181,7 @@ again:
       res->type = EXPR_GROUP;
       break;
     case TOKEN_OPEN_CURLY:
-      parser_advance_with(P, LEXER_DEFAULT_FLAGS & ~LEXERFLAG_ENABLE_NEW_LINE);
-
-      res->type = EXPR_BLOCK;
-
-      while (parser_current(P)->type != TOKEN_CLOSE_CURLY)
-      {
-        Expr *node = parse_expr_tree(P, depth + 1, 1);
-        if (node == NULL)
-        {
-          while (parser_current(P)->type != TOKEN_LINE_BREAK)
-          {
-            parser_advance(P);
-            if (parser_current(P)->type == TOKEN_END_OF_FILE)
-            {
-              parser_error(P, parser_current(P), "unexpected end of file");
-              return NULL;
-            }
-          }
-          parser_consume(P, TOKEN_LINE_BREAK);
-          continue;
-        }
-
-        if (parser_current(P)->type == TOKEN_CLOSE_CURLY)
-        {
-          parser_advance(P);
-        }
-
-        if (!parser_consume(P, TOKEN_LINE_BREAK))
-        {
-          return NULL;
-        }
-
-        array_push(&res->as.block, node->id);
-      }
+      res = parse_block(P, depth);
       break;
     case TOKEN_PLUS:
       parser_advance(P);
@@ -310,7 +333,7 @@ Ast parse(const char *source, const size_t length, const char *file_path)
 
   parser.pool = &ast.pool;
 
-  ast.root = parse_expr(&parser, 0);
+  ast.root = parse_term(&parser, 0);
   if (parser.errors.count != 0)
   {
     ast.ok = false;
