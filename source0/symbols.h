@@ -1,6 +1,7 @@
 #pragma once
 
 #include "libc.h"
+#include "spans.h"
 
 typedef struct {
   Span span;
