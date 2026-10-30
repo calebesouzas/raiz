@@ -71,13 +71,16 @@ void transpile_node_pre(Expr *node, uint32_t depth, void *data, void *out)
 void transpile_node_post(Expr *node, uint32_t depth, void *data, void *out)
 {
   (void) depth;
-  (void) out;
 
   State *state = (State*) data;
 
   switch (node->type)
   {
     case EXPR_LITERAL:
+    {
+      Result *result = push_temp_result(state);
+      fprintf(state->stream, "  int t_%d = %d;\n", result->as.temp_id, node->as.literal.value);
+    } break;
     case EXPR_GROUP:
       break;
     case EXPR_UNARY:
@@ -105,6 +108,9 @@ void transpile_node_post(Expr *node, uint32_t depth, void *data, void *out)
     case EXPR_DECLARATION:
       break;
   }
+
+  Result *last_result = (Result*) out;
+  (*last_result) = *array_last(&state->result_stack);
 }
 
 bool transpile_ast(Ast *ast, const char *output_path)
@@ -122,12 +128,18 @@ bool transpile_ast(Ast *ast, const char *output_path)
     return false;
   }
 
+  fprintf(state.stream, "#include <stdio.h>\nint main(void){\n");
   WalkerCombo combo = {
     .pre = transpile_node_pre,
     .post = transpile_node_post
   };
 
-  ast_walk_combo(ast, &combo, &state, NULL);
+  Result last_result = {0};
+  ast_walk_combo(ast, &combo, &state, &last_result);
+
+  fprintf(state.stream, "  printf(\"%%d\\n\", %c_%d);\n", last_result.type, last_result.as.any_id);
+  fprintf(state.stream, "  return 0;\n}\n");
+
   fclose(state.stream);
   return true;
 }
