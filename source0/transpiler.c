@@ -1,11 +1,46 @@
-#include "libc.h"
-#include "ast.h"
-#include "scope.h"
+#include "transpiler.h"
+
+typedef enum {
+  ID_TEMP = 't',
+  ID_VAR = 'v',
+} IdType;
+
+typedef struct {
+  IdType type;
+  union {
+    uint32_t any_id;
+    uint32_t temp_id;
+    uint32_t var_id;
+  } as;
+} Result;
+
+typedef array_of(Result) ResultStack;
 
 typedef struct {
   FILE *stream;
   ScopeStack *scope_stack;
+  ResultStack result_stack;
+  uint32_t temp_count;
+  uint32_t var_count;
 } State;
+
+static inline Result *push_temp_result(State *state)
+{
+  Result result = {0};
+  result.type = ID_TEMP;
+  result.as.temp_id = state->temp_count++;
+  array_push(&state->result_stack, result);
+  return array_last(&state->result_stack);
+}
+
+static inline Result *push_var_result(State *state)
+{
+  Result result = {0};
+  result.type = ID_VAR;
+  result.as.var_id = state->var_count++;
+  array_push(&state->result_stack, result);
+  return array_last(&state->result_stack);
+}
 
 void transpile_node_pre(Expr *node, uint32_t depth, void *data, void *out)
 {
@@ -43,13 +78,26 @@ void transpile_node_post(Expr *node, uint32_t depth, void *data, void *out)
   switch (node->type)
   {
     case EXPR_LITERAL:
-      break;
     case EXPR_GROUP:
       break;
     case EXPR_UNARY:
-      break;
+    {
+      Result inner = array_pop(&state->result_stack);
+      Result *result = push_temp_result(state);
+      fprintf(state->stream,
+          "  int t_%d = -%c_%d;\n", result->as.temp_id, inner.type, inner.as.any_id
+      );
+    } break;
     case EXPR_BINARY:
-      break;
+    {
+      Result right = array_pop(&state->result_stack);
+      Result left = array_pop(&state->result_stack);
+      Result *result = push_temp_result(state);
+      fprintf(state->stream,
+          "  int t_%d = %c_%d + %c_%d;\n",
+          result->as.temp_id, left.type, left.as.any_id, right.type, right.as.any_id
+      );
+    } break;
     case EXPR_IDENTIFIER:
       break;
     case EXPR_BLOCK:
@@ -59,7 +107,7 @@ void transpile_node_post(Expr *node, uint32_t depth, void *data, void *out)
   }
 }
 
-bool transpile_ast(Ast *ast, ScopeStack *scope_stack, const char *output_path)
+bool transpile_ast(Ast *ast, const char *output_path)
 {
   if (output_path == NULL)
   {
@@ -74,13 +122,12 @@ bool transpile_ast(Ast *ast, ScopeStack *scope_stack, const char *output_path)
     return false;
   }
 
-  state.scope_stack = scope_stack;
-
   WalkerCombo combo = {
     .pre = transpile_node_pre,
     .post = transpile_node_post
   };
 
   ast_walk_combo(ast, &combo, &state, NULL);
+  fclose(state.stream);
   return true;
 }
