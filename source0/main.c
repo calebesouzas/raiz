@@ -3,6 +3,7 @@
 #include "ast.h"
 #include "parser.h"
 #include "semantics.h"
+#include "transpiler.h"
 
 bool process_program(const char *source, size_t length, const char *file_path, bool dump);
 
@@ -47,6 +48,9 @@ bool process_program(const char *source, size_t length, const char *file_path, b
   else
   {
     if (!check_ast(&ast))
+      result = false;
+
+    if (!transpile_ast(&ast, NULL))
       result = false;
   }
 
