@@ -130,5 +130,10 @@ bool transpile_ast(Ast *ast, const char *output_path)
   fprintf(state.stream, "  return 0;\n}\n");
 
   fclose(state.stream);
+  array_for(Scope, scope, &state.scope_stack)
+  {
+    array_free(&scope->symbols);
+  }
+  array_free(&state.scope_stack);
   return true;
 }
