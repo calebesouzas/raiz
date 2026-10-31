@@ -1,43 +1,22 @@
 #include "transpiler.h"
 
-typedef enum {
-  ID_TEMP = 't',
-  ID_VAR = 'v',
-} IdType;
-
 typedef struct {
-  IdType type;
-  union {
-    uint32_t any_id;
-    uint32_t temp_id;
-    uint32_t var_id;
-  } as;
+  uint32_t id;
 } Result;
 
 typedef array_of(Result) ResultStack;
 
 typedef struct {
   FILE *stream;
-  ScopeStack *scope_stack;
+  ScopeStack scope_stack;
   ResultStack result_stack;
-  uint32_t temp_count;
-  uint32_t var_count;
+  uint32_t register_count;
 } State;
 
-static inline Result *push_temp_result(State *state)
+static inline Result *push_result(State *state)
 {
   Result result = {0};
-  result.type = ID_TEMP;
-  result.as.temp_id = state->temp_count++;
-  array_push(&state->result_stack, result);
-  return array_last(&state->result_stack);
-}
-
-static inline Result *push_var_result(State *state)
-{
-  Result result = {0};
-  result.type = ID_VAR;
-  result.as.var_id = state->var_count++;
+  result.id = state->register_count++;
   array_push(&state->result_stack, result);
   return array_last(&state->result_stack);
 }
@@ -62,7 +41,9 @@ void transpile_node_pre(Expr *node, uint32_t depth, void *data, void *out)
     case EXPR_IDENTIFIER:
       break;
     case EXPR_BLOCK:
-      break;
+    {
+      scope_new(&state->scope_stack);
+    } break;
     case EXPR_DECLARATION:
       break;
   }
@@ -78,35 +59,41 @@ void transpile_node_post(Expr *node, uint32_t depth, void *data, void *out)
   {
     case EXPR_LITERAL:
     {
-      Result *result = push_temp_result(state);
-      fprintf(state->stream, "  int t_%d = %d;\n", result->as.temp_id, node->as.literal.value);
+      Result *result = push_result(state);
+      fprintf(state->stream, "  int r%d = %d;\n", result->id, node->as.literal.value);
     } break;
     case EXPR_GROUP:
       break;
     case EXPR_UNARY:
     {
       Result inner = array_pop(&state->result_stack);
-      Result *result = push_temp_result(state);
-      fprintf(state->stream,
-          "  int t_%d = -%c_%d;\n", result->as.temp_id, inner.type, inner.as.any_id
-      );
+      Result *result = push_result(state);
+      fprintf(state->stream, "  int r%d = -r%d;\n", result->id, inner.id);
     } break;
     case EXPR_BINARY:
     {
       Result right = array_pop(&state->result_stack);
       Result left = array_pop(&state->result_stack);
-      Result *result = push_temp_result(state);
+      Result *result = push_result(state);
       fprintf(state->stream,
-          "  int t_%d = %c_%d + %c_%d;\n",
-          result->as.temp_id, left.type, left.as.any_id, right.type, right.as.any_id
+          "  int r%d = r%d %.*s r%d;\n",
+          result->id, left.id, __TOKEN_FMT(node->as.binary.operator), right.id
       );
     } break;
     case EXPR_IDENTIFIER:
-      break;
+    {
+      Symbol *symbol = scope_search(&state->scope_stack, node->span.text, node->span.length);
+      Result *result = push_result(state);
+      result->id = symbol->value_id;
+    } break;
     case EXPR_BLOCK:
+      // do I really need to do something here?
       break;
     case EXPR_DECLARATION:
-      break;
+    {
+      Result *value = array_last(&state->result_stack);
+      scope_insert(&state->scope_stack, &node->span, value->id);
+    } break;
   }
 
   Result *last_result = (Result*) out;
@@ -128,6 +115,8 @@ bool transpile_ast(Ast *ast, const char *output_path)
     return false;
   }
 
+  scope_new(&state.scope_stack);
+
   fprintf(state.stream, "#include <stdio.h>\nint main(void){\n");
   WalkerCombo combo = {
     .pre = transpile_node_pre,
@@ -137,7 +126,7 @@ bool transpile_ast(Ast *ast, const char *output_path)
   Result last_result = {0};
   ast_walk_combo(ast, &combo, &state, &last_result);
 
-  fprintf(state.stream, "  printf(\"%%d\\n\", %c_%d);\n", last_result.type, last_result.as.any_id);
+  fprintf(state.stream, "  printf(\"%%d\\n\", r%d);\n", last_result.id);
   fprintf(state.stream, "  return 0;\n}\n");
 
   fclose(state.stream);
