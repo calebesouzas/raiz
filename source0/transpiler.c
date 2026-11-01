@@ -87,8 +87,9 @@ void transpile_node_post(Expr *node, uint32_t depth, void *data, void *out)
       result->id = symbol->value_id;
     } break;
     case EXPR_BLOCK:
-      // do I really need to do something here?
-      break;
+    {
+      array_pop(&state->scope_stack);
+    } break;
     case EXPR_DECLARATION:
     {
       Result *value = array_last(&state->result_stack);
