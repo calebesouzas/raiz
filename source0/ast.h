@@ -36,6 +36,12 @@ typedef struct {
   size_t value_id;
 } Expr_Declaration;
 
+typedef struct {
+  size_t condition_id;
+  size_t then_id;
+  size_t else_id;
+} Expr_If;
+
 typedef enum {
   EXPR_LITERAL,
   EXPR_GROUP,
@@ -45,6 +51,7 @@ typedef enum {
   EXPR_BLOCK,
   EXPR_DECLARATION,
   EXPR_ASSIGN,
+  EXPR_IF,
 } ExprType;
 
 typedef struct Expr {
@@ -57,6 +64,7 @@ typedef struct Expr {
     Expr_Block block;
     Expr_Declaration declaration;
     Expr_Assign assign;
+    Expr_If if_node;
   } as;
   size_t id;
   ExprType type;
