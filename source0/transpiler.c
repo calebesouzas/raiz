@@ -31,13 +31,10 @@ void transpile_node_pre(Expr *node, uint32_t depth, void *data, void *out)
   switch (node->type)
   {
     case EXPR_LITERAL:
-      break;
     case EXPR_GROUP:
-      break;
     case EXPR_UNARY:
-      break;
     case EXPR_BINARY:
-      break;
+    case EXPR_ASSIGN:
     case EXPR_IDENTIFIER:
       break;
     case EXPR_BLOCK:
@@ -79,6 +76,12 @@ void transpile_node_post(Expr *node, uint32_t depth, void *data, void *out)
           "  int r%d = r%d %.*s r%d;\n",
           result->id, left.id, __TOKEN_FMT(node->as.binary.operator), right.id
       );
+    } break;
+    case EXPR_ASSIGN:
+    {
+      Result right = array_pop(&state->result_stack);
+      const Result *left = array_last(&state->result_stack);
+      fprintf(state->stream, "  r%d = r%d;\n", left->id, right.id);
     } break;
     case EXPR_IDENTIFIER:
     {

@@ -280,10 +280,19 @@ Expr *parse_expr_tree(Parser *P, uint32_t depth, uint8_t min_precedence)
 
     Expr *expr = parser_new_node(P);
 
-    expr->type = EXPR_BINARY;
-    expr->as.binary.operator = operator;
-    expr->as.binary.left_id = left->id;
-    expr->as.binary.right_id = right->id;
+    if (operator->type == TOKEN_EQUAL)
+    {
+      expr->type = EXPR_ASSIGN;
+      expr->as.assign.left_id = left->id;
+      expr->as.assign.right_id = right->id;
+    }
+    else
+    {
+      expr->type = EXPR_BINARY;
+      expr->as.binary.operator = operator;
+      expr->as.binary.left_id = left->id;
+      expr->as.binary.right_id = right->id;
+    }
     left = expr;
   } while (token_is_operator(parser_current(P)));
 

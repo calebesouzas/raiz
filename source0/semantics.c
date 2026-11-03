@@ -10,6 +10,7 @@ typedef struct {
   size_t error_id;
   bool error : 1;
   bool poisoned : 1;
+  bool is_left_value : 1;
 } Result;
 
 typedef array_of(Result) ResultStack;
@@ -58,7 +59,12 @@ void check_node_post(Expr *node, uint32_t depth, void *data, void *out)
   ErrorArray *errors = (ErrorArray*) out;
 
   const Result ok = {0};
-  const Result poison = {.poisoned = true, .error = false, .error_id = 0};
+  const Result poison = {
+    .poisoned = true, .error = false, .error_id = 0, .is_left_value = false
+  };
+  const Result left_value = {
+    .is_left_value = true, .poisoned = false, .error = false, .error_id = 0
+  };
   // error resuls are generated dynamically
   switch (node->type)
   {
@@ -110,6 +116,25 @@ void check_node_post(Expr *node, uint32_t depth, void *data, void *out)
 
       array_push_no_resize(&state->result_stack, ok);
     } break;
+    case EXPR_ASSIGN:
+    {
+      Result right = array_pop(&state->result_stack);
+      Result left = array_pop(&state->result_stack);
+      if (right.poisoned || left.poisoned)
+      {
+        array_push_no_resize(&state->result_stack, poison);
+        return;
+      }
+
+      if (!left.is_left_value)
+      {
+        push_error(errors, node, "assignment to right value");
+        array_push_no_resize(&state->result_stack, poison);
+        return;
+      }
+
+      array_push_no_resize(&state->result_stack, left_value);
+    } break;
     case EXPR_IDENTIFIER:
     {
       Token *identifier = node->as.identifier;
@@ -135,7 +160,7 @@ void check_node_post(Expr *node, uint32_t depth, void *data, void *out)
         return;
       }
 
-      array_push(&state->result_stack, ok);
+      array_push(&state->result_stack, left_value);
     } break;
     case EXPR_DECLARATION:
     {
@@ -161,7 +186,7 @@ void check_node_post(Expr *node, uint32_t depth, void *data, void *out)
       }
 
       scope_insert(&state->scope_stack, &node->span, node->as.declaration.value_id);
-      array_push_no_resize(&state->result_stack, ok);
+      array_push_no_resize(&state->result_stack, left_value);
     } break;
   }
 }

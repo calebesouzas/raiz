@@ -25,6 +25,10 @@ typedef struct {
   Token *operator;
 } Expr_Binary;
 
+typedef struct {
+  size_t left_id, right_id;
+} Expr_Assign;
+
 typedef array_of(size_t) Expr_Block;
 
 typedef struct {
@@ -40,6 +44,7 @@ typedef enum {
   EXPR_IDENTIFIER,
   EXPR_BLOCK,
   EXPR_DECLARATION,
+  EXPR_ASSIGN,
 } ExprType;
 
 typedef struct Expr {
@@ -51,6 +56,7 @@ typedef struct Expr {
     Expr_Identifier identifier;
     Expr_Block block;
     Expr_Declaration declaration;
+    Expr_Assign assign;
   } as;
   size_t id;
   ExprType type;

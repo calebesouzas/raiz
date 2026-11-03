@@ -38,6 +38,10 @@ void expr_walk(
         expr_walk(pool, &pool[*term_id], depth + 1, visit, post_order, data, out);
       }
       break;
+    case EXPR_ASSIGN:
+      expr_walk(pool, &pool[node->as.assign.left_id], depth + 1, visit, post_order, data, out);
+      expr_walk(pool, &pool[node->as.assign.right_id], depth + 1, visit, post_order, data, out);
+      break;
   }
 
   if (post_order)
@@ -87,6 +91,10 @@ void expr_walk_combo(
       {
         expr_walk_combo(pool, &pool[*term_id], depth + 1, combo, data, out);
       }
+      break;
+    case EXPR_ASSIGN:
+      expr_walk_combo(pool, &pool[node->as.assign.left_id], depth + 1, combo, data, out);
+      expr_walk_combo(pool, &pool[node->as.assign.right_id], depth + 1, combo, data, out);
       break;
   }
 
@@ -142,6 +150,9 @@ void dump_expr(Expr *expr, uint32_t level, void *data, void *out)
       break;
     case EXPR_BLOCK:
       fprintf(stream, "block (count %zu):\n", expr->as.block.count);
+      break;
+    case EXPR_ASSIGN:
+      fprintf(stream, "assign:\n");
       break;
   }
 }
