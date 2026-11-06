@@ -42,6 +42,14 @@ void expr_walk(
       expr_walk(pool, &pool[node->as.assign.left_id], depth + 1, visit, post_order, data, out);
       expr_walk(pool, &pool[node->as.assign.right_id], depth + 1, visit, post_order, data, out);
       break;
+    case EXPR_IF:
+      expr_walk(pool, &pool[node->as.if_node.condition_id], depth + 1, visit, post_order, data, out);
+      expr_walk(pool, &pool[node->as.if_node.then_id], depth + 1, visit, post_order, data, out);
+      if (node->as.if_node.else_id != 0)
+      {
+        expr_walk(pool, &pool[node->as.if_node.else_id], depth + 1, visit, post_order, data, out);
+      }
+      break;
   }
 
   if (post_order)
@@ -95,6 +103,14 @@ void expr_walk_combo(
     case EXPR_ASSIGN:
       expr_walk_combo(pool, &pool[node->as.assign.left_id], depth + 1, combo, data, out);
       expr_walk_combo(pool, &pool[node->as.assign.right_id], depth + 1, combo, data, out);
+      break;
+    case EXPR_IF:
+      expr_walk_combo(pool, &pool[node->as.if_node.condition_id], depth + 1, combo, data, out);
+      expr_walk_combo(pool, &pool[node->as.if_node.then_id], depth + 1, combo, data, out);
+      if (node->as.if_node.else_id != 0)
+      {
+        expr_walk_combo(pool, &pool[node->as.if_node.else_id], depth + 1, combo, data, out);
+      }
       break;
   }
 
@@ -153,6 +169,9 @@ void dump_expr(Expr *expr, uint32_t level, void *data, void *out)
       break;
     case EXPR_ASSIGN:
       fprintf(stream, "assign:\n");
+      break;
+    case EXPR_IF:
+      fprintf(stream, "if:\n");
       break;
   }
 }
