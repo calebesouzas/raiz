@@ -88,8 +88,25 @@ void expr_walk_combo(
       expr_walk_combo(pool, &pool[node->as.unary.inner_id], depth + 1, combo, data, out);
       break;
     case EXPR_BINARY:
+      if (combo->stage_pre != NULL)
+      {
+        combo->stage_pre(node, WALK_STAGE_BINARY_LEFT, data, out);
+      }
       expr_walk_combo(pool, &pool[node->as.binary.left_id], depth + 1, combo, data, out);
+      if (combo->stage_post != NULL)
+      {
+        combo->stage_post(node, WALK_STAGE_BINARY_LEFT, data, out);
+      }
+
+      if (combo->stage_pre != NULL)
+      {
+        combo->stage_pre(node, WALK_STAGE_BINARY_RIGHT, data, out);
+      }
       expr_walk_combo(pool, &pool[node->as.binary.right_id], depth + 1, combo, data, out);
+      if (combo->stage_post != NULL)
+      {
+        combo->stage_post(node, WALK_STAGE_BINARY_RIGHT, data, out);
+      }
       break;
     case EXPR_DECLARATION:
       expr_walk_combo(pool, &pool[node->as.declaration.value_id], depth + 1, combo, data, out);
@@ -101,15 +118,58 @@ void expr_walk_combo(
       }
       break;
     case EXPR_ASSIGN:
+      if (combo->stage_pre != NULL)
+      {
+        combo->stage_pre(node, WALK_STAGE_BINARY_LEFT, data, out);
+      }
       expr_walk_combo(pool, &pool[node->as.assign.left_id], depth + 1, combo, data, out);
+      if (combo->stage_post != NULL)
+      {
+        combo->stage_post(node, WALK_STAGE_BINARY_LEFT, data, out);
+      }
+
+      if (combo->stage_pre != NULL)
+      {
+        combo->stage_pre(node, WALK_STAGE_BINARY_RIGHT, data, out);
+      }
       expr_walk_combo(pool, &pool[node->as.assign.right_id], depth + 1, combo, data, out);
+      if (combo->stage_post != NULL)
+      {
+        combo->stage_post(node, WALK_STAGE_BINARY_RIGHT, data, out);
+      }
       break;
     case EXPR_IF:
+      if (combo->stage_pre != NULL)
+      {
+        combo->stage_pre(node, WALK_STAGE_CONDITION, data, out);
+      }
       expr_walk_combo(pool, &pool[node->as.if_node.condition_id], depth + 1, combo, data, out);
+      if (combo->stage_post != NULL)
+      {
+        combo->stage_post(node, WALK_STAGE_CONDITION, data, out);
+      }
+
+      if (combo->stage_pre != NULL)
+      {
+        combo->stage_pre(node, WALK_STAGE_THEN, data, out);
+      }
       expr_walk_combo(pool, &pool[node->as.if_node.then_id], depth + 1, combo, data, out);
+      if (combo->stage_post != NULL)
+      {
+        combo->stage_post(node, WALK_STAGE_THEN, data, out);
+      }
+
       if (node->as.if_node.else_id != 0)
       {
+        if (combo->stage_pre != NULL)
+        {
+          combo->stage_pre(node, WALK_STAGE_ELSE, data, out);
+        }
         expr_walk_combo(pool, &pool[node->as.if_node.else_id], depth + 1, combo, data, out);
+        if (combo->stage_post != NULL)
+        {
+          combo->stage_post(node, WALK_STAGE_ELSE, data, out);
+        }
       }
       break;
   }

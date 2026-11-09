@@ -42,6 +42,12 @@ typedef struct {
   size_t else_id;
 } Expr_If;
 
+#define WALK_STAGE_BINARY_LEFT 1
+#define WALK_STAGE_BINARY_RIGHT 2
+#define WALK_STAGE_CONDITION 1
+#define WALK_STAGE_THEN 2
+#define WALK_STAGE_ELSE 3
+
 typedef enum {
   EXPR_LITERAL,
   EXPR_GROUP,
@@ -84,9 +90,13 @@ void ast_walk(Ast *ast, WalkerFunction visit, bool post_order, void *data, void 
 
 void dump_ast(Ast *ast, FILE *stream);
 
+typedef void (*WalkerStageFunction) (Expr *node, unsigned int stage, void *data, void *out);
+
 typedef struct {
   WalkerFunction pre;
   WalkerFunction post;
+  WalkerStageFunction stage_pre;
+  WalkerStageFunction stage_post;
 } WalkerCombo;
 
 void ast_walk_combo(Ast *ast, WalkerCombo *combo, void *data, void *out);
