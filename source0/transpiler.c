@@ -36,13 +36,95 @@ void transpile_node_pre(Expr *node, uint32_t depth, void *data, void *out)
     case EXPR_BINARY:
     case EXPR_ASSIGN:
     case EXPR_IDENTIFIER:
+    case EXPR_DECLARATION:
       break;
     case EXPR_BLOCK:
     {
       scope_new(&state->scope_stack);
     } break;
+    case EXPR_IF:
+    {
+      Result *result = push_result(state);
+      fprintf(state->stream, "  int r%d;\n", result->id);
+    } break;
+  }
+}
+
+void transpile_node_stage_pre(Expr *node, uint32_t stage, void *data, void *out)
+{
+  (void) out;
+
+  State *state = (State*) data;
+
+  switch (node->type)
+  {
+    case EXPR_LITERAL:
+    case EXPR_GROUP:
+    case EXPR_UNARY:
+    case EXPR_BINARY:
+    case EXPR_IDENTIFIER:
+    case EXPR_BLOCK:
     case EXPR_DECLARATION:
+    case EXPR_ASSIGN:
       break;
+    case EXPR_IF:
+    {
+      switch (stage)
+      {
+        case WALK_STAGE_CONDITION:
+          break; // insert "if (...)" at 'stage_post()' function
+        case WALK_STAGE_THEN:
+          fprintf(state->stream, "  {\n");
+          break;
+        case WALK_STAGE_ELSE:
+          fprintf(state->stream, "  else\n  {\n");
+          break;
+        default:
+          fprintf(stderr, "unreachable 'if' node stage: %u\n", stage);
+          abort();
+      }
+    } break;
+  }
+}
+
+void transpile_node_stage_post(Expr *node, uint32_t stage, void *data, void *out)
+{
+  (void) out;
+
+  State *state = (State*) data;
+
+  switch (node->type)
+  {
+    case EXPR_LITERAL:
+    case EXPR_GROUP:
+    case EXPR_UNARY:
+    case EXPR_BINARY:
+    case EXPR_IDENTIFIER:
+    case EXPR_BLOCK:
+    case EXPR_DECLARATION:
+    case EXPR_ASSIGN:
+      break;
+    case EXPR_IF:
+    {
+      switch (stage)
+      {
+        case WALK_STAGE_CONDITION:
+        {
+          Result condition = array_pop(&state->result_stack);
+          fprintf(state->stream, "  if (r%d)\n", condition.id);
+        } break;
+        case WALK_STAGE_THEN:
+        case WALK_STAGE_ELSE:
+        {
+          Result last = array_pop(&state->result_stack);
+          Result if_result = array_pop(&state->result_stack);
+          fprintf(state->stream, "  r%d = r%d;\n  }\n", if_result.id, last.id);
+        } break;
+        default:
+          fprintf(stderr, "unreachable 'if' node stage: %u\n", stage);
+          abort();
+      }
+    } break;
   }
 }
 
@@ -60,6 +142,7 @@ void transpile_node_post(Expr *node, uint32_t depth, void *data, void *out)
       fprintf(state->stream, "  int r%d = %d;\n", result->id, node->as.literal.value);
     } break;
     case EXPR_GROUP:
+    case EXPR_IF:
       break;
     case EXPR_UNARY:
     {
@@ -124,7 +207,9 @@ bool transpile_ast(Ast *ast, const char *output_path)
   fprintf(state.stream, "#include <stdio.h>\nint main(void){\n");
   WalkerCombo combo = {
     .pre = transpile_node_pre,
-    .post = transpile_node_post
+    .post = transpile_node_post,
+    .stage_pre = transpile_node_stage_pre,
+    .stage_post = transpile_node_stage_post
   };
 
   Result last_result = {0};
