@@ -188,6 +188,34 @@ void check_node_post(Expr *node, uint32_t depth, void *data, void *out)
       scope_insert(&state->scope_stack, &node->span, node->as.declaration.value_id);
       array_push_no_resize(&state->result_stack, left_value);
     } break;
+    case EXPR_IF:
+    {
+      if (node->as.if_node.else_id != 0)
+      {
+        Result else_branch = array_pop(&state->result_stack);
+        if (else_branch.poisoned)
+        {
+          array_push_no_resize(&state->result_stack, poison);
+          return;
+        }
+      }
+
+      Result then_branch = array_pop(&state->result_stack);
+      if (then_branch.poisoned)
+      {
+        array_push_no_resize(&state->result_stack, poison);
+        return;
+      }
+
+      Result condition = array_pop(&state->result_stack);
+      if (condition.poisoned)
+      {
+        array_push_no_resize(&state->result_stack, poison);
+        return;
+      }
+
+      array_push_no_resize(&state->result_stack, ok);
+    } break;
   }
 }
 
