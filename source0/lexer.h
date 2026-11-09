@@ -17,9 +17,10 @@ typedef struct Lexer {
 
 typedef enum {
   LEXERFLAG_ENABLE_NEW_LINE = 1 << 0,
+  LEXERFLAG_ENABLE_KEYWORDS = 1 << 1,
 } LexerFlags;
 
-#define LEXER_DEFAULT_FLAGS (LEXERFLAG_ENABLE_NEW_LINE)
+#define LEXER_DEFAULT_FLAGS (LEXERFLAG_ENABLE_NEW_LINE|LEXERFLAG_ENABLE_KEYWORDS)
 
 Lexer lexer_init(const char *source, size_t length, const char *file_path);
 

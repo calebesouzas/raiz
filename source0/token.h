@@ -20,6 +20,8 @@ typedef enum TokenType {
   TOKEN_LINE_BREAK,
   TOKEN_OPEN_CURLY,
   TOKEN_CLOSE_CURLY,
+  TOKEN_IF,
+  TOKEN_ELSE,
   __TOKEN_COUNT, // keep this one as the last!
 } TokenType;
 

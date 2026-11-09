@@ -40,6 +40,16 @@ next:
   }
 }
 
+static const struct {
+  TokenType type;
+  const char *keyword;
+  size_t length;
+} keyword_list[] = {
+  {.type = TOKEN_IF, .keyword = "if", .length = 2},
+  {.type = TOKEN_ELSE, .keyword = "else", .length = 4},
+};
+static const size_t keyword_count = sizeof(keyword_list) / sizeof(keyword_list[0]);
+
 Token next_token(Lexer *L, uint32_t flags)
 {
   skip_whitespace(L, flags);
@@ -143,6 +153,16 @@ Token next_token(Lexer *L, uint32_t flags)
       {
         token.span.length++;
       } while (isalnum(L->cursor[token.span.length]) || L->cursor[token.span.length] == '_');
+      for (size_t i = 0; i < keyword_count; i++)
+      {
+        size_t length = keyword_list[i].length;
+        const char *keyword = keyword_list[i].keyword;
+        if (token.span.length == length && strncmp(token.span.text, keyword, length) == 0)
+        {
+          token.type = keyword_list[i].type;
+          break;
+        }
+      }
     }
     else
     {
