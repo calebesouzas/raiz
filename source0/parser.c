@@ -230,6 +230,38 @@ again:
         res->as.declaration.value_id = value->id;
       }
     } break;
+    case TOKEN_IF:
+    {
+      parser_advance(P);
+
+      res->type = EXPR_IF;
+
+      Expr *condition = parse_expr_tree(P, depth + 1, 1);
+      if (condition == NULL)
+        return NULL;
+      res->as.if_node.condition_id = condition->id;
+
+      if (parser_current(P)->type == TOKEN_LINE_BREAK)
+        parser_advance(P);
+
+      Expr *then_branch = parse_nud(P, depth + 1);
+      if (then_branch == NULL)
+        return NULL;
+      res->as.if_node.then_id = then_branch->id;
+
+      if (parser_current(P)->type == TOKEN_LINE_BREAK)
+        parser_advance(P);
+
+      if (parser_current(P)->type == TOKEN_ELSE)
+      {
+        parser_advance_with(P, LEXER_DEFAULT_FLAGS & ~LEXERFLAG_ENABLE_NEW_LINE);
+
+        Expr *else_branch = parse_nud(P, depth + 1);
+        if (else_branch == NULL)
+          return NULL;
+        res->as.if_node.else_id = else_branch->id;
+      }
+    } break;
     case __TOKEN_COUNT:
       fprintf(stderr, "unreachable token: __TOKEN_COUNT\n");
       abort();
