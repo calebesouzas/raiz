@@ -45,7 +45,7 @@ void transpile_node_pre(Expr *node, uint32_t depth, void *data, void *out)
     case EXPR_IF:
     {
       Result *result = push_result(state);
-      fprintf(state->stream, "  int r%d;\n", result->id);
+      fprintf(state->stream, "  int r%u;\n", result->id);
     } break;
   }
 }
@@ -111,14 +111,14 @@ void transpile_node_stage_post(Expr *node, uint32_t stage, void *data, void *out
         case WALK_STAGE_CONDITION:
         {
           Result condition = array_pop(&state->result_stack);
-          fprintf(state->stream, "  if (r%d)\n", condition.id);
+          fprintf(state->stream, "  if (r%u)\n", condition.id);
         } break;
         case WALK_STAGE_THEN:
         case WALK_STAGE_ELSE:
         {
           Result last = array_pop(&state->result_stack);
           Result if_result = array_pop(&state->result_stack);
-          fprintf(state->stream, "  r%d = r%d;\n  }\n", if_result.id, last.id);
+          fprintf(state->stream, "  r%u = r%u;\n  }\n", if_result.id, last.id);
         } break;
         default:
           fprintf(stderr, "unreachable 'if' node stage: %u\n", stage);
@@ -139,7 +139,7 @@ void transpile_node_post(Expr *node, uint32_t depth, void *data, void *out)
     case EXPR_LITERAL:
     {
       Result *result = push_result(state);
-      fprintf(state->stream, "  int r%d = %d;\n", result->id, node->as.literal.value);
+      fprintf(state->stream, "  int r%u = %u;\n", result->id, node->as.literal.value);
     } break;
     case EXPR_GROUP:
     case EXPR_IF:
@@ -148,7 +148,7 @@ void transpile_node_post(Expr *node, uint32_t depth, void *data, void *out)
     {
       Result inner = array_pop(&state->result_stack);
       Result *result = push_result(state);
-      fprintf(state->stream, "  int r%d = -r%d;\n", result->id, inner.id);
+      fprintf(state->stream, "  int r%u = -r%u;\n", result->id, inner.id);
     } break;
     case EXPR_BINARY:
     {
@@ -156,7 +156,7 @@ void transpile_node_post(Expr *node, uint32_t depth, void *data, void *out)
       Result left = array_pop(&state->result_stack);
       Result *result = push_result(state);
       fprintf(state->stream,
-          "  int r%d = r%d %.*s r%d;\n",
+          "  int r%u = r%u %.*s r%u;\n",
           result->id, left.id, __TOKEN_FMT(node->as.binary.operator), right.id
       );
     } break;
@@ -164,7 +164,7 @@ void transpile_node_post(Expr *node, uint32_t depth, void *data, void *out)
     {
       Result right = array_pop(&state->result_stack);
       const Result *left = array_last(&state->result_stack);
-      fprintf(state->stream, "  r%d = r%d;\n", left->id, right.id);
+      fprintf(state->stream, "  r%u = r%u;\n", left->id, right.id);
     } break;
     case EXPR_IDENTIFIER:
     {
@@ -215,7 +215,7 @@ bool transpile_ast(Ast *ast, const char *output_path)
   Result last_result = {0};
   ast_walk_combo(ast, &combo, &state, &last_result);
 
-  fprintf(state.stream, "  printf(\"%%d\\n\", r%d);\n", last_result.id);
+  fprintf(state.stream, "  printf(\"%%d\\n\", r%u);\n", last_result.id);
   fprintf(state.stream, "  return 0;\n}\n");
 
   fclose(state.stream);
