@@ -57,6 +57,8 @@ do\
 
 #define array_last(array) (&(array)->data[(array)->count - 1])
 
+#define array_safe_last(array) ((array)->count == 0? NULL : array_last(array))
+
 #define array_pop(array) ((array)->data[--(array)->count])
 
 #define array_free(array)\
