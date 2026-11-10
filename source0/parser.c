@@ -78,6 +78,38 @@ static inline bool parser_consume(Parser *P, TokenType expected)
   return true;
 }
 
+static inline bool parser_consume_any(Parser *P, TokenType *types, size_t size)
+{
+  bool found = false;
+  for (size_t i = 0; i < size; i++)
+  {
+    if (parser_current(P)->type == types[i])
+    {
+      found = true;
+      break;
+    }
+  }
+
+  if (!found)
+  {
+    char message[PARSER_MESSAGE_SIZE];
+    size_t bytes_count = snprintf(message, sizeof(message), "expected ");
+    for (size_t i = 0; i < size; i++)
+    {
+      bytes_count += snprintf(message + bytes_count, sizeof(message) - bytes_count,
+          i == 0? "'%s'" : " or '%s'", token_name(types[i])
+      );
+    }
+    bytes_count += snprintf(message + bytes_count, sizeof(message) - bytes_count,
+        ", got '%s'", token_name(parser_current(P)->type)
+    );
+    parser_error(P, parser_current(P), message);
+    return false;
+  }
+
+  return true;
+}
+
 static inline Expr *parser_new_node(Parser *P)
 {
   size_t id = P->pool->count;
