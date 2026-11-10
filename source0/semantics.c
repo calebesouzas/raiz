@@ -16,8 +16,15 @@ typedef struct {
 typedef array_of(Result) ResultStack;
 
 typedef struct {
+  bool in_assignment : 1;
+} Context;
+
+typedef array_of(Context) ContextStack;
+
+typedef struct {
   ResultStack result_stack;
   ScopeStack scope_stack;
+  ContextStack context_stack;
 } State;
 
 typedef struct {
@@ -134,6 +141,7 @@ void check_node_post(Expr *node, uint32_t depth, void *data, void *out)
       }
 
       array_push_no_resize(&state->result_stack, left_value);
+      array_pop(&state->context_stack);
     } break;
     case EXPR_IDENTIFIER:
     {
@@ -187,9 +195,11 @@ void check_node_post(Expr *node, uint32_t depth, void *data, void *out)
 
       scope_insert(&state->scope_stack, &node->span, node->as.declaration.value_id);
       array_push_no_resize(&state->result_stack, left_value);
+      array_pop(&state->context_stack);
     } break;
     case EXPR_IF:
     {
+      Context *context = array_safe_last(&state->context_stack);
       if (node->as.if_node.else_id != 0)
       {
         Result else_branch = array_pop(&state->result_stack);
@@ -198,6 +208,12 @@ void check_node_post(Expr *node, uint32_t depth, void *data, void *out)
           array_push_no_resize(&state->result_stack, poison);
           return;
         }
+      }
+      else if (context != NULL && context->in_assignment)
+      {
+        push_error(errors, node, "'if' at right value requires an 'else' branch");
+        array_push_no_resize(&state->result_stack, poison);
+        return;
       }
 
       Result then_branch = array_pop(&state->result_stack);
@@ -233,6 +249,13 @@ void check_node_pre(Expr *node, uint32_t depth, void *data, void *out)
       // do not forget to pop it in post logic for blocks!
       scope_new(&state->scope_stack);
       break;
+    case EXPR_DECLARATION:
+    case EXPR_ASSIGN:
+    {
+      Context context = {0};
+      context.in_assignment = true;
+      array_push(&state->context_stack, context);
+    } break;
     default:
       break;
   }
