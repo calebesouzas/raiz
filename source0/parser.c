@@ -137,7 +137,7 @@ Expr *parse_term(Parser *P, uint32_t depth)
 {
   Expr *res = parse_expr(P, depth);
 
-  if (!parser_consume(P, TOKEN_LINE_BREAK))
+  if (parser_current(P)->type != TOKEN_END_OF_FILE && !parser_consume(P, TOKEN_LINE_BREAK))
     return NULL;
 
   return res;
