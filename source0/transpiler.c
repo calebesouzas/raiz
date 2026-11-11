@@ -117,8 +117,8 @@ void transpile_node_stage_post(Expr *node, uint32_t stage, void *data, void *out
         case WALK_STAGE_ELSE:
         {
           Result last = array_pop(&state->result_stack);
-          Result if_result = array_pop(&state->result_stack);
-          fprintf(state->stream, "  r%u = r%u;\n  }\n", if_result.id, last.id);
+          Result *result = array_last(&state->result_stack);
+          fprintf(state->stream, "  r%u = r%u;\n  }\n", result->id, last.id);
         } break;
         default:
           fprintf(stderr, "unreachable 'if' node stage: %u\n", stage);
