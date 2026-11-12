@@ -145,15 +145,20 @@ Expr *parse_term(Parser *P, uint32_t depth)
 
 Expr *parse_block(Parser *P, uint32_t depth)
 {
+  if (!parser_expect(P, TOKEN_OPEN_CURLY, parser_current(P)))
+    return NULL;
+
   parser_advance_with(P, LEXER_DEFAULT_FLAGS & ~LEXERFLAG_ENABLE_NEW_LINE);
 
   Expr *res = parser_new_node(P);
   res->type = EXPR_BLOCK;
 
+  bool got_error = false;
+
   while (parser_current(P)->type != TOKEN_CLOSE_CURLY)
   {
     Expr *node = parse_term(P, depth + 1);
-    if (node == NULL)
+    if (node == NULL) // recovering...
     {
       while (parser_current(P)->type != TOKEN_LINE_BREAK)
       {
@@ -167,6 +172,7 @@ Expr *parse_block(Parser *P, uint32_t depth)
 
       if (!parser_consume(P, TOKEN_LINE_BREAK))
       {
+        got_error = true;
         break;
       }
 
@@ -175,16 +181,14 @@ Expr *parse_block(Parser *P, uint32_t depth)
 
     array_push(&res->as.block, node->id);
 
-    if (parser_current(P)->type == TOKEN_CLOSE_CURLY)
-    {
-      parser_advance(P);
-    }
-
     if (token_is_expression_finisher(parser_current(P)))
     {
       break;
     }
   }
+
+  if (!got_error && !parser_consume(P, TOKEN_CLOSE_CURLY))
+    return NULL;
 
   return res;
 }
@@ -276,7 +280,7 @@ again:
       if (parser_current(P)->type == TOKEN_LINE_BREAK)
         parser_advance(P);
 
-      Expr *then_branch = parse_nud(P, depth + 1);
+      Expr *then_branch = parse_block(P, depth + 1);
       if (then_branch == NULL)
         return NULL;
       res->as.if_node.then_id = then_branch->id;
@@ -288,7 +292,7 @@ again:
       {
         parser_advance_with(P, LEXER_DEFAULT_FLAGS & ~LEXERFLAG_ENABLE_NEW_LINE);
 
-        Expr *else_branch = parse_nud(P, depth + 1);
+        Expr *else_branch = parse_block(P, depth + 1);
         if (else_branch == NULL)
           return NULL;
         res->as.if_node.else_id = else_branch->id;
