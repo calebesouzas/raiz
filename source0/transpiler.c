@@ -1,4 +1,5 @@
 #include "transpiler.h"
+#include <stdarg.h>
 
 typedef struct {
   uint32_t id;
